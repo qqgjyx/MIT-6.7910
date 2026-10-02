@@ -28,7 +28,6 @@ mid-training moves the solution toward the new optimizer's preferred one. Three 
 states implicit bias mostly for linear, diagonal or infinitely wide models, as parameter norms that
 differ by optimizer; experiments report test accuracy, which cannot separate risk-equivalent
 predictors; and curvature depends on parameterization, so ``flatter'' need not mean ``simpler''.
-Tags: \tagF{} foundational, \tagR{} 2024--26 top venue, \tagP{} preprint or workshop.
 
 %% =================================================================
 %% Literature
@@ -45,23 +44,23 @@ max-margin solution in that norm, but slowly: GD reaches the $\ell_2$ margin on 
 at a logarithmic rate \citep{soudry2018separable}, so a finite-time comparison may be far from the
 limit.}
 
-\entry{gunasekar2018geometry}{\tagF}{For mirror descent, natural gradient and steepest descent on
+\entry{gunasekar2018geometry}{For mirror descent, natural gradient and steepest descent on
 underdetermined regression and separable linear classification, asks when the limit depends only on
 the geometry, not on step size or momentum. For steepest descent on separable data it is the
 max-margin solution in the chosen norm. Later results for Adam ($\ell_\infty$) and Muon (spectral
 norm) follow this template.}
 
-\entry{gunasekar2018conv}{\tagF}{GD on full-width linear convolutional networks of depth $L$ converges
+\entry{gunasekar2018conv}{GD on full-width linear convolutional networks of depth $L$ converges
 to a predictor tied to an $\ell_{2/L}$ bridge penalty in the frequency domain; fully connected linear
 networks reach the hard-margin SVM at any depth. Same optimizer, different function, so any
 optimizer comparison is also an architecture comparison.}
 
-\entry{chizat2020logistic}{\tagF}{For infinitely wide two-layer homogeneous networks, gradient flow on
+\entry{chizat2020logistic}{For infinitely wide two-layer homogeneous networks, gradient flow on
 the logistic loss converges to a max-margin classifier in a non-Hilbertian function space that
 adapts to hidden low-dimensional structure; training only the last layer gives a kernel SVM without
 that adaptivity. The bias is stated for \emph{functions}, the level at which we compare optimizers.}
 
-\entry{wilson2017marginal}{\tagF}{On constructed separable data, GD and SGD reach zero test error
+\entry{wilson2017marginal}{On constructed separable data, GD and SGD reach zero test error
 while AdaGrad, RMSProp and Adam approach chance; on deep-learning benchmarks adaptive methods
 generalize worse even when they train better. The claim we test, that Adam finds different
 solutions, starts here.}
@@ -75,15 +74,15 @@ the function has; Jacobian norms say how steep they are. Both change at constant
 regions drift from the training points toward the decision boundary long after interpolation
 \citep{humayun2024grok}, so a matched-loss comparison must also fix training time.}
 
-\entry{hanin2019regions}{\tagF}{At initialization, the number of linear regions of a ReLU network
+\entry{hanin2019regions}{At initialization, the number of linear regions of a ReLU network
 along a line grows linearly in the number of neurons, far below the exponential bound, and stays far
 below it after training. Region counts are computable and typically small.}
 
-\entry{novak2018sensitivity}{\tagF}{Across thousands of trained models, the input-output Jacobian norm
+\entry{novak2018sensitivity}{Across thousands of trained models, the input-output Jacobian norm
 is small near the training data and correlates with generalization across architectures, optimizers
 and datasets. It measures slope, complementing region counts.}
 
-\entry{li2025regions}{\tagR}{Counts connected input regions with the same predicted label, a
+\entry{li2025regions}{Counts connected input regions with the same predicted label, a
 parameterization-free measure of implicit bias. Small counts go with simple boundaries and good
 generalization; larger learning rates and smaller batches give smaller counts, with theory for the
 learning-rate effect. It compares hyperparameters, not optimizers.}
@@ -95,23 +94,23 @@ learning-rate effect. It compares hyperparameters, not optimizers.}
 acts through stability, mini-batch noise through an implicit penalty, scaled by $\eta$ or $\eta/B$.
 What they buy depends on the model: smoothness in low dimension, a sparse input support, low rank.}
 
-\entry{qiao2024stable}{\tagR}{\citet{mulayoff2021stability} showed that minima GD can stably reach at
+\entry{qiao2024stable}{\citet{mulayoff2021stability} showed that minima GD can stably reach at
 step $\eta$ in univariate two-layer ReLU networks have weighted total variation of $f'$ at most about
 $1/\eta$. This paper drops interpolation: with label noise $\sigma$, stable minima have weighted total
 variation at most $1/\eta-1/2+\widetilde O(\sigma+\sqrt{\mathrm{MSE}})$, giving a near-optimal
 $\widetilde O(n^{-4/5})$ rate. Univariate inputs only.}
 
-\entry{liang2025shattering}{\tagR}{With multivariate inputs, flatness still implies generalization,
+\entry{liang2025shattering}{With multivariate inputs, flatness still implies generalization,
 but the rates worsen exponentially with dimension: flat solutions can ``shatter'' the data with
 rarely active, large neurons. Low-norm solutions avoid this, so stability alone cannot explain
 generalization in high dimension.}
 
-\entry{smith2021origin}{\tagF}{For small finite $\eta$, the mean SGD iterate with random shuffling
+\entry{smith2021origin}{For small finite $\eta$, the mean SGD iterate with random shuffling
 follows gradient flow on a modified loss that penalizes mini-batch gradient norms, with strength
 proportional to $\eta/B$ for small batches. ``SGD equals GD plus a step on a regularizer'' becomes a
 theorem, with the sign of the batch-size effect.}
 
-\entry{beneventano2024support}{\tagP}{From the instructors' group. Mini-batch SGD learns the target's
+\entry{beneventano2024support}{From the instructors' group. Mini-batch SGD learns the target's
 support in the first layer, driving weights on irrelevant inputs to zero through a second-order
 implicit regularizer proportional to $\eta/B$; full-batch GD needs an explicit penalty to do the
 same. Relatedly, SGD with weight decay favours low-rank weights \citep{galanti2022rank} and can jump
@@ -134,18 +133,18 @@ penalize or anti-penalize gradient norms.]}
 at matched loss with two independent function metrics, and the one swap study reports only accuracy.
 That is the gap.}
 
-\entry{cortesi2026same}{\tagP}{From the course staff. In S\&P~500 volatility forecasting, models with
+\entry{cortesi2026same}{From the course staff. In S\&P~500 volatility forecasting, models with
 identical test loss learn different functions; the optimizer reshapes response profiles and temporal
 dependence, with about $3\times$ spread in portfolio turnover at similar Sharpe ratio. We extend this
 matched-loss design beyond one noisy domain.}
 
-\entry{vasudeva2025rich}{\tagR}{For two-layer ReLU networks on Gaussian data, proves GD has a
+\entry{vasudeva2025rich}{For two-layer ReLU networks on Gaussian data, proves GD has a
 simplicity bias toward a linear boundary with suboptimal margin, while Adam learns richer features and
 a nonlinear boundary closer to Bayes-optimal; empirically Adam then generalizes better under spurious
 correlations. Here richness helps, the opposite of the usual lesson from
 \citet{wilson2017marginal}.}
 
-\entry{keskar2017swats}{\tagF\,\tagP}{SWATS starts with Adam and switches to SGD when a
+\entry{keskar2017swats}{SWATS starts with Adam and switches to SGD when a
 projection-based trigger fires, closing the generalization gap on most CIFAR, Tiny-ImageNet and
 language-modeling tasks tried. It is the existing swap intervention, but it reports only accuracy,
 so it cannot say whether the swap changes the learned function.}
