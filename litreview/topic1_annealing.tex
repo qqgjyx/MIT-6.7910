@@ -179,8 +179,10 @@ noise, so its drop must come from stability or basin selection; a constant-$\eta
 length controls compute (\cref{sec:lit-stability,sec:lit-basin}). Raising $B$ at fixed $\eta$
 \citep{smith2018dontdecay} moves only noise. Averaging constant-$\eta$ iterates
 \citep{hagele2024scaling,defazio2024schedulefree} removes oscillation and noise without a new basin.
-Re-warming after the decay tests the basin: if the loss returns to the plateau, the basin did not
-change. Run on two tasks at a matched update budget, this grid is the ablation the project asks for,
+Basin selection needs a basin-sensitive test, not a loss curve: re-warming restores the oscillation
+term, so the loss can return to the plateau from a different basin. Instead, decay, re-warm and decay
+again, then compare with the directly decayed branch by the loss barrier along the linear path
+between them \citep{frankle2020lmc} and by prediction agreement. Run on two tasks at a matched update budget, this grid is the ablation the project asks for,
 and the papers above predict every cell.
 
 \item \textbf{Theory: annealing should land in a sharper region, at a cost.} Self-stabilization and
