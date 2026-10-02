@@ -1,0 +1,223 @@
+\documentclass[10pt]{article}
+\input{preamble}
+
+\title{\vspace{-1.6em}Optimizer-Controlled Implicit Bias and Functional Complexity\\[2pt]
+\large Literature review and implications (9.520, Fall 2026)}
+\author{Juntang Wang \and V\'ictor Conchello}
+\date{October 2, 2026}
+
+%% Split: Juntang wrote Sec. 1, 2.1-2.3, 2.5, the key-papers draft and the implications draft.
+%% Victor writes Sec. 2.4 (Adam and Muon) and edits Sec. 3-4.
+%% Page budget: the document must stay at 4 pages, so Sec. 2.4 gets at most ~0.5 page
+%% (4-5 entries of ~45 words).
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+%% =================================================================
+%% Question
+%% =================================================================
+\section{The question and why it is hard}
+\label{sec:question}
+
+Overparameterized networks have many parameter settings with the same loss; the optimizer picks
+which one training returns. The project asks whether SGD, Adam and Muon, \emph{at matched loss},
+select functions of different complexity, curvature or robustness, and whether swapping optimizers
+mid-training moves the solution toward the new optimizer's preferred one. Three obstacles: theory
+states implicit bias mostly for linear, diagonal or infinitely wide models, as parameter norms that
+differ by optimizer; experiments report test accuracy, which cannot separate risk-equivalent
+predictors; and curvature depends on parameterization, so ``flatter'' need not mean ``simpler''.
+Tags: \tagF{} foundational, \tagR{} 2024--26 top venue, \tagP{} preprint or workshop.
+
+%% =================================================================
+%% Literature
+%% =================================================================
+\section{Annotated literature}
+\label{sec:lit}
+
+\subsection{Foundations: the optimizer's geometry selects the solution}
+\label{sec:lit-foundations}
+
+\synth{Implicit bias belongs to the optimizer and the parameterization together, not to the loss. In
+linear models a first-order method acts as steepest descent in some norm and converges to the
+max-margin solution in that norm, but slowly: GD reaches the $\ell_2$ margin on separable data only
+at a logarithmic rate \citep{soudry2018separable}, so a finite-time comparison may be far from the
+limit.}
+
+\entry{gunasekar2018geometry}{\tagF}{For mirror descent, natural gradient and steepest descent on
+underdetermined regression and separable linear classification, asks when the limit depends only on
+the geometry, not on step size or momentum. For steepest descent on separable data it is the
+max-margin solution in the chosen norm. Later results for Adam ($\ell_\infty$) and Muon (spectral
+norm) follow this template.}
+
+\entry{gunasekar2018conv}{\tagF}{GD on full-width linear convolutional networks of depth $L$ converges
+to a predictor tied to an $\ell_{2/L}$ bridge penalty in the frequency domain; fully connected linear
+networks reach the hard-margin SVM at any depth. Same optimizer, different function, so any
+optimizer comparison is also an architecture comparison.}
+
+\entry{chizat2020logistic}{\tagF}{For infinitely wide two-layer homogeneous networks, gradient flow on
+the logistic loss converges to a max-margin classifier in a non-Hilbertian function space that
+adapts to hidden low-dimensional structure; training only the last layer gives a kernel SVM without
+that adaptivity. The bias is stated for \emph{functions}, the level at which we compare optimizers.}
+
+\entry{wilson2017marginal}{\tagF}{On constructed separable data, GD and SGD reach zero test error
+while AdaGrad, RMSProp and Adam approach chance; on deep-learning benchmarks adaptive methods
+generalize worse even when they train better. The claim we test, that Adam finds different
+solutions, starts here.}
+
+\subsection{Measuring functional complexity}
+\label{sec:lit-metrics}
+
+\synth{We need two independent function metrics. These are defined on the input-output map, so unlike
+sharpness or weight norms they do not depend on parameterization. Region counts say how many pieces
+the function has; Jacobian norms say how steep they are. Both change at constant training loss:
+regions drift from the training points toward the decision boundary long after interpolation
+\citep{humayun2024grok}, so a matched-loss comparison must also fix training time.}
+
+\entry{hanin2019regions}{\tagF}{At initialization, the number of linear regions of a ReLU network
+along a line grows linearly in the number of neurons, far below the exponential bound, and stays far
+below it after training. Region counts are computable and typically small.}
+
+\entry{novak2018sensitivity}{\tagF}{Across thousands of trained models, the input-output Jacobian norm
+is small near the training data and correlates with generalization across architectures, optimizers
+and datasets. It measures slope, complementing region counts.}
+
+\entry{li2025regions}{\tagR}{Counts connected input regions with the same predicted label, a
+parameterization-free measure of implicit bias. Small counts go with simple boundaries and good
+generalization; larger learning rates and smaller batches give smaller counts, with theory for the
+learning-rate effect. It compares hyperparameters, not optimizers.}
+
+\subsection{The GD and SGD side: step size and noise select simpler functions}
+\label{sec:lit-sgd}
+
+\synth{The best-developed side, and the closest to the course's training-dynamics line. Step size
+acts through stability, mini-batch noise through an implicit penalty, scaled by $\eta$ or $\eta/B$.
+What they buy depends on the model: smoothness in low dimension, a sparse input support, low rank.}
+
+\entry{qiao2024stable}{\tagR}{\citet{mulayoff2021stability} showed that minima GD can stably reach at
+step $\eta$ in univariate two-layer ReLU networks have weighted total variation of $f'$ at most about
+$1/\eta$. This paper drops interpolation: with label noise $\sigma$, stable minima have weighted total
+variation at most $1/\eta-1/2+\widetilde O(\sigma+\sqrt{\mathrm{MSE}})$, giving a near-optimal
+$\widetilde O(n^{-4/5})$ rate. Univariate inputs only.}
+
+\entry{liang2025shattering}{\tagR}{With multivariate inputs, flatness still implies generalization,
+but the rates worsen exponentially with dimension: flat solutions can ``shatter'' the data with
+rarely active, large neurons. Low-norm solutions avoid this, so stability alone cannot explain
+generalization in high dimension.}
+
+\entry{smith2021origin}{\tagF}{For small finite $\eta$, the mean SGD iterate with random shuffling
+follows gradient flow on a modified loss that penalizes mini-batch gradient norms, with strength
+proportional to $\eta/B$ for small batches. ``SGD equals GD plus a step on a regularizer'' becomes a
+theorem, with the sign of the batch-size effect.}
+
+\entry{beneventano2024support}{\tagP}{From the instructors' group. Mini-batch SGD learns the target's
+support in the first layer, driving weights on irrelevant inputs to zero through a second-order
+implicit regularizer proportional to $\eta/B$; full-batch GD needs an explicit penalty to do the
+same. Relatedly, SGD with weight decay favours low-rank weights \citep{galanti2022rank} and can jump
+to lower-rank minima but never back \citep{wang2024onewayjumps}.}
+
+\subsection{The adaptive side: Adam and Muon}
+\label{sec:lit-adaptive}
+
+%% VICTOR: at most ~0.5 page. Suggested entries: Zhang-Zou-Cao 2024 (NeurIPS), Xie-Li 2024 (ICML),
+%% Fan-Schmidt-Thrampoulidis 2025 (NeurIPS), Beneventano-Abdelmoneum-Poggio 2026 (preprint), plus
+%% Liu et al. 2025 for Muon at scale. Once added, cite Xie-Li and Fan et al. in implication 1.
+\synth{[V\'ictor's section: Adam and sign descent converge toward $\ell_\infty$ max-margin solutions,
+Muon and spectral descent toward the spectral-norm max margin, and their implicit regularizers can
+penalize or anti-penalize gradient norms.]}
+
+\subsection{Matched-loss comparisons and optimizer swaps}
+\label{sec:lit-matched}
+
+\synth{These show the function can change while the error does not. None compares SGD, Adam and Muon
+at matched loss with two independent function metrics, and the one swap study reports only accuracy.
+That is the gap.}
+
+\entry{cortesi2026same}{\tagP}{From the course staff. In S\&P~500 volatility forecasting, models with
+identical test loss learn different functions; the optimizer reshapes response profiles and temporal
+dependence, with about $3\times$ spread in portfolio turnover at similar Sharpe ratio. We extend this
+matched-loss design beyond one noisy domain.}
+
+\entry{vasudeva2025rich}{\tagR}{For two-layer ReLU networks on Gaussian data, proves GD has a
+simplicity bias toward a linear boundary with suboptimal margin, while Adam learns richer features and
+a nonlinear boundary closer to Bayes-optimal; empirically Adam then generalizes better under spurious
+correlations. Here richness helps, the opposite of the usual lesson from
+\citet{wilson2017marginal}.}
+
+\entry{keskar2017swats}{\tagF\,\tagP}{SWATS starts with Adam and switches to SGD when a
+projection-based trigger fires, closing the generalization gap on most CIFAR, Tiny-ImageNet and
+language-modeling tasks tried. It is the existing swap intervention, but it reports only accuracy,
+so it cannot say whether the swap changes the learned function.}
+
+%% =================================================================
+%% Key papers
+%% =================================================================
+\section{Three key papers}
+\label{sec:key}
+
+\textbf{\citet{wilson2017marginal}} (NeurIPS; about 1{,}200 citations on Semantic Scholar) started the
+question of whether optimizers differ in what they learn, not just how fast. Its construction proves
+adaptive and non-adaptive methods can reach opposite test errors on the same data, and its
+experiments made ``SGD generalizes better'' a belief later work has had to qualify. Our matched-loss
+comparisons re-test that claim with modern optimizers.
+
+\textbf{\citet{gunasekar2018conv}} (NeurIPS; about 490 citations; listed in the project description)
+shows implicit bias depends on parameterization as much as on the optimizer, and characterizes it as
+a function-space penalty in a nontrivial model, part of the Srebro and Soudry work that made implicit
+bias a theorem. Design rule for us: hold the architecture fixed, and do not assume results transfer
+across architectures.
+
+\textbf{\citet{vasudeva2025rich}} (NeurIPS 2025) is the most recent top-venue theorem comparing Adam
+and GD in function space for nonlinear networks. It names a mechanism (GD's simplicity bias versus
+Adam's richer features), predicts boundary shape, and shows ``simpler'' is not always better. It is
+the first hypothesis to test on our matched-loss model bank.
+
+%% =================================================================
+%% Implications
+%% =================================================================
+\section{Implications for theory and practice}
+\label{sec:implications}
+
+\begin{enumerate}[leftmargin=1.3em,itemsep=4pt]
+\item \textbf{Comparing complexity across optimizers is circular unless the metric is neutral.} Each
+optimizer favours small values of the norm it descends in \citep{gunasekar2018geometry}: $\ell_2$
+for GD, $\ell_\infty$ for Adam-like methods, spectral for Muon (\cref{sec:lit-adaptive}). Measuring
+complexity in one of these norms favours the matching optimizer by construction. Use metrics defined
+on the function, such as region counts \citep{hanin2019regions,li2025regions} and input-Jacobian norms
+\citep{novak2018sensitivity}, and require the two to agree.
+
+\item \textbf{Theory: stability explains the GD and SGD side only in low dimension, so structure must
+do the rest.} Minima stability gives sharp function-space bounds in one dimension
+\citep{mulayoff2021stability,qiao2024stable}, but the rates degrade exponentially with input
+dimension \citep{liang2025shattering}. Explanations that survive must use structure: input support
+\citep{beneventano2024support}, rank \citep{galanti2022rank,wang2024onewayjumps}, or more generally
+compositional sparsity, where the relevant dimension is that of each constituent, not the input.
+Prediction: optimizer differences in complexity should be largest on compositionally sparse targets,
+where the $\ell_2$, $\ell_\infty$ and spectral geometries disagree most about which constituents to
+use.
+
+\item \textbf{Practice: matched test loss is not enough to choose an optimizer.} With risk-equivalent
+predictors, the optimizer still changes robustness, response profiles and downstream decisions
+\citep{cortesi2026same,vasudeva2025rich}. Report at least one function-level metric next to the loss,
+especially in noisy domains. A swap at matched loss, as in SWATS \citep{keskar2017swats} but scored
+with function metrics, is a cheap test: if the function moves, the optimizer is a modeling choice,
+not a tuning detail.
+
+\item \textbf{Open question: is the bias set early or applied throughout training?} The break-even
+picture \citep{jastrzebski2020breakeven} and the EoS literature suggest hyperparameters fix a
+curvature regime early. Swapping at different times, scored with two neutral metrics, separates a
+bias that acts by choosing the basin early from one that keeps acting inside it. This is the causal
+form of the project's question, and it connects to the instructors' work on stability with momentum
+\citep{andreyev2026momentum} and under Muon (\cref{sec:lit-adaptive}).
+\end{enumerate}
+
+\otherrefs
+
+\vspace{2pt}
+{\footnotesize\textbf{Use of generative AI.} We used an AI assistant for literature discovery,
+checking citation metadata against arXiv and proceedings pages, and drafting prose. We read the
+primary sources for every claim above, verified all citations, and take responsibility for the
+content.}
+
+\end{document}

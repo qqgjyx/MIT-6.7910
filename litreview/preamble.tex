@@ -1,0 +1,37 @@
+%% Shared preamble for the 9.520 Oct 2 literature reviews.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[backend=bibtex,style=authoryear,natbib=true,maxcitenames=2,maxbibnames=4,minbibnames=3,uniquelist=false,uniquename=false,giveninits=true,doi=false,isbn=false,url=false,eprint=true]{biblatex}
+\addbibresource{refs.bib}
+\usepackage[colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\setlist{nosep,leftmargin=*}
+
+%% Tags for the annotated entries: [F] foundational, [R] 2024-26, [P] preprint or workshop.
+\newcommand{\tagF}{\textsf{\textcolor{MidnightBlue}{[F]}}}
+\newcommand{\tagR}{\textsf{\textcolor{ForestGreen}{[R]}}}
+\newcommand{\tagP}{\textsf{\textcolor{BrickRed}{[P]}}}
+
+%% One annotated bibliography entry: \entry{key}{tags}{annotation}
+\DeclareBibliographyCategory{annotated}
+\newcommand{\entry}[3]{%
+  \addtocategory{annotated}{#1}%
+  \par\noindent\hangindent=1.2em\hangafter=1
+  {\small\fullcite{#1}}~#2\par
+  {\leftskip=1.2em #3\par}\vspace{2pt}}
+
+%% Group synthesis paragraph opening each explanation.
+\newcommand{\synth}[1]{\par\noindent\emph{#1}\par\vspace{2pt}}
+
+%% Works cited in the text but not annotated, printed compactly at the end.
+\newcommand{\otherrefs}{%
+  {\footnotesize\setlength{\bibitemsep}{0pt}%
+  \printbibliography[notcategory=annotated,heading=subbibliography,title={Other references}]}}
