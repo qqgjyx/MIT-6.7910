@@ -23,8 +23,7 @@ sharply once $\eta$ decays, far more than the same steps at constant $\eta$ woul
 gradient noise}; (iii) \emph{select a basin} the constant run never reaches; or (iv) just add
 \emph{compute} at a useful moment. One decay changes all four at once, and a loss curve fits each
 story. Telling them apart needs interventions that move one factor at a matched update budget. Each
-group below collects the evidence for one explanation. Tags: \tagF{} foundational, \tagR{} 2024--26
-top venue, \tagP{} preprint or workshop.
+group below collects the evidence for one explanation.
 
 %% =================================================================
 %% Literature
@@ -39,27 +38,27 @@ top venue, \tagP{} preprint or workshop.
 annealing is our extrapolation: at EoS the observed loss includes an oscillation term set by $\eta$,
 and a decay should remove it. Only the fifth studies the decay.}
 
-\entry{cohen2021eos}{\tagF}{In full-batch GD, the top Hessian eigenvalue $\lambda_{\max}$ rises
+\entry{cohen2021eos}{In full-batch GD, the top Hessian eigenvalue $\lambda_{\max}$ rises
 (\emph{progressive sharpening}) until it reaches $2/\eta$, then hovers there while the loss keeps
 falling non-monotonically, against the classical requirement $\eta<2/\lambda_{\max}$. For annealing:
 after a drop to $\eta'$, sharpness may climb again to $2/\eta'$, so the extra margin is temporary.}
 
-\entry{damian2023selfstab}{\tagF}{A cubic Taylor term explains EoS: when the iterate diverges along
+\entry{damian2023selfstab}{A cubic Taylor term explains EoS: when the iterate diverges along
 the top eigenvector, the cubic term lowers curvature until stability returns. GD at EoS thus follows
 projected GD under $S(\theta)\le 2/\eta$. A decay loosens this constraint and lets the trajectory
 move to sharper regions.}
 
-\entry{cohen2025central}{\tagR}{Derives a \emph{central flow}, an ODE for the time-averaged
+\entry{cohen2025central}{Derives a \emph{central flow}, an ODE for the time-averaged
 trajectory at EoS that predicts long-run loss and sharpness, also for adaptive optimizers. The
 observed loss exceeds the loss at the time-averaged point by an amount set by the oscillations; that
 gap is our candidate for the immediate cooldown drop. Schedules are not studied.}
 
-\entry{andreyev2024eoss}{\tagP}{For mini-batch SGD, what settles at $2/\eta$ is \emph{batch
+\entry{andreyev2024eoss}{For mini-batch SGD, what settles at $2/\eta$ is \emph{batch
 sharpness}, the curvature of mini-batch losses along their own gradients, while $\lambda_{\max}$,
 usually smaller, is suppressed. So with SGD it is batch sharpness that should re-equilibrate after a
 decay.}
 
-\entry{wen2025river}{\tagR}{Pretraining loss as a \emph{river valley}: at high $\eta$ the iterate
+\entry{wen2025river}{Pretraining loss as a \emph{river valley}: at high $\eta$ the iterate
 moves fast along the river while bouncing between the walls; the decay stops the bouncing and reveals
 the progress. Both phases are needed. The landscape is a conjecture, shown to arise on a bigram
 dataset.}
@@ -71,21 +70,21 @@ dataset.}
 Caveat: in non-smooth convex theory the same floor comes from gradient size even without noise, so
 convex bounds fitting LLM curves do not by themselves favour noise over oscillation.}
 
-\entry{smith2018dontdecay}{\tagF}{Raising the batch size instead of decaying $\eta$ gives the same
+\entry{smith2018dontdecay}{Raising the batch size instead of decaying $\eta$ gives the same
 training and test curves, for SGD, momentum and Adam, with fewer updates. If annealing were only
 noise reduction, this swap would be exact. Shown for step decay in image classification; it also
 changes the update count.}
 
-\entry{ge2019stepdecay}{\tagF}{For the final SGD iterate on least squares with a known horizon, every
+\entry{ge2019stepdecay}{For the final SGD iterate on least squares with a known horizon, every
 polynomial decay is far from the minimax rate, while geometric step decay is within log factors. The
 shape of the decay matters even when noise is the only reason to decay.}
 
-\entry{schaipp2025convex}{\tagR}{A last-iterate bound from non-smooth convex optimization tracks LLM
+\entry{schaipp2025convex}{A last-iterate bound from non-smooth convex optimization tracks LLM
 loss curves: with a linear cooldown it loses its log term, matching the observed gain, and it
 transfers good learning rates across schedules. Its floor comes from gradient norms, so it fits (ii)
 and an oscillation reading of (i) equally well.}
 
-\entry{li2026fsl}{\tagR}{Derives the optimal schedule under a stability constraint for SGD in
+\entry{li2026fsl}{Derives the optimal schedule under a stability constraint for SGD in
 power-law kernel regression. Easy tasks: decay from the start. Hard tasks: hold the largest stable
 $\eta$, then decay at the end, i.e.\ WSD. Difficulty sets when to decay; capacity sets how.}
 
@@ -96,24 +95,24 @@ $\eta$, then decay at the end, i.e.\ WSD. Difficulty sets when to decay; capacit
 test error, not training loss. One recent paper finds the opposite sign: the basin after a decay can
 be worse for later use.}
 
-\entry{li2019largelr}{\tagF}{Proves in a two-layer model that large initial $\eta$ plus annealing
+\entry{li2019largelr}{Proves in a two-layer model that large initial $\eta$ plus annealing
 beats small $\eta$ throughout. The order of learning decides it: the small-$\eta$ model first
 memorizes easy-to-generalize, hard-to-fit patterns, then generalizes worse on hard-to-generalize,
 easier-to-fit ones. On CIFAR-10, a small patch is memorized at once at small $\eta$ but ignored at
 large $\eta$ until after annealing.}
 
-\entry{andriushchenko2023sparse}{\tagF}{Large steps make SGD bounce across a valley, which stalls the
+\entry{andriushchenko2023sparse}{Large steps make SGD bounce across a valley, which stalls the
 loss; meanwhile noise orthogonal to the bouncing pushes the network toward sparse predictors. The
 longer $\eta$ stays high, the stronger the effect, so the plateau does real work that the decay
 exposes. Same geometry as \citet{wen2025river}, read as regularization.}
 
-\entry{kwag2026eos}{\tagP}{From the instructors' group. Branching runs that enter or leave EoS from
+\entry{kwag2026eos}{From the instructors' group. Branching runs that enter or leave EoS from
 the same state show that the stability constraint shifts learning across data subsets: groups whose
 gradient aligns with the top Hessian eigenvector, and does not saturate, gain at others' expense. A
 decay is one such exit, so it should change \emph{which} examples get fit, which the average loss
 hides. Their branching design is a template for our ablation.}
 
-\entry{yano2026nodecay}{\tagR}{At 1B and 8B parameters, skipping the final decay can give worse
+\entry{yano2026nodecay}{At 1B and 8B parameters, skipping the final decay can give worse
 pretraining loss but better results after supervised fine-tuning. Decay lands in sharper minima.
 Whether annealing ``helps'' depends on the metric, and the sharper minima fit the stability view.}
 
@@ -125,20 +124,20 @@ the cooldown gain survives at equal compute; two find that averaging the iterate
 it, which points to noise or oscillation, not extra steps. Iterate averaging goes back to SWA
 \citep{izmailov2018swa}.}
 
-\entry{hagele2024scaling}{\tagR}{Constant $\eta$ plus a cooldown scales as predictably as cosine and
+\entry{hagele2024scaling}{Constant $\eta$ plus a cooldown scales as predictably as cosine and
 matches it at equal compute; weight averaging improves iterates at no training cost. One constant run
 can be branched into many cooldowns, so equal-step comparisons are cheap.}
 
-\entry{tissue2025annealing}{\tagR}{Fits LLM loss curves as $L(s)=L_0+A\,S_1^{-\alpha}-C\,S_2$, with
+\entry{tissue2025annealing}{Fits LLM loss curves as $L(s)=L_0+A\,S_1^{-\alpha}-C\,S_2$, with
 $S_1$ the area under the learning-rate curve and $S_2$ an annealing area, and predicts loss under new
 schedules from one or two runs. $S_2$ splits annealing from compute, but descriptively.}
 
-\entry{defazio2024schedulefree}{\tagR}{Schedule-free SGD and AdamW, built on a theory linking
+\entry{defazio2024schedulefree}{Schedule-free SGD and AdamW, built on a theory linking
 schedules to iterate averaging, need no decay or stopping time and match tuned schedules from convex
 problems to large models. If averaging can replace the decay, the gain is mostly variance or
 oscillation removal, not a new basin.}
 
-\entry{bergsma2025straight}{\tagR}{At compute-optimal budgets, linear decay to zero beats cosine to
+\entry{bergsma2025straight}{At compute-optimal budgets, linear decay to zero beats cosine to
 10\% of peak. Reading AdamW's weights as a moving average of updates, the decay widens the window
 and averages out noise. The gain grows with tokens per parameter, which predicts where it fails:
 short runs, with little noise to average.}

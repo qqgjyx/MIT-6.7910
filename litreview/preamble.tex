@@ -15,18 +15,13 @@
 \setlength{\parindent}{0pt}
 \setlist{nosep,leftmargin=*}
 
-%% Tags for the annotated entries: [F] foundational, [R] 2024-26, [P] preprint or workshop.
-\newcommand{\tagF}{\textsf{\textcolor{MidnightBlue}{[F]}}}
-\newcommand{\tagR}{\textsf{\textcolor{ForestGreen}{[R]}}}
-\newcommand{\tagP}{\textsf{\textcolor{BrickRed}{[P]}}}
-
-%% One annotated bibliography entry: \entry{key}{tags}{annotation}
+%% One annotated bibliography entry: \entry{key}{annotation}
 \DeclareBibliographyCategory{annotated}
-\newcommand{\entry}[3]{%
+\newcommand{\entry}[2]{%
   \addtocategory{annotated}{#1}%
   \par\noindent\hangindent=1.2em\hangafter=1
-  {\small\fullcite{#1}}~#2\par
-  {\leftskip=1.2em #3\par}\vspace{2pt}}
+  {\small\fullcite{#1}}\par
+  {\leftskip=1.2em #2\par}\vspace{2pt}}
 
 %% Group synthesis paragraph opening each explanation.
 \newcommand{\synth}[1]{\par\noindent\emph{#1}\par\vspace{2pt}}
