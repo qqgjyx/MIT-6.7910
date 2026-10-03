@@ -27,34 +27,16 @@
 \maketitle
 \vspace{-2em}
 
+\section{The question and why it is hard}
+
+An 8-bit E$x$M$y$ format spends $x$ bits on the exponent and $y$ on the mantissa, so E3M4 has more range than E2M5 (about $2^{11}$ against $2^{8}$ under the OFP8 convention \citep{Micikevicius2022}) but coarser precision (rounding error $2^{-5}$ against $2^{-6}$). As the shared scales of FP4 blocks, E3M4 gives a lower LLM training loss \citep{Chmiel2025}, and nobody has explained why. We ask whether the edge of stability (EoS) does: training sits at the stability limit of the sharpest curvature direction, so quantization error along it could matter far more than its average size suggests. This is hard to test. Range and precision change together, the exponent bias alone can reverse a ranking \citep{Kuzmin2022}, and no study has measured sharpness while varying the format.
+
 \section{E3M4 versus E2M5}
-
-\subsection{The two formats}
-
-An 8-bit E$x$M$y$ code has a sign bit $s$, an exponent field $E$ of $x$ bits and a mantissa $M$ of $y$ bits. Given an exponent bias $b$, a code with $E>0$ is normal and represents $(-1)^s2^{E-b}(1.M)_2$. A code with $E=0$ is subnormal and fills the gap between zero and the smallest normal value. For the bias and the special values, we use the OCP 8-bit floating-point (OFP8) convention \citep{Micikevicius2022}. The bias is $b=2^{x-1}-1$. There are no infinities and only the all-ones pattern encodes NaN. The bias only shifts the representable window; its width and spacing are what separate the two formats.
-
-
-
-\begin{table}[h]
-\centering\small
-\begin{tabular}{lcc}
-\toprule
- & E3M4 & E2M5 \\
-\midrule
-Unit roundoff (round-to-nearest), $u=2^{-(y+1)}$ & $2^{-5}\approx3.1\%$ & $2^{-6}\approx1.6\%$ \\
-Powers of two covered by normal values & 7 & 3 \\
-Largest / smallest positive value & $30$ / $2^{-6}$ & $7.75$ / $2^{-5}$ \\
-Dynamic range, largest/smallest nonzero & $\approx2^{11}$ & $\approx2^{8}$ \\
-\bottomrule
-\end{tabular}
-\caption{The two formats under the OFP8 convention.}
-\label{tab:formats}
-\end{table}
 
 \subsection{How the literature distinguishes the two formats}
 
 \paragraph{\citet{Chmiel2025}.}
-\emph{E3M4 works better than E2M5 as the scale format for FP4 training.} This study trains LLMs with FP4 (E2M1) weights, activations and gradients in all three matrix multiplications: forward, backward and update. Each block of FP4 values shares one 8-bit scale, which multiplies the block back to its real magnitude when the values enter a higher-precision computation. E3M4 and E2M5 scales have no hardware support, so they are simulated. Block sizes and scale formats are swept on a 350M Llama-style model with block size 16. The scale format takes seven values. E3M4 and E4M3 reach the lowest loss. E2M5, E5M2 and E8M0 end slightly worse, E6M1 clearly worse, and E1M6 diverges. This challenges the Microscaling (MX) standard \citep{Rouhani2023}, which uses a power-of-two E8M0 scale with no mantissa bits. A scale error rescales all 16 elements of its block together, so it produces correlated rather than independent perturbations. The scales are positive, so the sign bit is unused. The recipe uses round-to-nearest in the forward pass and stochastic rounding for neural gradients (backward and update matrix multiplications) and for activations in the update matrix multiplication. The authors also show that once the gradient norm falls below about $\sqrt3$ times the quantization noise, a short higher-precision phase is needed. The format ranking itself is purely empirical: the authors report it without explaining it.
+\emph{E3M4 works better than E2M5 as the scale format for FP4 training.} This study trains LLMs with FP4 (E2M1) weights, activations and gradients, where each block of 16 values shares one 8-bit scale that restores its real magnitude in higher-precision computation. Across seven simulated scale formats on a 350M Llama-style model, E3M4 and E4M3 reach the lowest loss; E2M5, E5M2 and E8M0 end slightly worse, E6M1 clearly worse, and E1M6 diverges. This challenges the Microscaling (MX) standard \citep{Rouhani2023}, whose E8M0 scale has no mantissa bits. A scale error rescales its whole block, so errors are correlated rather than independent. The ranking is purely empirical: the authors do not explain it.
 
 \paragraph{\citet{Kuzmin2022}.}
 \emph{More exponent bits pay off when tensors have outliers; more mantissa bits pay off otherwise.} This paper derives the expected quantization error of FP8 formats as a function of the tensor distribution: for Gaussian tensors E2M5 is optimal, and the optimum moves to more exponent bits as outliers grow. Pretrained FP32 transformers have heavy-tailed activations, so their post-training quantization favours more exponent bits. With a bias set per channel, E3M4 beats E2M5 on ViT (77.7 vs 77.3) and on BERT (82.6 vs 80.3); with a single bias for the whole network, E2M5 falls to 51.1 on ViT against 77.0 for E3M4. For CNNs the ranking depends on the bias. Quantization-aware training narrows the gaps between formats to about one accuracy point or less, but does not close them. This is a first hint that a format gap can partly reflect a mismatch between the training and deployment arithmetic.
@@ -93,6 +75,14 @@ We found no study that measures sharpness while varying number format. The close
 
 \paragraph{\citet{Qi2025}.}
 \emph{Low precision destabilizes RL fine-tuning through a mismatch between the training and inference engines, and FP16 fixes it.} In RL fine-tuning of LLMs, the rollout engine (e.g.\ vLLM) and the training engine compute different token probabilities for the same weights, which biases the policy ratio and can collapse training. Algorithmic corrections only partially help, whereas switching both engines from BF16 to FP16 (7 versus 10 mantissa bits) largely removes the problem across algorithms and frameworks. \citet{Yao2025} document the same gap and correct it with truncated importance sampling, and \citet{He2025} show that the mismatch can arise even at fixed precision, from inference kernels that are not batch-invariant.
+
+\section{Three key papers}
+
+\paragraph{\citet{Cohen2021}} (ICLR 2021; about 500 citations on Semantic Scholar) founded the edge-of-stability literature. It supplies the mechanism we test and the quantity to measure: if stability explains the format gap, E3M4 and E2M5 must settle at different sharpness for the same learning rate.
+
+\paragraph{\citet{Chmiel2025}} (NeurIPS 2025; about 45 citations in its first year) is the main training-time comparison of E3M4 and E2M5, so it defines the result we must explain. Its limits, one seed per format, one model size and no explanation, are what our experiments must address.
+
+\paragraph{\citet{Kuzmin2022}} (NeurIPS 2022; about 150 citations) is the main analytic account of how the split between exponent and mantissa bits should depend on the data. It offers an alternative explanation, based on range and precision alone, which we should keep in mind alongside the EoS view.
 
 \newpage
 \section{Implications for machine learning theory and practice}

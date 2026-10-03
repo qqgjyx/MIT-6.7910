@@ -119,12 +119,34 @@ to lower-rank minima but never back \citep{wang2024onewayjumps}.}
 \subsection{The adaptive side: Adam and Muon}
 \label{sec:lit-adaptive}
 
-%% VICTOR: at most ~0.5 page. Suggested entries: Zhang-Zou-Cao 2024 (NeurIPS), Xie-Li 2024 (ICML),
-%% Fan-Schmidt-Thrampoulidis 2025 (NeurIPS), Beneventano-Abdelmoneum-Poggio 2026 (preprint), plus
-%% Liu et al. 2025 for Muon at scale. Once added, cite Xie-Li and Fan et al. in implication 1.
-\synth{[V\'ictor's section: Adam and sign descent converge toward $\ell_\infty$ max-margin solutions,
-Muon and spectral descent toward the spectral-norm max margin, and their implicit regularizers can
-penalize or anti-penalize gradient norms.]}
+\synth{Adaptive methods have their own geometry. Adam behaves like sign descent and Muon like spectral
+descent, so their limits are max-margin or norm-constrained solutions in $\ell_\infty$ and in the
+spectral norm, respectively, not in $\ell_2$. Away from the limit, Adam's implicit regularizer, unlike SGD's, can
+work against small gradient norms.}
+
+\entry{zhang2024adam}{For logistic regression on linearly separable data, Adam converges in
+direction to the maximum $\ell_\infty$-margin classifier, in polynomial time for a broad class of
+diminishing learning rates, whereas GD reaches the $\ell_2$ margin. Earlier analyses had found that Adam
+also reaches the $\ell_2$ margin, but only because its stability constant $\epsilon$ dominates late in
+training and makes it behave like GD.}
+
+\entry{xie2024adamw}{Viewing Adam as smoothed sign descent, proves that full-batch AdamW, if it
+converges, reaches a KKT point of the loss constrained to $\|x\|_\infty\le1/\lambda$, where $\lambda$
+is the weight decay. This holds for any differentiable loss, neural networks included, and their
+experiments confirm it on a small transformer trained on Penn Treebank when $\beta_1=\beta_2$, though not with the default $\beta_1=0.9$, $\beta_2=0.999$. So the
+$\ell_\infty$ bias holds at any loss, not only in the separable case.}
+
+\entry{fan2025spectral}{For multiclass separable data, normalized steepest descent in an
+entrywise or Schatten $p$-norm, with or without momentum, converges to the max-margin solution in that
+norm, with rates. Spectral descent and Muon reach the spectral-norm max margin, and Adam the max-norm
+margin.}
+
+\entry{cattaneo2024adam}{With finite steps, an optimizer approximately follows gradient flow on a
+slightly modified loss. For SGD, the modification penalizes large gradients and so pushes training
+toward flatter regions \citep{smith2021origin}. This paper derives the modified loss for RMSProp and
+Adam: its extra term involves the $\ell_1$ norm of the gradient and, for typical hyperparameters, has
+the opposite sign, slowing the decrease of the gradient instead of penalizing it. Adam therefore need
+not favour flat solutions.}
 
 \subsection{Matched-loss comparisons and optimizer swaps}
 \label{sec:lit-matched}
@@ -181,7 +203,7 @@ the first hypothesis to test on our matched-loss model bank.
 \begin{enumerate}[leftmargin=1.3em,itemsep=4pt]
 \item \textbf{Comparing complexity across optimizers is circular unless the metric is neutral.} Each
 optimizer favours small values of the norm it descends in \citep{gunasekar2018geometry}: $\ell_2$
-for GD, $\ell_\infty$ for Adam-like methods, spectral for Muon (\cref{sec:lit-adaptive}). Measuring
+for GD, $\ell_\infty$ for Adam-like methods, spectral for Muon \citep{xie2024adamw,fan2025spectral}. Measuring
 complexity in one of these norms favours the matching optimizer by construction. Use metrics defined
 on the function, such as region counts \citep{hanin2019regions,li2025regions} and input-Jacobian norms
 \citep{novak2018sensitivity}, and require the two to agree.
