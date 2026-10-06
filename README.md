@@ -11,7 +11,7 @@ page of implications.
 |:--|:--|:--|
 | Why does late-stage learning-rate annealing help? | `topic1_annealing.tex` | done |
 | Does an EoS mechanism explain E3M4 vs E2M5? | `topic2_e3m4_e2m5.tex` | done |
-| Optimizer-controlled implicit bias and functional complexity | `topic3_optimizer_bias.tex` | §2.4 (Adam, Muon) open for Víctor, about half a page |
+| Optimizer-controlled implicit bias and functional complexity | `topic3_optimizer_bias.tex`| done |
 
 Build from `litreview/` with `latexmk -pdf <file>.tex`. Shared preamble in `preamble.tex`;
 bibliography in `refs.bib` (titles and authors from arXiv, venues checked against proceedings).
