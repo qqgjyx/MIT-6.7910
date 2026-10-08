@@ -58,3 +58,28 @@ Each entry: what the decision is about, the options, what we chose and why.
 ## Assumptions to check
 - **Deadlines:** initial checkpoint Oct 30 (first results needed), project discussion in the first two weeks of November, presentation Dec 1–4, final paper Dec 11. Experiments are planned to finish by Nov 30.
 - **Split of work:** Juntang leads CIFAR-10, and Víctor leads the linear check and the language model. This is a placeholder until you agree with Juntang.
+
+## Revision after the TA meeting (Oct 8)
+The plan above was rewritten around *when* optimizers diverge, following the TA's suggestions. Decisions 2-5 are superseded where they conflict with the points below.
+
+### 6. Main question
+- **About:** what the project measures.
+- **Options:** (a) end-point comparison at matched loss plus a swap after convergence (the Oct 5 plan); (b) the full trajectory: do SGD, AdamW and Muon first follow the same path in function space and diverge later, and where.
+- **Chosen:** (b). The TA pointed to a vision result where runs separate in prediction space after an early phase (we cite Jastrzębski et al. 2020, the break-even point; **Víctor: confirm this is the paper he meant**). The end-point comparison survives as the last step of the swap.
+- **Why:** "where do they split, and what happens there" is a sharper question than "are the end points different", and it connects directly to edge-of-stability events, which is the instructors' line.
+
+### 7. Setting
+- **Chosen:** nanoGPT (the TA's suggestion) on character-level Shakespeare first, then TinyStories at ~10M and ~30M parameters. Muon on hidden matrices with AdamW on embeddings and head, as in the Muon reference implementation. A small CIFAR-10 CNN only as a check that the pipeline reproduces the vision result.
+- **Dropped:** the linear separable task and the three-size sweep (cost, and the 2-page limit); the third-order input-derivative metrics move to "if time allows".
+
+### 8. Locating the split
+- **Chosen:** Jensen-Shannon divergence and top-1 agreement of next-token predictions on a fixed held-out set, aligned both by step and by training loss; noise floor from the same optimizer with a different data order; t* = first loss-matched point above the floor by a fixed margin for several checkpoints, bootstrapped over seeds. Second test: linear mode connectivity (Frankle et al. 2020) between forks as a function of fork time.
+
+### 9. Swap timing
+- **Chosen:** swaps at several times (before, at and after t*) instead of once after convergence; shadow state kept. Prediction: before t* the fork ends at B's function, after t* it stays near A's.
+
+### 10. Moonshot: layer anatomy of EoS
+- **Chosen:** split the top Hessian eigenvector by parameter block (embeddings, QK, OV and MLP per layer, norms, head) and record each block's share of the direction and of the sharpness, over training and by optimizer (AdamW: preconditioned Hessian). Side project, shared, after Nov 15.
+
+### Split of work (proposal, Víctor to confirm)
+Juntang: divergence curves and sharpness tracking. Víctor: swaps and function metrics. Moonshot shared.

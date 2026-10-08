@@ -16,10 +16,10 @@
 \setlength{\parindent}{0pt}
 \setlist{nosep,leftmargin=*}
 
-\title{\vspace{-1.6em}Do Optimizers Choose Different Functions at the Same Loss?\\[2pt]
+\title{\vspace{-1.6em}Together First, Apart Later? When Optimizers Start to Learn Different Functions\\[2pt]
 \large Project plan (9.520, Fall 2026)}
 \author{Juntang Wang \and V\'ictor Conchello}
-\date{October 5, 2026}
+\date{October 8, 2026}
 
 \begin{document}
 \maketitle
@@ -27,88 +27,89 @@
 
 \section{Problem}
 
-Overparameterized networks have many parameter settings with the same training loss, and the optimizer
-decides which one training returns. In linear models each first-order method converges to the
-max-margin solution of its own norm: $\ell_2$ for gradient descent \citep{soudry2018separable},
-$\ell_\infty$ for Adam \citep{zhang2024adam} and the spectral norm for Muon
-\citep{fan2025spectral}. For nonlinear networks the evidence is mixed: adaptive methods were found to
-generalize worse \citep{wilson2017marginal}, while recent theory finds that Adam learns richer features
-than gradient descent and can be more robust \citep{vasudeva2025rich}. We ask a causal question: \emph{at matched training loss, do SGD, Adam and Muon return functions of different
-complexity, curvature and robustness, and does switching optimizer move the function toward the new
-optimizer's typical solution?}
+The optimizer decides which of many equal-loss solutions training returns. In linear models each
+first-order method converges to the max-margin solution of its own norm: $\ell_2$ for gradient descent
+\citep{soudry2018separable}, $\ell_\infty$ for Adam \citep{zhang2024adam} and the spectral norm for Muon
+\citep{fan2025spectral}. In deep networks we only see the end point: adaptive methods were found to
+generalize worse \citep{wilson2017marginal}, then to learn richer features \citep{vasudeva2025rich}, and
+on language models most optimizers reach similar loss \citep{zhao2025deconstructing}. We ask
+\emph{when} the difference appears. From the same initialization and the same data order, do SGD,
+AdamW and Muon first follow the same path in function space and only later separate? If so, where is
+the split, what happens in the optimization at that moment, and is the final difference already
+decided there?
+
+In vision, \citet{jastrzebski2020breakeven} show SGD runs with different learning rates separating in
+prediction space, and tie the early dynamics to a \emph{break-even point}, the first time training
+meets a stability boundary along the sharpest direction. We test whether the same picture holds across optimizers, on a small language
+model, and whether the split coincides with an edge-of-stability event
+\citep{cohen2021eos,cohen2022adaptive,andreyev2024eoss}.
 
 \section{What we plan to achieve}
 
 \begin{enumerate}
-\item \textbf{A model bank} of converged networks trained with SGD with momentum, AdamW and Muon, on an
-image task (CIFAR-10) and a language task (TinyStories) at three model sizes, plus a linear sanity check.
-\item \textbf{A large-scale function comparison} of these models through input-derivative metrics of first to
-third order and a broad set of weight norms. The
-norms test the linear-theory prediction that each optimizer keeps its own norm small, which is exact on
-separable data, in nonlinear networks and across model sizes.
-\item \textbf{A causal test by swapping.} If the optimizer selects the function, switching from $A$ to $B$
-after convergence should move the metrics toward $B$'s values, unless $A$'s solution is stable under $B$.
-We test all ordered pairs, with $B$'s optimizer state carried over in shadow to avoid a cold start.
+\item \textbf{Divergence curves.} The function-space distance between optimizers over training, compared
+both at equal steps and at equal training loss, so that ``faster'' is not confused with ``different''.
+\item \textbf{A located split point} $t^\ast$ for each pair of optimizers, with uncertainty, defined
+against the seed-to-seed spread of a single optimizer.
+\item \textbf{What coincides with $t^\ast$}: sharpness reaching its stability threshold, the end of
+warmup, or a loss level.
+\item \textbf{A causal check by swapping}: swapping optimizer before $t^\ast$ should end at the new
+optimizer's function, and swapping after $t^\ast$ should stay near the old one.
+\item \textbf{Moonshot}: which layers carry the sharp direction at the edge of stability, by optimizer.
 \end{enumerate}
 
 \section{How we plan to achieve it}
 
-\subsection{Tasks}
- (0) Linearly separable synthetic data with a linear model, as a check against the known
-limits. (A) A small GELU convolutional network on CIFAR-10. (B) A small GELU transformer language model on TinyStories, the setting Muon was designed for. Each task is run at three model sizes: input dimension for task 0, width for the CNN, roughly 1M, 3M and 10M parameters for the language model. The architecture is otherwise fixed within each task.
+\paragraph{Setup.} nanoGPT \citep{karpathy2022nanogpt}, a small decoder-only transformer, on
+character-level Shakespeare (minutes per run) and then TinyStories at about 10M and 30M parameters.
+Optimizers: SGD with momentum, AdamW, and Muon for the hidden matrices with AdamW on embeddings and
+head, as in \citet{jordan2024muon}. Each optimizer gets a short learning-rate sweep, and we keep the
+best rate. All runs share the initialization and the batch order. A small CNN on CIFAR-10 reproduces
+the vision result as a check of the pipeline.
 
-\subsection{Matched-loss model bank}
- At each model size, each optimizer is trained with three learning rates and three seeds (81 runs per task), and trained to convergence, i.e. until the training loss plateaus. We report the final training and test loss with every metric. Steps are recorded, as the function can drift at constant loss.
+\paragraph{Function distance.} On a fixed held-out set of contexts we log, every few hundred steps,
+the next-token distributions of each run. The distance between two runs is the mean Jensen--Shannon
+divergence between their predictions, plus top-1 agreement. The noise floor is the distance between
+two runs of the \emph{same} optimizer with different data order. We align runs in two ways: by step,
+and by training loss (each checkpoint matched to the other run's checkpoint with the same loss).
 
-\subsection{Function metrics}
+\paragraph{Locating the split.} $t^\ast$ is the first point where the loss-matched distance between
+two optimizers exceeds the noise floor by a fixed margin over several consecutive checkpoints, with a
+bootstrap over seeds for its uncertainty. As a second, basin-level test we measure linear mode
+connectivity \citep{frankle2020lmc}: the loss barrier between two runs forked from a common checkpoint
+with different optimizers, as a function of the fork time.
 
-\paragraph{Input-derivative metrics.} At test points $x$, let $f$ be
-the loss at the true label as a function of the input, $H(x)=\nabla^2 f(x)$, $\lambda(x)$ its largest eigenvalue
-with unit eigenvector $v(x)$, and $T(x)=\nabla^3 f(x)$. For the language model, $x$ is the sequence of input embeddings and $f$ the next-token loss. Each of the metrics below measures how fast $f$, or one of its derivatives, varies with the input, so a simpler function should have smaller values and less spread across test points; we report the mean and the standard deviation over the test set.
-\begin{itemize}
-\item \emph{First order}: the Frobenius norm of the input Jacobian of the logits, a measure of sensitivity
-linked to generalization and robustness \citep{novak2018sensitivity}.
-\item \emph{Second order}: the Frobenius norm of $H$, estimated with Hutchinson's method from
-Hessian-vector products, and $\lambda$, by power iteration, both linked to robustness by CURE \citep{moosavi2019cure}; and the curvature of the level sets of $f$, i.e.\ how fast the gradient direction turns, a projected variant of the normalized curvature of \citet{srinivas2022lowcurv}. With $\hat g=\nabla f/\|\nabla f\|$ and $P=I-\hat g\hat g^\top$, it is $\|PHP\|_F/\|\nabla f\|=\sqrt{\mathbb{E}_z\|PH(Pz)\|^2}/\|\nabla f\|$, estimated through random probes $z$ with identity covariance.
-\item \emph{Third order} (novel, to the best of our knowledge): how the curvature changes between nearby
-points. All three quantities use one primitive, $T[u,u,\cdot\,]=\nabla_x\big(u^\top H(x)u\big)$ with $u$ held fixed,
-computed by differentiating a Hessian-vector product.
-\begin{itemize}
-\item \emph{Size of $T$}: its spectral norm $\|T\|_\sigma=\max_{\|u\|=1}|T[u,u,u]|$, estimated by the shifted tensor
-power iteration $u\leftarrow (T[u,u,\cdot\,]+\alpha u)/\|T[u,u,\cdot\,]+\alpha u\|$ from a few random starts.
-\item \emph{Third derivative along the sharpest direction}: $T[v,v,v]=\frac{d^3}{dt^3}f(x+tv)\big|_{t=0}$, with $v$
-from the power iteration on $H$ and its sign fixed by $v^\top\nabla f\ge 0$.
-\item \emph{Curvature length scale}: $\lambda/\|\nabla_x\lambda\|$, the distance over which, to first order,
-the top curvature doubles or vanishes; small values mean the curvature varies sharply. For simple $\lambda$, $\nabla_x\lambda=T[v,v,\cdot\,]$.
-\end{itemize}
-\end{itemize}
+\paragraph{What happens at the split.} Along each run we track the top Hessian eigenvalue by power
+iteration on a fixed batch: $\lambda_{\max}$ for SGD, the preconditioned version for AdamW
+\citep{cohen2022adaptive}, and batch sharpness \citep{andreyev2024eoss}. We compare $t^\ast$ with the
+step at which each reaches its threshold, and with the end of warmup.
 
-\paragraph{Weight norms.} The $\ell_0$, $\ell_1$, $\ell_2$, $\ell_3$ and
-$\ell_\infty$ norms of all weights; per layer, the spectral norm, the nuclear norm and the stable rank; and the path norm, the spectral complexity and the distance
-from initialization, the last three among the generalization measures compared by \citet{jiang2020fantastic}.
+\paragraph{Swap.} We fork optimizer $A$ at times before, at and after $t^\ast$ and continue with $B$.
+$B$'s state is accumulated in shadow during $A$'s run, so $B$ starts warm. The control is $A$
+continued. We report where each fork lands between pure $A$ and pure $B$, by the distance above and by a few
+function metrics: input-Jacobian norm, token-substitution sensitivity \citep{hahn2021sensitivity},
+and the $\ell_2$, $\ell_\infty$ and spectral weight norms each optimizer is predicted to keep small.
 
-\paragraph{Accuracy and robustness.} Test accuracy (next-token accuracy for the language model). For the image models, accuracy under Gaussian input noise; for the language model, the sensitivity of \citet{hahn2021sensitivity}, i.e.\ how often the prediction changes when a single input token is replaced.
-
-\subsection{Swap intervention}
-We run a swap for every ordered pair $(A,B)$ of distinct optimizers among SGD, AdamW and Muon, six in total. The swap happens after convergence \citep[cf.][]{keskar2017swats}: from the converged model of $A$, we continue training with $B$ until it converges again.
-To avoid a cold start, $B$'s state is accumulated in shadow during
-$A$'s run, from $A$'s gradients and without applying $B$'s updates, so no learning-rate re-warm is needed. The control is $A$ continued with $A$ for the same number of steps. The
-effect of the swap is the change in each metric relative to this control, compared with the pure-$A$ to
-pure-$B$ gap.
-
-\subsection{Analysis}
- For each metric, the gap between optimizers in units of the seed-to-seed spread, and the
-fraction of it a swap closes. A large fraction means the optimizer still shapes the function inside the basin; a small one, that the bias is set earlier.
+\paragraph{Moonshot: the anatomy of the edge of stability.}
+At each logged step we take the top Hessian eigenvector $v$ and split it by parameter block:
+embeddings, the query-key and value-output matrices and the MLP of each layer, the norms and the head.
+For block $b$ we record its share of the direction, $\|v_b\|^2$, and its share of the sharpness,
+$v_b^\top (Hv)_b$, whose sum over blocks is $\lambda_{\max}$. The questions: which components carry
+the sharpness when training reaches the edge of stability, whether this moves across layers during
+training, and whether it differs by optimizer, given that transformer Hessians differ strongly across
+blocks \citep{zhang2024hessian}. If the block that dominates changes near $t^\ast$, the two halves of
+the project meet.
 
 \section{Timeline}
 
-\begin{itemize}
-\item \textbf{Oct 6--18:} code for the three optimizers (with shadow state), matched-loss stopping and the metrics; task 0.
-\item \textbf{Oct 19--30:} model bank on task A and first metric comparisons, for the initial checkpoint.
-\item \textbf{Oct 31--Nov 15:} model bank on task B; swaps on task A.
-\item \textbf{Nov 16--30:} swaps on task B; statistics across seeds.
-\item \textbf{Dec 1--4:} presentation. \textbf{Dec 5--11:} final paper, public code and Colab notebook.
-\end{itemize}
+\textbf{Oct 9--18:} nanoGPT with three optimizers on Shakespeare, shadow state, prediction logging,
+noise floor; CIFAR-10 check. \textbf{Oct 19--30:} divergence curves, first $t^\ast$, sharpness
+tracking; initial checkpoint. \textbf{Oct 31--Nov 15:} TinyStories at two sizes; mode connectivity
+against fork time; swaps. \textbf{Nov 16--30:} statistics over seeds; moonshot. \textbf{Dec 1--4:}
+presentation. \textbf{Dec 5--11:} paper, code and Colab notebook.
+
+Split of work: Juntang leads the divergence and sharpness tracking, V\'ictor the swaps and function
+metrics; the moonshot is shared.
 
 \section*{References}
 {\scriptsize\setlength{\bibitemsep}{0pt}\begin{multicols}{2}\printbibliography[heading=none]\end{multicols}}
