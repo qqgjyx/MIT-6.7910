@@ -139,6 +139,9 @@ def main(argv):
         if step % cfg.log.train_every == 0:
             log('train', step, loss=loss.item(), lr=base_lr * lr_mult(step, cfg),
                 grad_norm=grad_norm.item(), time=time.time() - t0)
+            if not math.isfinite(loss.item()):
+                print(f'diverged at step {step}')
+                break
         if stop or time.time() - last_save > 60 * cfg.log.resume_minutes:
             save_latest(step + 1)
             last_save = time.time()
