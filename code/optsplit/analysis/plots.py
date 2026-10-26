@@ -164,6 +164,33 @@ def function_metrics(runs, keys, path):
     _save(fig, path)
 
 
+def sweep(runs, path, select='final'):
+    """One panel per optimizer with the validation loss of each learning rate against step, and a last panel
+    with the final (or minimum) validation loss against the learning rate; x marks runs that diverged."""
+    opts = sorted({r.optimizer for r in runs})
+    fig, axes = plt.subplots(1, len(opts) + 1, figsize=(4 * (len(opts) + 1), 3.2), squeeze=False)
+    axes = axes[0]
+    curves = {r.id: r.series('eval', 'val_loss') for r in runs}
+    best = min(v.min() for _, v in curves.values() if len(v))
+    ylim = (0.97 * best, 2 * best)
+    for c, opt in enumerate(opts):
+        rs = sorted((r for r in runs if r.optimizer == opt), key=lambda r: r.lr)
+        pts = []
+        for r, col in zip(rs, plt.cm.viridis(np.linspace(0, 0.9, len(rs)))):
+            s, v = curves[r.id]
+            axes[c].plot(s, v, color=col, label=f'lr {r.lr:g}')
+            diverged = s[-1] < r.cfg.train.max_steps
+            pts.append((r.lr, ylim[1] if diverged else v.min() if select == 'min' else v[-1], diverged))
+        axes[c].set(title=opt, xlabel='step', ylabel='validation loss', ylim=ylim)
+        axes[c].legend(fontsize=6)
+        lr, val, div = map(np.array, zip(*pts))
+        axes[-1].plot(lr[~div], val[~div], '-o', ms=4, color=f'C{c}', label=opt)
+        axes[-1].plot(lr[div], val[div], 'x', color=f'C{c}', clip_on=False)
+    axes[-1].set(xscale='log', xlabel='learning rate', ylabel=f'{select} validation loss', ylim=ylim)
+    axes[-1].legend(fontsize=7)
+    _save(fig, path)
+
+
 def _path(out, name):
     return Path(out or root_dir() / 'analysis' / 'figures') / f'{name}.png'
 
@@ -198,8 +225,12 @@ def fig_function(runs, keys, out=None, name='function_metrics'):
     function_metrics(load_runs(runs), keys, _path(out, name))
 
 
+def fig_sweep(runs, select='final', out=None, name='sweep'):
+    sweep(load_runs(runs), _path(out, name), select)
+
+
 FIGS = dict(divergence=fig_divergence, sharpness=fig_sharpness, anatomy=fig_anatomy, swap=fig_swap,
-            lmc=fig_lmc, function=fig_function)
+            lmc=fig_lmc, function=fig_function, sweep=fig_sweep)
 
 
 def main():
@@ -232,6 +263,10 @@ def main():
     s = sub.add_parser('function', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--keys', nargs='+', required=True, help='dotted keys of function_metrics/*.json')
+    s = sub.add_parser('sweep', parents=[common])
+    s.add_argument('--runs', nargs='+', required=True)
+    s.add_argument('--select', default='final', choices=['final', 'min'],
+                   help='validation loss to compare learning rates by (min for runs that overfit)')
     args = {k: v for k, v in vars(p.parse_args()).items() if v is not None}
     FIGS[args.pop('fig')](**args)
 

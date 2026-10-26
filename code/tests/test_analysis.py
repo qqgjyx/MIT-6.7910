@@ -147,6 +147,7 @@ def test_figures(root, tmp_path, monkeypatch):
     plots.lmc([{'parent': 'syn/adamw_d0', 'forks': [{'fork_step': s, 'optimizer': 'muon', 'barrier': s / T}
                                                      for s in (300, 1500)]}], tmp_path / 'lmc.png')
     plots.function_metrics(runs_a + runs_b, ['input.jac_fro', 'weights.l2'], tmp_path / 'fm.png')
+    plots.sweep(load_runs('syn/*_d*'), tmp_path / 'sweep.png', select='min')
     sgd_like = runs_a[:2]
     breakeven.curves(sgd_like, tmp_path / 'be_curves.png', acc_threshold=0.5)
     breakeven.scatter(sgd_like, tmp_path / 'be_scatter.png')
@@ -156,7 +157,7 @@ def test_figures(root, tmp_path, monkeypatch):
     monkeypatch.setattr(sys, 'argv', ['plots', str(spec)])
     plots.main()
     for f in ('div', 'sharp', 'anat', 'anat_layer', 'swap', 'lmc', 'fm', 'be_curves', 'be_scatter', 'be_traj',
-              'spec_sharp'):
+              'spec_sharp', 'sweep'):
         assert (tmp_path / f'{f}.png').stat().st_size > 0
 
 
