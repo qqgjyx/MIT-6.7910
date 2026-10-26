@@ -1,0 +1,12 @@
+# Jastrzebski et al. (2020) on our model: plain SGD at a constant learning rate without warmup, three
+# learning rates x three data orders, with the gradient-covariance metrics. The split analysis between two
+# learning rates is their "trajectories separate in prediction space" (Fig. 1).
+suite: shakespeare_breakeven
+base: ../base/shakespeare_char.yaml
+overrides:
+  optimizer: sgd
+  optim.sgd.momentum: 0.0
+  schedule: {warmup_steps: 0, decay: constant}
+  measure.gradcov: true
+runs:
+  - {optim.sgd.lr: [0.1, 0.3, 1.0], train.data_seed: [0, 1, 2], name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"}

@@ -1,0 +1,17 @@
+# ~300M parameters, 256 x 256 tokens per step, 30k steps = 2B tokens (several epochs of TinyStories).
+# Optional larger scale; measurements are sparser and lighter (one Hessian HVP costs ~3 steps here).
+base: tinystories_10m.yaml
+model: {n_layer: 24, n_head: 16, n_embd: 1024}
+train: {batch_size: 256, max_steps: 30000, compile: true}
+optim:
+  adamw: {lr: 3.0e-4}
+  muon: {adam_lr: 3.0e-4}
+schedule: {warmup_steps: 1000}
+log:
+  eval_steps: {every: 1000, geometric: 25}
+  ckpt_steps: {every: 5000, geometric: 8}
+measure:
+  steps: {every: 2500, geometric: 20}
+  hessian_batch: 16
+  lanczos_iters: 15
+  batch_sharpness_batches: 4

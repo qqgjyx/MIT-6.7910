@@ -1,0 +1,15 @@
+# nanoGPT's "baby GPT" on character-level Shakespeare (config/train_shakespeare_char.py), without dropout.
+# ~10.7M parameters; a few minutes per run on one GPU.
+task: gpt
+dataset: shakespeare_char
+model: {block_size: 256, n_layer: 6, n_head: 6, n_embd: 384}
+train: {batch_size: 64, max_steps: 5000}
+optim:
+  adamw: {lr: 1.0e-3, betas: [0.9, 0.99]}
+schedule: {warmup_steps: 100, decay: cosine, min_lr_frac: 0.1}
+log:
+  eval_steps: {every: 100, geometric: 40}
+  ckpt_steps: {every: 500, geometric: 12}
+probe: {n_seqs: 64, positions_per_seq: 0, train_seqs: 64}
+measure:
+  steps: {every: 100, geometric: 30}

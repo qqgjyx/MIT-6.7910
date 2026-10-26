@@ -1,0 +1,14 @@
+# Swaps: fork optimizer A's d0 run at each fork step and continue with B (B's state comes warm from A's
+# shadow), for all 6 ordered pairs; plus A continued with another data order (the Frankle et al. 2020
+# instability control for mode connectivity). The A-continued control with the same data order is the
+# parent run itself. Forks start from the parent's config (see scripts/launch.py).
+suite: ts10m_forks
+base: ../base/tinystories_10m.yaml
+overrides: {shadow: [], log.fork_steps: []}
+runs:
+  - {fork.parent: ts10m_main/sgd_d0, optimizer: [adamw, muon], fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "sgd_to_{optimizer}_at{fork.step}"}
+  - {fork.parent: ts10m_main/sgd_d0, optimizer: sgd, train.data_seed: 1, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "sgd_to_sgd_d1_at{fork.step}"}
+  - {fork.parent: ts10m_main/adamw_d0, optimizer: [sgd, muon], fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "adamw_to_{optimizer}_at{fork.step}"}
+  - {fork.parent: ts10m_main/adamw_d0, optimizer: adamw, train.data_seed: 1, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "adamw_to_adamw_d1_at{fork.step}"}
+  - {fork.parent: ts10m_main/muon_d0, optimizer: [sgd, adamw], fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "muon_to_{optimizer}_at{fork.step}"}
+  - {fork.parent: ts10m_main/muon_d0, optimizer: muon, train.data_seed: 1, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "muon_to_muon_d1_at{fork.step}"}

@@ -1,0 +1,14 @@
+# Replication of Jastrzebski et al. (2020) with SimpleCNN on CIFAR-10 and plain SGD: learning rates
+# 0.001/0.01/0.1 at batch 128 (Figs. 1, 2, 4a, 5a), and batch sizes 30/300 at lr 0.05 (K always from
+# batch-128 gradients, as in the paper), 100 epochs each. Two data orders per setting for the noise floor.
+suite: cifar_breakeven
+base: ../base/cifar_simplecnn.yaml
+overrides: {measure.gradcov_batch: 128}
+runs:
+  - {optim.sgd.lr: [0.001, 0.01, 0.1], train.data_seed: [0, 1], name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"}
+  - {optim.sgd.lr: 0.05, train.batch_size: 30, train.max_steps: 166600, log.eval_steps: {every: 1666, geometric: 40},
+     log.ckpt_steps: {every: 16660, geometric: 12}, measure.steps: {every: 1666, geometric: 30},
+     train.data_seed: [0, 1], name: "sgd_bs30_d{train.data_seed}"}
+  - {optim.sgd.lr: 0.05, train.batch_size: 300, train.max_steps: 16600, log.eval_steps: {every: 166, geometric: 40},
+     log.ckpt_steps: {every: 1660, geometric: 12}, measure.steps: {every: 166, geometric: 30},
+     train.data_seed: [0, 1], name: "sgd_bs300_d{train.data_seed}"}

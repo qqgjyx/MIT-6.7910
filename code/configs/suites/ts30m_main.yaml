@@ -1,0 +1,15 @@
+# Main runs: every optimizer from the same initialization, with data orders 0-4 (order 0 is shared across
+# optimizers; the others give each optimizer's seed-to-seed noise floor). The d0 runs accumulate the other
+# optimizers' state in shadow and save fork checkpoints for ts30m_forks.yaml.
+# Learning rates below are guesses: set them to the best of ts30m_lrsweep.
+suite: ts30m_main
+base: ../base/tinystories_30m.yaml
+overrides:
+  optim.sgd.lr: 0.3
+  optim.adamw.lr: 1.5e-3
+  optim.muon.lr: 0.02
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 0, shadow: [[sgd, adamw, muon]],
+     log.fork_steps: [[100, 200, 400, 800, 1400, 2000, 3000, 5000, 8000]]}
+  - {optimizer: [sgd, adamw, muon], train.data_seed: [1, 2, 3, 4]}

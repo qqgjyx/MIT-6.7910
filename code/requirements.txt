@@ -1,0 +1,10 @@
+# torch comes from the CUDA wheel index (slurm/setup_env.sh); on a laptop, `pip install torch` first.
+numpy
+scipy
+pyyaml
+matplotlib
+tokenizers
+umap-learn
+requests
+torchvision
+pytest
