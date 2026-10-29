@@ -22,7 +22,7 @@ from optsplit.config import load_yaml, root_dir
 def _save(fig, path):
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    fig.savefig(path, dpi=150)
+    fig.savefig(path, dpi=150, bbox_inches='tight')
     plt.close(fig)
     print(f'wrote {path}')
 
