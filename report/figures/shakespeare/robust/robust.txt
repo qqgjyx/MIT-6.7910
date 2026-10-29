@@ -1,0 +1,63 @@
+== adamw muon --metric disagree
+  episodes above the floor (loss from, to): 4.227-2.867
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --margin-mult 0.25
+  episodes above the floor (loss from, to): 4.227-2.770, 2.616-2.574, 2.326-1.527
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --margin-mult 1.0
+  episodes above the floor (loss from, to): 4.227-2.867
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --k 2
+  episodes above the floor (loss from, to): 4.227-2.770, 2.616-2.578, 2.304-2.117
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --k 5
+  episodes above the floor (loss from, to): 4.227-2.770
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --tol 0.01
+  episodes above the floor (loss from, to): 4.227-2.578, 2.245-2.117
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw muon --tol 0.05
+  episodes above the floor (loss from, to): 4.227-2.770, 2.304-2.034
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw sgd --metric disagree
+  episodes above the floor (loss from, to): 4.227-3.101
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== adamw sgd --margin-mult 0.25
+  episodes above the floor (loss from, to): 4.227-2.616
+  persistent split at loss 4.2269 (95% CI 2.7697-4.2269, found in 77% of bootstraps); step
+== adamw sgd --margin-mult 1.0
+  episodes above the floor (loss from, to): 4.227-3.101
+  persistent split at loss nan (95% CI 4.2269-4.2269, found in 0% of bootstraps); steps: {
+== adamw sgd --k 2
+  episodes above the floor (loss from, to): 4.227-3.101, 2.690-2.616
+  persistent split at loss 2.6899 (95% CI 2.6899-4.2269, found in 76% of bootstraps); step
+== adamw sgd --k 5
+  episodes above the floor (loss from, to): 4.227-3.101
+  persistent split at loss nan (95% CI 4.2269-4.2269, found in 22% of bootstraps); steps: 
+== adamw sgd --tol 0.01
+  episodes above the floor (loss from, to): 4.227-2.985
+  persistent split at loss nan (95% CI 2.7697-4.2269, found in 42% of bootstraps); steps: 
+== adamw sgd --tol 0.05
+  episodes above the floor (loss from, to): 4.227-3.101
+  persistent split at loss nan (95% CI 2.7697-4.2269, found in 34% of bootstraps); steps: 
+== muon sgd --metric disagree
+  episodes above the floor (loss from, to): 4.253-3.162
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shake
+== muon sgd --margin-mult 0.25
+  episodes above the floor (loss from, to): 4.253-2.607
+  persistent split at loss 4.2527 (95% CI 2.8208-4.2527, found in 100% of bootstraps); ste
+== muon sgd --margin-mult 1.0
+  episodes above the floor (loss from, to): 4.253-3.162
+  persistent split at loss nan (95% CI 2.7505-4.2527, found in 26% of bootstraps); steps: 
+== muon sgd --k 2
+  episodes above the floor (loss from, to): 4.253-3.162, 2.821-2.607
+  persistent split at loss 2.8208 (95% CI 2.7505-4.2527, found in 99% of bootstraps); step
+== muon sgd --k 5
+  episodes above the floor (loss from, to): 4.253-3.162
+  persistent split at loss nan (95% CI 4.2527-4.2527, found in 42% of bootstraps); steps: 
+== muon sgd --tol 0.01
+  episodes above the floor (loss from, to): 4.253-2.607
+  persistent split at loss 4.2527 (95% CI 2.7505-4.2527, found in 89% of bootstraps); step
+== muon sgd --tol 0.05
+  episodes above the floor (loss from, to): 4.253-2.607
+  persistent split at loss 4.2527 (95% CI 2.7505-4.2527, found in 97% of bootstraps); step

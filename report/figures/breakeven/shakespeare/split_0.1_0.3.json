@@ -1,0 +1,164 @@
+{
+ "metric": "js",
+ "margin_mult": 0.5,
+ "margin_add": 0.0,
+ "k": 3,
+ "tol": 0.02,
+ "optimizer_a": "sgd",
+ "optimizer_b": "sgd",
+ "seeds": [
+  0,
+  1,
+  2
+ ],
+ "runs_a": [
+  "shakespeare_breakeven/sgd_lr0.1_d0",
+  "shakespeare_breakeven/sgd_lr0.1_d1",
+  "shakespeare_breakeven/sgd_lr0.1_d2"
+ ],
+ "runs_b": [
+  "shakespeare_breakeven/sgd_lr0.3_d0",
+  "shakespeare_breakeven/sgd_lr0.3_d1",
+  "shakespeare_breakeven/sgd_lr0.3_d2"
+ ],
+ "t_star_loss": NaN,
+ "ci_loss": [
+  NaN,
+  NaN
+ ],
+ "boot_found": 0.0,
+ "steps": {
+  "shakespeare_breakeven/sgd_lr0.1_d0": null,
+  "shakespeare_breakeven/sgd_lr0.1_d1": null,
+  "shakespeare_breakeven/sgd_lr0.1_d2": null,
+  "shakespeare_breakeven/sgd_lr0.3_d0": null,
+  "shakespeare_breakeven/sgd_lr0.3_d1": null,
+  "shakespeare_breakeven/sgd_lr0.3_d2": null
+ },
+ "step_ci": {
+  "shakespeare_breakeven/sgd_lr0.1_d0": [
+   null,
+   null
+  ],
+  "shakespeare_breakeven/sgd_lr0.1_d1": [
+   null,
+   null
+  ],
+  "shakespeare_breakeven/sgd_lr0.1_d2": [
+   null,
+   null
+  ],
+  "shakespeare_breakeven/sgd_lr0.3_d0": [
+   null,
+   null
+  ],
+  "shakespeare_breakeven/sgd_lr0.3_d1": [
+   null,
+   null
+  ],
+  "shakespeare_breakeven/sgd_lr0.3_d2": [
+   null,
+   null
+  ]
+ },
+ "episodes": [],
+ "persist_loss": NaN,
+ "ci_persist": [
+  NaN,
+  NaN
+ ],
+ "boot_found_persist": 0.0,
+ "steps_persist": {
+  "shakespeare_breakeven/sgd_lr0.1_d0": null,
+  "shakespeare_breakeven/sgd_lr0.1_d1": null,
+  "shakespeare_breakeven/sgd_lr0.1_d2": null,
+  "shakespeare_breakeven/sgd_lr0.3_d0": null,
+  "shakespeare_breakeven/sgd_lr0.3_d1": null,
+  "shakespeare_breakeven/sgd_lr0.3_d2": null
+ },
+ "grid": [
+  4.298804759979248,
+  3.817908763885498,
+  3.65472149848938,
+  3.4267935752868652,
+  3.3156239986419678,
+  3.2895350456237793,
+  3.2888121604919434,
+  3.2866883277893066,
+  3.280424118041992,
+  3.2750701904296875,
+  3.2741379737854004,
+  3.269166946411133,
+  3.2674202919006348,
+  3.240257740020752,
+  3.0942869186401367
+ ],
+ "cross": [
+  0.0,
+  0.0031727693941554203,
+  0.07516554259926964,
+  0.014640837264652798,
+  0.03234345728566286,
+  0.010936743044793069,
+  0.012782563955147779,
+  0.008450078992666279,
+  0.005276343584234985,
+  0.011944729247735193,
+  0.011626183146942545,
+  0.0140918281637038,
+  0.010460197726452477,
+  0.023289018737184173,
+  0.07891841861087615
+ ],
+ "floor": [
+  0.0,
+  0.0037028033345777446,
+  0.08274374768239458,
+  0.07770242103189291,
+  0.03198080825366153,
+  0.011483919199021893,
+  0.010915981638010538,
+  0.009247384080791166,
+  0.006421402829900284,
+  0.017433945794140194,
+  0.01957370382546041,
+  0.02452362471238155,
+  0.025083295300401265,
+  0.03480759223784274,
+  0.1099261155480925
+ ],
+ "floor_lo": [
+  0.0,
+  0.00011671290290172553,
+  0.00351073523666489,
+  0.007564903344513032,
+  0.0023443482350558043,
+  0.0027986157219856977,
+  0.006039055995643139,
+  0.0021667368710041046,
+  0.0007343701436184347,
+  0.0012422958388924599,
+  0.0012330038007348776,
+  0.0007060839561745524,
+  0.0016237786039710045,
+  0.015355650335550308,
+  0.061775057235438614
+ ],
+ "floor_hi": [
+  0.0,
+  0.006864932696254787,
+  0.17882694933428755,
+  0.10980848024040647,
+  0.03983499270974846,
+  0.01663115620613098,
+  0.012026731582174589,
+  0.01033755997861041,
+  0.009601411640572731,
+  0.028193272035770947,
+  0.03143045471056721,
+  0.03761767878789415,
+  0.0377732689480364,
+  0.05183064565062523,
+  0.13885743916034698
+ ]
+}

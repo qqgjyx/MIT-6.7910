@@ -1,0 +1,15 @@
+ts10m_main/adamw_d0              warmup  200  at EoS 1-4500 (50% of measurements), max ratio 18.09  first(adamw|muon)=1 ratio 18.09 first(adamw|sgd)=1 ratio 18.09
+ts10m_main/adamw_d1              warmup  200  at EoS 1-7000 (52% of measurements), max ratio 24.40  first(adamw|muon)=1 ratio 20.82 first(adamw|sgd)=1 ratio 20.82
+ts10m_main/adamw_d2              warmup  200  at EoS 1-5000 (65% of measurements), max ratio 51.08  first(adamw|muon)=1 ratio 18.74 first(adamw|sgd)=1 ratio 18.74
+ts10m_main/adamw_d3              warmup  200  at EoS 1-9500 (58% of measurements), max ratio 214.89  first(adamw|muon)=1 ratio 18.74 first(adamw|sgd)=1 ratio 18.74
+ts10m_main/adamw_d4              warmup  200  at EoS 1-6000 (56% of measurements), max ratio 17.86  first(adamw|muon)=1 ratio 17.86 first(adamw|sgd)=1 ratio 17.86
+ts10m_main/muon_d0               warmup  200  no threshold  first(adamw|muon)=7 first(muon|sgd)=1
+ts10m_main/muon_d1               warmup  200  no threshold  first(adamw|muon)=7 first(muon|sgd)=1
+ts10m_main/muon_d2               warmup  200  no threshold  first(adamw|muon)=7 first(muon|sgd)=2
+ts10m_main/muon_d3               warmup  200  no threshold  first(adamw|muon)=7 first(muon|sgd)=2
+ts10m_main/muon_d4               warmup  200  no threshold  first(adamw|muon)=7 first(muon|sgd)=2
+ts10m_main/sgd_d0                warmup  200  at EoS 62-1500 (12% of measurements), max ratio 1.79  first(adamw|sgd)=3 ratio 0.03 first(muon|sgd)=1 ratio 0.01
+ts10m_main/sgd_d1                warmup  200  at EoS 500-788 (6% of measurements), max ratio 1.04  first(adamw|sgd)=3 ratio 0.03 first(muon|sgd)=1 ratio 0.01
+ts10m_main/sgd_d2                warmup  200  at EoS 62-2500 (12% of measurements), max ratio 2.50  first(adamw|sgd)=3 ratio 0.03 first(muon|sgd)=1 ratio 0.01
+ts10m_main/sgd_d3                warmup  200  at EoS 45-1000 (10% of measurements), max ratio 1.06  first(adamw|sgd)=3 ratio 0.03 first(muon|sgd)=1 ratio 0.01
+ts10m_main/sgd_d4                warmup  200  at EoS 500-1083 (10% of measurements), max ratio 0.96  first(adamw|sgd)=3 ratio 0.03 first(muon|sgd)=1 ratio 0.01

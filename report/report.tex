@@ -1,0 +1,1299 @@
+\documentclass[10pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[backend=bibtex,style=authoryear,natbib=true,maxcitenames=2,maxbibnames=4,minbibnames=3,uniquelist=false,uniquename=false,giveninits=true,doi=false,isbn=false,url=false,eprint=false]{biblatex}
+\addbibresource{refs.bib}
+\usepackage[colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0pt}
+\makeatletter
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{1.2ex \@plus .4ex \@minus .2ex}{-1em}{\normalfont\normalsize\bfseries}}
+\makeatother
+\setlist{nosep,leftmargin=*}
+
+%% Placeholders for results (rendered in red).
+\DeclareRobustCommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\DeclareRobustCommand{\tbd}{\textcolor{red}{??}}
+%% Figure placeholder: \figbox[height]{what goes here}
+\newcommand{\figbox}[2][1.6in]{\fbox{\parbox[c][#1][c]{0.96\linewidth}{\centering\small\todo{#2}}}}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\mean}{mean}
+\newcommand{\JS}{\mathrm{JS}}
+\newcommand{\KL}{\mathrm{KL}}
+\newcommand{\lmax}{\lambda_{\max}}
+\newcommand{\Dloss}{D^{\mathrm{loss}}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cM}{\mathcal{M}}
+\newcommand{\cD}{\mathcal{D}}
+
+\title{\vspace{-1.6em}Together First, Apart Later? When Optimizers Start to Learn Different Functions\\[2pt]
+\large Project report, MIT 6.7910 Statistical Learning Theory, Fall 2026}
+\author{Juntang Wang \and V\'ictor Conchello}
+\date{Draft, \today}
+
+\begin{document}
+\maketitle
+\vspace{-1.2em}
+
+\begin{abstract}
+\noindent
+From the same initialization and the same sequence of mini-batches, we train small transformer language
+models with SGD with momentum, AdamW and Muon, and ask when their learned functions start to differ. We
+measure the distance between the next-token predictions of two runs on held-out text, compare runs at
+equal training loss so that speed is not mistaken for difference, and calibrate against the distance
+between two runs of the same optimizer that differ only in data order. For each pair of optimizers we look
+for a persistent split, a loss level from which their distance stays above this floor, with a bootstrap
+over data orders, and test what coincides with the changes in distance: sharpness reaching its stability
+threshold, the end of warmup, or a loss level. In all three language-model settings and for every pair, the
+loss-matched distance is 30 to 200 times the floor at high loss, falls back to near the floor around the
+stage where the models pass through the bigram statistics of the data, and stays there: the only persistent
+split is between Muon and SGD on Shakespeare, where SGD barely trains. At equal steps the optimizers do
+differ, mostly because they progress at different speeds; at the end of TinyStories-30M, replacing AdamW by
+Muon changes the predictions no more than changing the data order. AdamW sits at its adaptive edge of
+stability for much of training whether or not the optimizers differ, and SGD reaches its threshold only
+around the end of warmup. On CIFAR-10 we replicate the break-even effects of \citet{jastrzebski2020breakeven}
+on sharpness and gradient noise, but at equal loss two learning rates differ by only 1.0 to 1.75 times the
+floor. Swaps of optimizer at nine times during training are in progress.
+\end{abstract}
+
+%% =================================================================
+\section{Introduction}
+\label{sec:intro}
+%% =================================================================
+
+The optimizer decides which of the many solutions with equal training loss a network converges to. In
+linear models this choice is understood: a first-order method acts as steepest descent in some norm and
+converges in direction to the max-margin solution in that norm \citep{gunasekar2018geometry}, which is
+$\ell_2$ for gradient descent \citep{soudry2018separable}, $\ell_\infty$ for Adam
+\citep{zhang2024adam,xie2024adamw} and the spectral norm for Muon \citep{fan2025spectral}. These are
+statements about the limit of infinite training, approached slowly. In deep networks the comparison has
+been made at the end of training: adaptive methods were found to generalize worse
+\citep{wilson2017marginal}, then to learn richer features \citep{vasudeva2025rich}; models with the same
+error can compute different functions \citep{cortesi2026same}; and on language models most optimizers
+reach a similar loss \citep{zhao2025deconstructing}.
+
+We ask \emph{when} the difference between optimizers appears. From the same initialization and the same
+data order, do SGD with momentum, AdamW and Muon first follow the same path in function space and only
+later separate? If so, where is the split, what happens in the optimization at that moment, and is the
+final difference already decided there?
+
+The timing matters for two reasons. First, it says which theory is relevant. If optimizers separate early,
+the asymptotic margin results do not describe how the difference arises, and early events in training are
+candidates instead. In vision, \citet{jastrzebski2020breakeven} show that SGD runs with different learning
+rates separate in prediction space early in training, and tie this to a \emph{break-even point}; and
+\citet{frankle2020lmc} find that training becomes stable to the noise of SGD early, after which copies of a
+network trained with different data orders stay in one linearly connected region. Edge-of-stability events
+\citep{cohen2021eos,cohen2022adaptive,andreyev2024eoss} are the natural candidate for such an early event,
+and their thresholds differ by optimizer. Second, it matters in practice. Switching optimizers during
+training \citep{keskar2017swats} assumes the second optimizer can still change the solution; a split point
+bounds when that is possible.
+
+\paragraph{Approach.} We train nanoGPT models \citep{karpathy2022nanogpt} on character-level Shakespeare
+(10.8M parameters) and on TinyStories (14M and 30M parameters), with SGD with momentum, AdamW, and Muon
+\citep{jordan2024muon}, each at a learning rate chosen by a sweep, from a shared initialization, with five
+data orders per optimizer. The distance between two runs is the Jensen--Shannon divergence and the top-1
+disagreement of their next-token predictions on fixed held-out contexts. We compare runs at equal steps and
+at equal training loss, and calibrate against a noise floor: the distance between two runs of the same
+optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the break-even analysis of
+\citet{jastrzebski2020breakeven} as a check of the pipeline.
+
+\paragraph{Contributions.}
+\begin{enumerate}[leftmargin=1.5em]
+\item \textbf{Divergence curves} between every pair of optimizers in three settings, at equal steps and at
+  equal training loss, against a data-order noise floor (\cref{sec:res-split}). In all 9 pairs the
+  loss-matched distance is far above the floor early and returns to near it by the bigram stage of training.
+\item \textbf{A test for a split point}: episodes in which the distance exceeds the floor and a persistent
+  split, located as a loss level with a bootstrap over data orders (\cref{sec:method-split,sec:res-split}).
+  There is a persistent split in 1 of 9 pairs (Muon--SGD on Shakespeare, from loss 2.82, in 96.5\% of
+  resamples), none between AdamW and Muon.
+\item \textbf{Optimizer against data order} at equal steps (\cref{sec:res-route}): at the end of
+  TinyStories-30M the AdamW--Muon distance equals the data-order floor, and the n-gram references show where
+  the optimizers' routes meet.
+\item \textbf{What coincides with the changes in distance}: sharpness against its optimizer-specific
+  stability threshold, batch sharpness, the end of warmup (\cref{sec:res-coincide}). The edge of stability does
+  not explain them: AdamW is at its threshold for long stretches whether or not the optimizers differ, and SGD only
+  around the end of warmup. Muon with its auxiliary AdamW matched to AdamW still memorizes on Shakespeare, so the
+  memorization comes from its updates of the hidden matrices.
+\item \textbf{A causal test by swapping} optimizers at nine fork times with warm optimizer states, scored by
+  where the fork lands between the two pure runs, and a basin-level test by linear mode connectivity
+  (\cref{sec:res-swap}). \todo{results pending: $r$ for forks before and after the end of the early
+  episode.}
+\item \textbf{The anatomy of the sharp direction}: which parameter blocks carry the top Hessian eigenvector
+  and its curvature, by optimizer and over training (\cref{sec:res-anatomy}). It differs by optimizer
+  (embeddings for Muon on Shakespeare, value--output matrices for Muon on TinyStories, head or norms for
+  AdamW), and most of the eigenvalue comes from curvature between blocks.
+\item \textbf{A replication of the break-even point} on CIFAR-10 and its transfer to the language models
+  (\cref{sec:res-breakeven}). The sharpness and gradient-noise effects replicate, but at equal training loss
+  two learning rates differ by only 1.0--1.75 times the floor.
+\end{enumerate}
+Code: \url{https://github.com/qqgjyx/MIT-6.7910} (\texttt{code/}).
+
+%% =================================================================
+\section{Related work}
+\label{sec:related}
+%% =================================================================
+
+\paragraph{Implicit bias of optimizers.} For linear models the limit of training depends on the geometry
+of the optimizer: steepest descent in a norm converges to the max-margin solution in that norm
+\citep{gunasekar2018geometry}, giving $\ell_2$ for gradient descent \citep{soudry2018separable},
+$\ell_\infty$ for Adam \citep{zhang2024adam}, an $\ell_\infty$-constrained KKT point for AdamW with weight
+decay \citep{xie2024adamw}, and the spectral norm for Muon \citep{fan2025spectral}. Away from the limit,
+finite step sizes act as implicit regularizers: for SGD the modified loss penalizes the gradient norm
+\citep{smith2021origin}, while for Adam the corresponding term can have the opposite sign
+\citep{cattaneo2024adam}. Empirical comparisons in deep networks are made at the end of training
+\citep{wilson2017marginal,vasudeva2025rich,zhao2025deconstructing,cortesi2026same}. We look at the whole
+trajectory instead.
+
+\paragraph{Edge of stability.} With full-batch gradient descent, the top Hessian eigenvalue rises until it
+reaches $2/\eta$ and then stays near it while the loss keeps decreasing \citep{cohen2021eos}; this is
+explained by self-stabilization \citep{damian2023selfstab} and described by central flows
+\citep{cohen2025central}. Adaptive methods reach an analogous \emph{adaptive edge of stability}, where the
+top eigenvalue of the preconditioned Hessian sits at $(2+2\beta_1)/((1-\beta_1)\eta)$
+\citep{cohen2022adaptive}. For mini-batch SGD, \citet{andreyev2024eoss} show that the quantity that
+stabilizes at $2/\eta$ is the \emph{batch sharpness}, the curvature of mini-batch losses along their own
+gradients, while $\lmax$ stays below; \citet{andreyev2026momentum} study the same regime with momentum.
+\citet{kalra2024warmup} relate learning-rate warmup to these sharpness dynamics. Transformer Hessians differ
+strongly across parameter blocks \citep{zhang2024hessian}, which motivates our block decomposition.
+
+\paragraph{Break-even point and early training.} \citet{jastrzebski2020breakeven} argue that early in
+training SGD reaches a break-even point, after which the learning rate and batch size set the curvature and
+the gradient noise along the rest of the trajectory, and show that SGD runs with different learning rates
+separate early in prediction space. \citet{frankle2020lmc} find that training becomes stable to SGD noise
+early: two copies trained on from the same checkpoint with different data orders end in one linearly
+connected region once the checkpoint is past an early point. We use both as templates, comparing optimizers
+instead of learning rates or data orders.
+
+\paragraph{Muon and optimizer switching.} Muon \citep{jordan2024muon} updates each hidden weight matrix with
+its momentum after approximate orthogonalization by a Newton--Schulz iteration, and has been scaled to
+large language models \citep{liu2025muon}. SWATS \citep{keskar2017swats} switches from Adam to SGD during
+training, scored by accuracy; our swaps are scored by where the function ends.
+
+%% =================================================================
+\section{Setup}
+\label{sec:setup}
+%% =================================================================
+
+\paragraph{Models and data.} \Cref{tab:setup} lists the four settings. The language models are nanoGPT
+\citep{karpathy2022nanogpt} with pre-LayerNorm blocks, GELU MLPs of width $4d$, no biases, no dropout, an
+untied output head, and separate query, key and value projections (so that Muon orthogonalizes each and the
+block decomposition of \cref{sec:method-anatomy} can separate the query-key from the value-output
+matrices). The context is 256 tokens. Character-level Shakespeare uses nanoGPT's 90/10 split and a
+65-character vocabulary. TinyStories \citep{eldan2023tinystories} (GPT-4 version) uses a
+4096-token byte-level BPE trained on the training split, so that the head and the stored predictions stay
+small. The vision check is the SimpleCNN of \citet{jastrzebski2020breakeven} (two 32-filter and two
+64-filter $3\times3$ convolutions with max pooling after each pair, then a 128-unit dense layer, ReLU) on
+CIFAR-10 \citep{krizhevsky2009cifar} without augmentation.
+
+\begin{table}[t]
+\centering\small
+\caption{Settings. $L$ layers, model width $d$, vocabulary $V$. Parameters in parentheses exclude the token
+and position embeddings and the head. LM batches are sequences $\times$ tokens. ``aux.'': learning rate of
+Muon's auxiliary AdamW. CIFAR-10 settings in \cref{sec:method-breakeven}. LM schedules: linear warmup for $w$ steps, then cosine decay to
+10\% of the peak learning rate at the last step. The CIFAR-10 runs use a constant learning rate.}
+\label{tab:setup}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}llrrrrlll@{}}
+\toprule
+Setting & Model ($L$, heads, $d$, $V$) & Params & Steps & Batch & $w$ & $\eta_{\rm SGD}$ & $\eta_{\rm AdamW}$ & $\eta_{\rm Muon}$ (aux.) \\
+\midrule
+Shakespeare-char & 6, 6, 384, 65 & 10.8M (10.6M) & 1{,}500 & $64\times256$ & 100 & 0.05 & $3\cdot10^{-4}$ & 0.04 ($10^{-3}$) \\
+TinyStories-10M & 6, 6, 384, 4096 & 13.9M (10.6M) & 10{,}000 & $128\times256$ & 200 & 0.03 & $2\cdot10^{-3}$ & 0.01 ($2\cdot10^{-3}$) \\
+TinyStories-30M & 8, 8, 512, 4096 & 29.5M (25.2M) & 20{,}000 & $128\times256$ & 400 & 0.1 & $2\cdot10^{-3}$ & 0.01 ($1.5\cdot10^{-3}$) \\
+CIFAR-10 & SimpleCNN, ReLU & 0.36M & 39{,}000 & 128 & -- & \multicolumn{3}{l}{plain SGD, $\eta\in\{0.001,0.01,0.1\}$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Shakespeare runs take 24.6M tokens (about 24 passes over the 1M training characters). Without dropout the
+validation loss is lowest near step 1000 and rises after, so these runs stop at 1500 steps. The TinyStories
+runs take 328M and 655M tokens (about 0.6 and 1.2 epochs).
+
+\paragraph{Optimizers.} Write $g_t$ for the mini-batch gradient at step $t$ and $\eta_t=\eta\,\varphi(t)$
+for the learning rate, with $\varphi(t)=(t+1)/w$ for $t<w$ and
+$\varphi(t)=0.1+0.45\,(1+\cos(\pi\,(t-w)/(T-w)))$ after, $T$ being the last step.
+\begin{itemize}
+\item \textbf{SGD} with heavy-ball momentum $\mu=0.9$ and no weight decay:
+  $b_{t+1}=\mu b_t+g_t$, $\theta_{t+1}=\theta_t-\eta_t b_{t+1}$.
+\item \textbf{AdamW} with $(\beta_1,\beta_2)=(0.9,0.95)$ ($(0.9,0.99)$ for Shakespeare, as in nanoGPT),
+  $\epsilon=10^{-8}$, and decoupled weight decay $0.1$ on every tensor with at least two dimensions
+  (including embeddings and head) and none on LayerNorm gains:
+  $\theta_{t+1}=(1-\eta_t\lambda_{\rm wd})\theta_t-\eta_t\,\hat m_{t+1}/(\sqrt{\hat v_{t+1}}+\epsilon)$, with
+  bias-corrected moments $\hat m,\hat v$.
+\item \textbf{Muon} \citep{jordan2024muon} on every matrix inside the transformer blocks (query, key, value,
+  attention output, both MLP matrices), with momentum $\beta=0.95$, Nesterov, and no weight decay:
+  $M_{t+1}=\beta M_t+(1-\beta)G_t$, $W_{t+1}=W_t-\eta_t\sqrt{\max(1,n_{\rm out}/n_{\rm in})}\,
+  \mathrm{NS}_5\big((1-\beta)G_t+\beta M_{t+1}\big)$, where $\mathrm{NS}_5$ is five steps of the quintic
+  Newton--Schulz iteration that approximates the orthogonal polar factor. Embeddings, head and gains are
+  updated by an auxiliary AdamW with $(0.9,0.95)$, $\epsilon=10^{-8}$, no weight decay, and its own learning
+  rate (\cref{tab:setup}).
+\end{itemize}
+Gradient clipping is off, since it would hide edge-of-stability dynamics. Training steps of the language
+models use bfloat16 autocast; all measurements (\cref{sec:methods}) are in float32.
+
+\paragraph{Learning rates.} For each setting and optimizer we ran five learning rates (grids in
+\cref{tab:sweep}) on data order 0, with the schedule and length of the main runs and no measurements, and
+kept the one with the best final validation loss (on the validation sequences of the probe, \cref{sec:method-distance}). Shakespeare is the exception: since its runs overfit, we
+kept the best \emph{minimum} validation loss over training. SGD is the exception to the rule: in every
+setting its best rate on data order 0 diverged or blew up on other data orders (0.2 on Shakespeare, 0.1 on
+TinyStories-10M, 0.3 on TinyStories-30M), so SGD uses a lower rate: 0.05 on Shakespeare (the smallest of its
+grid) and the next lower rate on TinyStories, 0.03 and 0.1. On Shakespeare every SGD rate of the grid stops
+at about the same minimum validation loss (2.44--2.50, the bigram level), so we took the smallest and most
+stable one. Runs whose training loss became non-finite were stopped and counted as diverged.
+
+\paragraph{Shared initialization and data order.} Every run starts from the same initialization (seed 0).
+The mini-batch at step $t$ depends only on the data order $d$ and on $t$: for the language models it is
+$B$ windows of 256 tokens at offsets drawn uniformly from the training split by a generator seeded with
+$(d,t)$; for CIFAR-10 it is a slice of a per-epoch permutation seeded with $(d,\text{epoch})$, dropping the
+last incomplete batch. Two runs with the same $d$ therefore see identical batches whatever their optimizer,
+and forks and resumed runs see the batches their parent would have seen. Batches used for measurements come
+from separate random streams and never change the training order. Each optimizer is run with data orders
+$d\in\{0,\dots,4\}$: 15 main runs per setting. The runs with $d=0$ also keep the other optimizers' states
+in shadow and save fork checkpoints (\cref{sec:method-swap}).
+
+\paragraph{Control for Muon's auxiliary Adam.} On Shakespeare, Muon's auxiliary AdamW and the AdamW runs differ
+in learning rate ($10^{-3}$ against $3\cdot10^{-4}$), $\beta_2$ (0.95 against 0.99) and weight decay (none
+against 0.1). A control suite repeats Muon with its auxiliary AdamW matched to AdamW (learning rate
+$3\cdot10^{-4}$, $\beta=(0.9,0.99)$, weight decay 0.1, which here also applies to the gains), with data
+orders 0--4 (``matched Muon''). It differs from AdamW only in how the hidden matrices are trained (and in
+decay on the gains).
+
+%% =================================================================
+\section{Methods}
+\label{sec:methods}
+%% =================================================================
+Step $s$ always refers to the model $\theta_s$ after $s$ updates ($s=0$ is the initialization). Each run
+logs predictions at its prediction steps $\cS$ and curvature at its measurement steps $\cM$; both grids
+combine a linear and a log-spaced grid (\cref{tab:grids}).
+
+\subsection{Function distance and alignment}
+\label{sec:method-distance}
+
+\paragraph{Distance.} Every run stores, at each $s\in\cS$, its next-token distributions on a fixed set of
+$N$ held-out positions, identical across runs: for Shakespeare all 256 positions of 64 validation sequences
+($N=16{,}384$), for TinyStories 16 evenly spaced positions of 128 validation sequences ($N=2{,}048$), and
+for CIFAR-10 the 10{,}000 test images. Write $p_i^X(s)$ for the distribution of run $X$ at step $s$ on
+position $i$. The distance between run $X$ at step $s$ and run $Y$ at step $s'$ is the mean Jensen--Shannon
+divergence in bits,
+\begin{equation}
+D_{\JS}(X_s,Y_{s'})=\frac1N\sum_{i=1}^N\JS\big(p_i^X(s),\,p_i^Y(s')\big),\qquad
+\JS(p,q)=\tfrac12\KL(p\,\|\,m)+\tfrac12\KL(q\,\|\,m),\quad m=\tfrac12(p+q),
+\label{eq:js}
+\end{equation}
+with base-2 logarithms, so $D_\JS\in[0,1]$. The second distance is the top-1 disagreement
+$D_{\rm dis}(X_s,Y_{s'})=1-\frac1N\sum_i\mathbf 1\{\argmax_v p^X_{i,v}(s)=\argmax_v p^Y_{i,v}(s')\}$.
+
+\paragraph{Alignment by step.} $D(X_s,Y_s)$ at the steps $s\in\cS$ that both runs log.
+
+\paragraph{Alignment by training loss.} Optimizers progress at different speeds, and comparing at equal steps
+confounds ``faster'' with ``different''. Each run therefore also logs, at each $s\in\cS$, its mean
+cross-entropy $\ell_X(s)$ on a fixed training probe, the same for all runs (64 training sequences, all
+positions, for the language models; 2{,}000 training images for CIFAR-10). We make it monotone with a
+running minimum, $\bar\ell_X(s)=\min\{\ell_X(s'):s'\in\cS,\ s'\le s\}$. Each step $s$ of $X$ is matched with
+the earliest step of $Y$ whose loss is closest,
+\begin{equation}
+\pi_{XY}(s)=\min\Big(\argmin_{s'\in\cS}\,\big|\bar\ell_Y(s')-\bar\ell_X(s)\big|\Big),\qquad
+\text{kept if }\big|\bar\ell_Y(\pi_{XY}(s))-\bar\ell_X(s)\big|\le\tau\,\bar\ell_X(s),
+\label{eq:match}
+\end{equation}
+with $\tau=0.02$. The kept matches give points $\big(\bar\ell_X(s),\,D(X_s,Y_{\pi_{XY}(s)})\big)$, and the
+\emph{loss-matched distance} $\Dloss_{X,Y}(\ell)$ is their piecewise-linear interpolation in $\ell$ (where
+several steps share a loss value, the earliest is used), undefined outside the range of kept losses. The
+loss coordinate is that of the first run, $X$.
+
+\paragraph{Noise floor.} Two runs of the same optimizer from the same initialization with different data
+orders, $\Dloss_{O_d,O_{d'}}$ with $d\neq d'$, differ only through the sampling of mini-batches. A difference
+between optimizers counts only where it exceeds this floor.
+
+\subsection{Locating the split}
+\label{sec:method-split}
+
+Fix two optimizers $A$ and $B$ and write $A_d,B_d$ for their runs with data order $d\in\cD=\{0,\dots,4\}$.
+Runs with the same $d$ share initialization and batches, so they form the \emph{cross} pairs; runs of one
+optimizer with different $d$ form the \emph{floor} pairs:
+\[
+c_d(\ell)=\Dloss_{A_d,B_d}(\ell),\qquad f^O_{dd'}(\ell)=\Dloss_{O_d,O_{d'}}(\ell)\quad(O\in\{A,B\},\ d<d').
+\]
+
+\paragraph{Loss grid.} Let $\ell_1>\ell_2>\dots>\ell_J$ be the distinct values of $\bar\ell_{A_0}(s)$,
+$s\in\cS$, that lie in the range covered by all $2|\cD|$ runs,
+\[
+\Big[\max_X\min_{s\in\cS}\bar\ell_X(s),\ \min_X\max_{s\in\cS}\bar\ell_X(s)\Big].
+\]
+Decreasing loss is the order of training.
+
+\paragraph{Statistic.} For a multiset $S$ of data orders with distinct elements $U(S)$, let
+\begin{equation}
+\bar c_S(\ell)=\mean_{d\in S}\,c_d(\ell),\qquad
+F_S(\ell)=\max\Big(\mean_{d<d'\in U(S)}f^A_{dd'}(\ell),\ \mean_{d<d'\in U(S)}f^B_{dd'}(\ell)\Big),
+\label{eq:floor}
+\end{equation}
+where the cross mean counts repeated orders with their multiplicity, means skip undefined values, and the
+maximum takes the defined side if only one is. The floor is thus the larger of the two optimizers'
+average seed-to-seed distances. A level is \emph{above the floor} if the cross distance exceeds the floor by
+a margin,
+\begin{equation}
+o_S(j)=\mathbf 1\big\{\bar c_S(\ell_j)>(1+m_\times)\,F_S(\ell_j)+m_+\big\},
+\label{eq:over}
+\end{equation}
+with $m_\times=0.5$ and $m_+=0$; a comparison with an undefined value counts as false.
+
+\paragraph{First exceedance.} The first grid level from which the cross distance is above the floor at $k=3$
+consecutive levels,
+\begin{equation}
+t^\ast(S)=\ell_{j^\ast},\qquad
+j^\ast=\min\big\{j:\ o_S(i)=1\ \text{ for } i=j,\dots,j+k-1\big\},
+\label{eq:tstar}
+\end{equation}
+undefined if no such $j$ exists. Since the grid is made of the losses of $A_0$ at its prediction steps, the
+$k$ levels are consecutive distinct loss values of that run. This was the planned definition of the split, but
+it is degenerate: at initialization all runs compute the same function, so the floor is close to 0 for the
+first steps, while two different optimizers move apart from their first update. In every pair of optimizers
+$t^\ast$ is one of the first grid levels, reached at steps 1--8 (\cref{tab:tstar}). It records that two
+optimizers differ from the start, not that they split. We therefore also report:
+
+\paragraph{Episodes and persistent split.} An \emph{episode} is a maximal run of consecutive levels
+$\ell_{j_0},\dots,\ell_{j_1}$ with $o_S(j)=1$ that contains at least $k$ levels ($j_1-j_0+1\ge k$), reported
+as the loss range $[\ell_{j_0},\ell_{j_1}]$. The \emph{persistent split} $t^\ast_{\rm p}(S)$ is the start
+$\ell_{j_0}$ of the last episode if that episode ends at the last level of the grid ($j_1=J$), and undefined
+otherwise: the loss from which the cross distance stays above the floor down to the lowest loss that all runs
+reach. A persistent split is what ``together first, apart later'' predicts; an episode that ends before $\ell_J$
+is a difference that later disappears. Figures also show the ratio $\bar c_\cD(\ell)/F_\cD(\ell)$ against the
+loss, with the threshold $1+m_\times$.
+
+\paragraph{Estimate and uncertainty.} The point estimates are $t^\ast=t^\ast(\cD)$, $t^\ast_{\rm p}=
+t^\ast_{\rm p}(\cD)$ and the episodes of $\cD$. For their uncertainty we draw 1000 bootstrap resamples $S_b$ of
+$|\cD|$ data orders with replacement and report, for $t^\ast$ and $t^\ast_{\rm p}$ separately, the 2.5 and
+97.5 percentiles of the defined values, together with the fraction of resamples in which one is found (a
+resample with a single distinct order has no floor and gives none). The distance is $D_\JS$.
+\todo{$D_{\rm dis}$ estimates not computed yet.}
+
+\paragraph{In steps.} $t^\ast$ is a loss level, which makes it comparable across optimizers that reach it at
+different steps. For each run $X$, $t^\ast_X=\min\{s\in\cS:\bar\ell_X(s)\le t^\ast\}$ is the first step at
+which $X$ reaches it, and likewise $t^\ast_{{\rm p},X}$ for the persistent split.
+
+\subsection{Optimizer against data order, and n-gram references}
+\label{sec:method-route}
+
+\paragraph{Decomposition at equal steps.} For two optimizers $X,Y$ with data orders $d=0,\dots,n-1$ ($n=5$)
+and $d^+=(d+1)\bmod n$, we compare at each shared prediction step $s$ four families of $n$ pairs:
+$D(X^d_s,Y^d_s)$ (other optimizer, same data: the cross pairs above), $D(X^d_s,Y^{d^+}_s)$ (other
+optimizer, other data), and the floors $D(X^d_s,X^{d^+}_s)$ and $D(Y^d_s,Y^{d^+}_s)$ (same optimizer, other
+data), and plot the median and range over $d$. If the same-data distance is no larger than the floors, the
+change of optimizer changes the function no more than a change of data order; if it is smaller than the
+other-data distance, sharing the batches keeps the two optimizers closer.
+
+\paragraph{N-gram references.} From the counts $n(b)$ and $n(a,b)$ of tokens and of consecutive token pairs
+in the training split we build a unigram model $p_1(b)\propto n(b)+1$ and a bigram model smoothed towards it,
+$p_2(b\mid a)=\big(n(a,b)+\alpha\,p_1(b)\big)/\big(n(a)+\alpha\big)$ with $\alpha=1$, evaluated at the
+validation probe positions (the bigram conditioned on the current token). For a run $X$ we plot
+$D_\JS$ \eqref{eq:js} between $p^X(s)$ and each reference against the training loss $\bar\ell_X(s)$. A
+minimum near zero means the run passes through that n-gram solution; two optimizers that pass through it at
+the same loss meet there in function space.
+
+\subsection{Sharpness and stability thresholds}
+\label{sec:method-sharpness}
+
+At each $s\in\cM$, before the update of that step, we measure on $\theta_s$ (in float32):
+
+\paragraph{Sharpness.} $\lmax$ is the largest eigenvalue of the Hessian $H=\nabla^2L_{\mathcal H}(\theta_s)$ of
+the mean cross-entropy on a fixed batch $\mathcal H$ of training examples (32 sequences of 256 tokens for
+the language models; 2{,}500 images, 5\% of the training set, for CIFAR-10), computed by Lanczos with full
+reorthogonalization (20 iterations from a fixed random start) on Hessian-vector products.
+
+\paragraph{SGD threshold.} On a quadratic with curvature $\lambda$, heavy-ball momentum as above is stable if
+and only if $\eta\lambda<2+2\mu$. We compare $\lmax(\theta_s)$ with $(2+2\mu)/\eta_s$, which is $3.8/\eta_s$
+for $\mu=0.9$ and $2/\eta$ for the plain SGD of the break-even runs.
+
+\paragraph{AdamW preconditioned sharpness.}
+\label{sec:method-precond}
+Following \citet{cohen2022adaptive}, let
+$P=(1-\beta_1^t)\diag(\sqrt{\hat v}+\epsilon)$, with $\hat v=v/(1-\beta_2^t)$ built from the optimizer's
+current second-moment state and step count $t$. The AdamW update is then $-\eta_tP^{-1}m$ with $m$ the
+uncorrected first moment, so with $P$ frozen and weight decay ignored it is heavy-ball momentum with
+coefficient $\beta_1$ and step $\eta_t(1-\beta_1)$ in the metric $P$. It is stable if
+$\lmax(P^{-1}H)<(2+2\beta_1)/((1-\beta_1)\eta_t)$, which is $38/\eta_t$ for $\beta_1=0.9$. We compute the
+preconditioned sharpness $\lmax(P^{-1/2}HP^{-1/2})$, which has the spectrum of $P^{-1}H$, by the same
+Lanczos procedure, for every run that trains with AdamW (including forks into AdamW).
+
+\paragraph{Batch sharpness.} Following \citet[Def.~1]{andreyev2024eoss},
+\begin{equation}
+\mathrm{BS}(\theta)=\frac{\sum_{j=1}^n g_j^\top H_j\,g_j}{\sum_{j=1}^n\|g_j\|^2},
+\label{eq:bs}
+\end{equation}
+where $g_j$ and $H_j$ are the gradient and Hessian of the loss on mini-batch $j$, over $n=8$ random
+training mini-batches of the training batch size (a fresh random stream at every measured step). For
+mini-batch SGD without momentum, \citet{andreyev2024eoss} find that $\mathrm{BS}$ stabilizes at $2/\eta$. We
+measure it for every optimizer and compare it with $(2+2\mu)/\eta_s$ for SGD.
+
+\paragraph{Muon.} We have no stability threshold for Muon, and report its $\lmax$ and batch sharpness without
+one. Its update on a hidden matrix is orthogonalized, with all singular values near one whatever the size of
+the gradient, so the quadratic argument above, where the step scales with the gradient, does not carry over
+directly. This is a limitation. What we can test is the part of the model that Muon leaves to its auxiliary
+AdamW (\cref{sec:method-aux}).
+
+\paragraph{One-step loss change.} $\Delta L(s)=\ell_X(s)-\ell_X(s+1)$ on the training probe, used in the
+break-even analysis.
+
+\paragraph{Edge of stability of the Adam-managed block.}
+\label{sec:method-aux}
+Muon trains the embeddings, head and gains with an auxiliary AdamW; write $a$ for these coordinates. At the
+fork checkpoints of the $d=0$ runs (\cref{tab:forks}), which hold the optimizer states, we compute the top
+eigenvalue of $P_a^{-1/2}H_{aa}P_a^{-1/2}$, where $H_{aa}$ is the block of the Hessian on $\mathcal H$ restricted
+to $a$ and $P_a$ the preconditioner $P$ defined above, built from the state of the run's own Adam for
+these coordinates (Muon's auxiliary AdamW, or AdamW itself), by the same Lanczos procedure. We compare it with
+$(2+2\beta_1)/((1-\beta_1)\eta_s)$, with $\eta$ and $\beta_1$ of that Adam. This treats the block as if the
+rest of the model were frozen, so it is a check of the auxiliary AdamW on its own, not a threshold for Muon.
+
+\paragraph{What coincides with the split.} For a sharpness measure $\mathcal{Q}$ with threshold
+$\Theta$, the measured steps at the edge of stability are
+$\mathcal E(X)=\{s\in\cM:\mathcal{Q}_X(s)\ge(1-\delta)\,\Theta_X(s)\}$ with $\delta=0.1$. We report the onset
+$s_{\rm EoS}(X)=\min\mathcal E(X)$, the last step of $\mathcal E(X)$, and the fraction $|\mathcal E(X)|/|\cM|$
+of measured steps at the edge of stability, for $\lmax$ (SGD) and the preconditioned sharpness (AdamW), and
+the ratio $\mathcal Q_X(s)/\Theta_X(s)$ at the steps $t^\ast_X$ and $t^\ast_{{\rm p},X}$. Since $\cM$ is
+partly log-spaced, the fraction weights early training more than a fraction of steps would. Batch sharpness
+is shown in the figures but has no onset computed. We compare these with $t^\ast_X$ and $t^\ast_{{\rm p},X}$,
+with the episodes, with the end of warmup $w$, and with the loss levels across settings.
+
+\subsection{Swaps with warm optimizer states}
+\label{sec:method-swap}
+
+\paragraph{Shadow states.} During each $d=0$ run of optimizer $A$, the other two optimizers are stepped on the
+same mini-batch gradients with learning rate 0. The state updates of SGD momentum, AdamW and Muon do not
+depend on the learning rate, and with learning rate 0 neither the update nor the decoupled weight decay moves
+the parameters; so their momenta, second moments and step counts evolve as if they were training, while the
+parameters follow $A$ alone. (Our copy of Muon does not overwrite the gradient in place, so a shadow
+optimizer stepping after it sees the same gradient.)
+
+\paragraph{Forks.} At fork steps $s$ (nine per setting, \cref{tab:forks}), the $d=0$ run saves $\theta_s$ and
+the states of all three optimizers. The fork $A\to B$ at $s$ loads $\theta_s$ and $B$'s shadow state, keeps
+$B$'s own hyperparameters and learning rate, and continues from $s$ to $T$ on the same schedule $\varphi$ and
+the same batches. All six ordered pairs are forked at all nine steps. The control ``$A$ continued with the
+same batches'' is the parent run itself. In addition, $A$ is forked into $A$ with data order 1 at the same
+steps, the control for mode connectivity (\cref{sec:method-lmc}). This gives 81 forks per language-model
+setting. Forks log predictions and measurements like their parents.
+
+\paragraph{Where a fork lands.} Let $F$ be the final model of the fork $A\to B$ at $s$, $A$ the final model of
+the parent $A_0$, and $B$ the final model of the pure run $B_0$ (from initialization, same batches). With $D$
+either distance of \cref{sec:method-distance}, the landing coordinate is
+\begin{equation}
+r=\frac{D(F,A)}{D(F,A)+D(F,B)},
+\label{eq:landing}
+\end{equation}
+which is 0 at $A$'s function and 1 at $B$'s. It is a ratio of distances, not a projection: a fork far from
+both ends has $r$ near $1/2$, so we report $D(F,A)$, $D(F,B)$ and $D(A,B)$ with it. For each function metric
+$\phi$ of \cref{sec:method-metrics} we also report the shift $(\phi(F)-\phi(A))/(\phi(B)-\phi(A))$, the
+fraction of the gap between the pure runs that the swap closes. If the function is decided at the split,
+forks with $s<t^\ast_A$ should end near $r=1$ and forks with $s>t^\ast_A$ near $r=0$. Since $t^\ast$ turns out to be
+degenerate (\cref{sec:method-split}), the time to compare fork steps with is the end of the early episode.
+
+\subsection{Linear mode connectivity}
+\label{sec:method-lmc}
+
+For two final weight vectors $\theta_1,\theta_2$ of the same architecture let
+$L(\alpha)$ be the mean cross-entropy of $(1-\alpha)\theta_1+\alpha\theta_2$ (every floating-point entry of
+the state interpolated) on the 64 sequences of the training probe. The barrier is
+\begin{equation}
+\mathrm{Bar}(\theta_1,\theta_2)=\max_{\alpha\in\{0,0.1,\dots,1\}}\big[L(\alpha)-(1-\alpha)L(0)-\alpha L(1)\big],
+\label{eq:barrier}
+\end{equation}
+a loss version of the instability of \citet{frankle2020lmc}. We compute it between the parent $A_0$ and each
+of its forks, as a function of the fork step: the forks $A\to A$ with data order 1 reproduce the instability
+analysis of \citet{frankle2020lmc} for each optimizer, and the forks $A\to B$ ask whether a change of
+optimizer at $s$ leaves the solution in the same basin.
+
+\subsection{Anatomy of the top eigenvector}
+\label{sec:method-anatomy}
+
+Partition the parameters into blocks: \emph{emb} (token and position embeddings); for each layer $i$,
+\emph{qk}$_i$ ($W_Q,W_K$), \emph{ov}$_i$ ($W_V$ and the attention output $W_O$) and \emph{mlp}$_i$ (both MLP
+matrices); \emph{norms} (all LayerNorm gains); and \emph{head}. For the CNN each layer is a block. Let $v$ be
+the unit top eigenvector of $H$ returned by Lanczos, and $v_b$ the vector equal to $v$ on the coordinates of
+block $b$ and zero elsewhere. Since the blocks partition the coordinates, $v=\sum_bv_b$ and
+$\sum_b\|v_b\|^2=1$, and expanding the quadratic form gives
+\begin{equation}
+\lmax=v^\top Hv=\sum_b s_b+\chi,\qquad s_b=v_b^\top H_{bb}v_b,\qquad \chi=\sum_{b\neq c}v_b^\top H_{bc}v_c,
+\label{eq:anatomy}
+\end{equation}
+where $H_{bc}$ is the block of $H$ with rows in $b$ and columns in $c$ (and $v_b$ is read as its restriction
+to block $b$ where needed). We record, for each block, its share of the direction $\|v_b\|^2$ and its
+self-curvature $s_b$, and the cross-block remainder $\chi=v^\top Hv-\sum_bs_b$, with $v^\top Hv$ from one more
+Hessian-vector product (it equals the Lanczos estimate of $\lmax$ up to the Lanczos error). Both $s_b$ and
+$\chi$ can be negative, and $s_b\le\lmax(H_{bb})\|v_b\|^2$: a block carries a large part of the sharpness only
+if the direction lies in it and its own diagonal block is curved along it, while a large $\chi$ means the
+sharp direction comes from interactions between blocks. The split of the project plan, $v_b^\top(Hv)_b$,
+equals $\lmax\|v_b\|^2$ for an exact eigenvector and so repeats the direction share; this is why we use
+\eqref{eq:anatomy} instead. For AdamW runs we repeat the decomposition for $P^{-1/2}HP^{-1/2}$ and its top
+eigenvector, whose diagonal blocks are $P_b^{-1/2}H_{bb}P_b^{-1/2}$. Figures sum blocks by type (all
+\emph{qk}, all \emph{ov}, all \emph{mlp}) or by layer.
+
+\subsection{Function metrics}
+\label{sec:method-metrics}
+
+Offline, on saved checkpoints, we compute three groups of metrics at fixed validation points (definitions in
+\cref{app:metrics}). \emph{Input derivatives} of the loss as a function of the input (the token embeddings
+for the language models), from first to third order: gradient norm, Jacobian norm of the softmax output
+\citep{novak2018sensitivity}, Frobenius norm and top eigenvalue of the input Hessian
+\citep{moosavi2019cure}, level-set curvature \citep{srinivas2022lowcurv}, and three third-order
+quantities. \emph{Weight norms}: those linear theory predicts each optimizer keeps small ($\ell_2$,
+$\ell_\infty$, spectral), and norm-based measures compared by \citet{jiang2020fantastic}. \emph{Accuracy and
+robustness}: Gaussian input noise for the CNN \citep{ford2019noise} and one-token substitution sensitivity
+\citep{hahn2021sensitivity} for the language models.
+
+\subsection{Break-even replication}
+\label{sec:method-breakeven}
+
+We follow the protocol of \citet{jastrzebski2020breakeven}: plain SGD (no momentum) at a constant learning
+rate, without warmup. Besides $\lmax$ (their $\lambda_H^1$) and $\Delta L$, at each measured step we draw
+$L=25$ mini-batch gradients $g_1,\dots,g_L$ and estimate the gradient covariance
+$\hat K=\frac1L\sum_i(g_i-\bar g)(g_i-\bar g)^\top$ through the eigendecomposition of its $L\times L$ Gram
+matrix. We record its top eigenvalue $\lambda_K^1$, its smallest non-zero eigenvalue $\lambda_K^\ast$
+($\hat K$ has rank at most $L-1$), $\operatorname{Tr}\hat K$, and $\|g\|/\|g_5\|$, the mean over $i$ of
+$\|g_i\|/\|\Pi_5g_i\|$ with $\Pi_5$ the projection on the top five eigenvectors of $\hat K$. Prediction
+trajectories are embedded in two dimensions (PCA, then UMAP; \cref{app:measure}).
+
+\paragraph{Runs.} CIFAR-10: learning rates 0.001, 0.01 and 0.1 at batch size 128 (39{,}000 steps, 100
+epochs), and batch sizes 30 and 300 at learning rate 0.05 (also 100 epochs), with $\hat K$ always from
+batch-128 gradients; two data orders each. Shakespeare and TinyStories-10M: learning rates 0.03, 0.1 and 0.3
+at the training batch size, with the setting's model and length; three data orders each. A rate of 1.0
+diverged within 15 (Shakespeare) and 20 (TinyStories-10M) steps and was dropped. The split analysis
+of \cref{sec:method-split} applied to two learning rates instead of two optimizers measures the separation of
+trajectories in prediction space.
+
+\FloatBarrier
+%% =================================================================
+\section{Results}
+\label{sec:results}
+%% =================================================================
+
+\subsection{Learning-rate sweeps}
+\label{sec:res-sweep}
+
+\Cref{fig:sweep} (\cref{app:figures}) shows the sweeps. In all three settings Muon reaches the lowest
+validation loss, then AdamW, then SGD: best final validation loss 1.305, 1.339 and 1.914 on TinyStories-10M and
+1.181, 1.201 and 1.340 on TinyStories-30M (SGD at its best rate on data order 0; 1.957 and 1.370 at the rates
+we use), and best minimum validation loss 1.54, 1.56 and 2.44 on Shakespeare (2.50 for SGD at 0.05, about the
+loss at which all three optimizers pass the bigram model, \cref{sec:res-route}). SGD at 1 and 3 diverged on
+both TinyStories models. Without dropout the Shakespeare runs overfit, Muon fastest: its validation loss is
+lowest near step 500 and ends at 2.84--2.88 in the main runs, against 1.54--1.55 for AdamW (\cref{fig:losses}).
+
+\subsection{Divergence curves and the split}
+\label{sec:res-split}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/ts30m/divergence_adamw_muon.png}\\
+\includegraphics[width=0.9\linewidth]{figures/shakespeare/divergence_adamw_muon.png}\\
+\includegraphics[width=0.9\linewidth]{figures/shakespeare/divergence_muon_sgd.png}
+\caption{Function distance $D_\JS$ (bits) between optimizers. Rows: TinyStories-30M AdamW--Muon, Shakespeare
+AdamW--Muon, Shakespeare Muon--SGD (the only persistent split). Left: by step, for the 5 cross pairs (blue,
+same data order) and the 10 floor pairs of each optimizer (greys); the red line is the median step at which
+the first runs reach the persistent split, or the first exceedance $t^\ast$ if there is none. Middle:
+loss-matched distance (blue) against training loss (axis reversed), with the range over floor pairs (grey band),
+the floor $F_\cD$ (dashed), the episodes above the floor (shaded), $t^\ast$ (dotted) and the persistent split
+(dashed, with its 95\% interval shaded red). Right: cross distance over the floor, with the threshold
+$1+m_\times=1.5$ (red). The other pairs are in \cref{fig:app-divergence,fig:app-divergence10}.}
+\label{fig:divergence}
+\end{figure}
+
+\begin{table}[t]
+\centering\small
+\caption{Split analysis with $D_\JS$. Grid: range of the common loss grid. $t^\ast$: first exceedance
+\eqref{eq:tstar}, found in 99.8\% of resamples for every language-model pair (all resamples with at least two
+distinct data orders) and 52\% for CIFAR-10 (two data orders), with a 95\% interval equal to the point;
+steps: the steps at which $A_0$ and $B_0$ reach it. Episodes: loss ranges above the floor. Persistent: the
+persistent split $t^\ast_{\rm p}$ and the fraction of resamples in which one is found. Max and end: the ratio
+$\bar c_\cD/F_\cD$ at its maximum and at the last grid level. ``Matched'': Muon with its auxiliary AdamW
+matched to AdamW (\cref{sec:setup}). Break-even rows compare plain SGD at two learning rates.}
+\label{tab:tstar}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcccllcc@{}}
+\toprule
+Setting & Pair $A$--$B$ & Grid & $t^\ast$ & steps & Episodes & Persistent & Max & End \\
+\midrule
+Shakespeare & AdamW--Muon & 4.30--1.18 & 4.23 & 1 / 2 & 4.23--2.77, 2.30--2.12 & none (0\%) & 32 & 1.02 \\
+            & AdamW--SGD  & 4.30--2.62 & 4.23 & 1 / 1 & 4.23--3.10 & none (34\%) & 98 & 1.69 \\
+            & Muon--SGD   & 4.30--2.61 & 4.25 & 1 / 1 & 4.25--3.16, 2.82--2.61 & \textbf{2.82} (96.5\%) & 80 & 2.09 \\
+            & Matched--AdamW & 4.30--1.19 & 4.26 & 1 / 1 & 4.26--2.85, 2.70--1.68 & none (0\%) & 29 & 1.07 \\
+            & Matched--Muon & 4.30--0.23 & none (4\%) & -- & none & none (0\%) & 1.28 & 0.98 \\
+TinyStories-10M & AdamW--Muon & 8.39--1.35 & 8.26 & 1 / 7 & 8.26--4.85 & none (0\%) & 111 & 0.99 \\
+            & AdamW--SGD  & 8.39--2.04 & 8.26 & 1 / 3 & 8.26--6.32 & none (0\%) & 162 & 1.03 \\
+            & Muon--SGD   & 8.39--2.02 & 8.38 & 1 / 1 & 8.38--5.81 & none (0\%) & 204 & 1.00 \\
+TinyStories-30M & AdamW--Muon & 8.45--1.20 & 8.31 & 1 / 8 & 8.31--4.59 & none (0\%) & 124 & 1.02 \\
+            & AdamW--SGD  & 8.45--1.65 & 8.31 & 1 / 2 & 8.31--6.03 & none (0\%) & 121 & 1.01 \\
+            & Muon--SGD   & 8.45--1.65 & 8.44 & 1 / 1 & 8.44--6.82 & none (0\%) & 200 & 1.00 \\
+\midrule
+CIFAR-10 & $\eta$ 0.001--0.01 & 2.30--1.09 & 2.27 & 4290 / 510 & 4 short, 2.27--1.13 & none (0\%) & 19 & 1.47 \\
+         & $\eta$ 0.01--0.1 & 2.30--0.0004 & 0.50 & 11310 / 2730 & 0.50--0.41 & none (0\%) & 1.75 & 1.24 \\
+Shakespeare & $\eta$ 0.1--0.3 & 4.30--3.09 & none (0\%) & -- & none & none (0\%) & 1.17 & 0.72 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\Cref{tab:tstar} summarizes the split analysis for all pairs and \cref{fig:divergence} shows three of them.
+The same pattern holds in every language-model pair.
+
+\paragraph{The optimizers differ from the first steps.} The first exceedance $t^\ast$ is the first or second
+level of the loss grid, reached at steps 1--8. At that point the floor is still near zero, while two optimizers
+have already taken different first steps.
+
+\paragraph{An early episode, then back to the floor.} Each pair has one long early episode above the floor. It
+ends at loss 4.59--6.82 on TinyStories and 2.77--3.16 on Shakespeare, and the ratio peaks in it at 32--204.
+The ratio is large because the floor is near zero; in absolute terms the cross distance in the episode is at
+most 0.034--0.045 bits for AdamW--Muon and 0.04--0.18 bits for pairs with SGD. After the episode the ratio
+returns to near 1 and stays there. For AdamW--Muon it lies in 0.95--1.38 (median 1.02) below loss 4.85 on
+TinyStories-10M, in 0.87--1.34 (median 1.01) below loss 4.59 on TinyStories-30M, and in 1.02--1.46 (median 1.11)
+below loss 2.12 on Shakespeare, after a second, short episode (2.30--2.12). At the lowest common loss all
+TinyStories pairs are at 0.99--1.03 times the floor. The largest absolute AdamW--Muon distances, 0.14--0.15
+bits near loss 2.3 on TinyStories, occur where the floor is as large (middle panels).
+
+\paragraph{One persistent split.} Only Muon--SGD on Shakespeare has a persistent split: a second episode from
+loss 2.82 to the end of the common grid at 2.61, found in 96.5\% of resamples (95\% interval 2.75--4.25). Muon
+reaches it at steps 14--17 and SGD at steps 43--550, depending on the data order. This pair tells us the least
+about how optimizers shape the function: the comparison stops at 2.61 because the slowest SGD run gets no
+further, SGD at 0.05 is barely stable there (loss spikes, \cref{fig:losses}; erratic floor,
+\cref{fig:divergence} bottom left), and four of its five runs end at training loss 2.32--2.58, about the
+bigram level (the fifth at 1.66). AdamW--SGD on Shakespeare is borderline: after its episode the ratio stays at 1.33--1.73, which is a persistent split in
+34\% of resamples but not in the full sample. On TinyStories SGD's own data-order noise is large (on
+TinyStories-30M one run ends at validation loss 1.61 against 1.37--1.39 for the others; on TinyStories-10M the
+runs end at 1.77--1.96), so ``no split'' against SGD means no larger than SGD's own data-order noise.
+
+\paragraph{By step the picture differs.} At equal steps (left panels) the optimizers look different for much
+longer, because they progress at different speeds: on TinyStories-30M Muon's loss stays flat for about the
+first ten steps and then falls faster than AdamW's, and on Shakespeare Muon memorizes the training set while
+AdamW does not (\cref{fig:losses}). \Cref{sec:res-route} separates the two effects.
+
+\todo{agreement between $D_\JS$ and $D_{\rm dis}$; sensitivity to $m_\times$, $k$ and $\tau$ (not run yet).}
+
+\subsection{Where the optimizers' routes meet}
+\label{sec:res-route}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/ts30m/decompose_js.png}\\[2pt]
+\includegraphics[width=0.6\linewidth]{figures/shakespeare/ngram.png}
+\caption{Top: optimizer against data order at equal steps on TinyStories-30M (\cref{sec:method-route}): other
+optimizer on the same data order (blue) and on another data order (red, dashed), and the two floors (greys);
+median over the 5 data orders, range shaded. Bottom: $D_\JS$ of the $d=0$ runs on Shakespeare from the unigram
+(left) and bigram (right) models of the training data, against training loss. Shakespeare decomposition and
+TinyStories n-gram distances in \cref{fig:app-route}.}
+\label{fig:route}
+\end{figure}
+
+\paragraph{Optimizer against data order.} On TinyStories-30M (\cref{fig:route}, top left), from step 332 on, the
+AdamW--Muon distance on the same data order is at or below both optimizers' floors. At step 20{,}000 it is
+0.051 bits, against floors of 0.055 (AdamW) and 0.051 (Muon) and 0.056 for AdamW and Muon on different data
+orders: at the end of training, replacing AdamW by Muon changes the function no more than reshuffling the
+data. Sharing the data order does keep the two optimizers closer: the same-data distance is 20--32\% below the
+other-data distance between steps 119 and 10{,}000, and 8\% below at the end. Against SGD, the same-data
+distances at the end are 0.081 (AdamW) and 0.082 bits (Muon), above the median floors (0.051--0.063), and
+within 5\% of the other-data distances; at equal steps this includes SGD being slower (final validation loss
+1.37--1.39, one run 1.61, against 1.18--1.20 for AdamW and Muon). On Shakespeare (\cref{fig:app-route}) the
+optimizer dominates at equal steps: at step 1500 the AdamW--Muon distance is 0.26 bits, four times AdamW's
+floor (0.06) but below Muon's own floor (0.29), which grows as Muon memorizes; same and other data orders give
+the same distance (0.263 and 0.264).
+
+\paragraph{N-gram stages.} On Shakespeare (\cref{fig:route}, bottom) the three optimizers pass close to the
+bigram model at nearly the same training loss: the minimum distance to it is 0.036 (AdamW), 0.041 (Muon) and
+0.041 bits (SGD), at loss 2.46, 2.47 and 2.48. At loss 2.47 the loss-matched AdamW--Muon ratio is 0.91. Before
+that the routes differ: SGD passes through the unigram model (0.001 bits at loss 3.09) and AdamW near it
+(0.054 at 3.20), while Muon stays further away (0.111 at 2.99). On TinyStories (\cref{fig:app-route}) the
+optimizers come closest to the bigram model at loss 3.7--4.0, less closely than on Shakespeare (0.14--0.16 bits
+for AdamW and Muon, 0.20 for SGD); the AdamW--Muon ratio stays below 1.2 from loss 3.69 (TinyStories-10M)
+and 3.80 (TinyStories-30M) on. The early episodes therefore cover the stage before the bigram statistics are
+learned, where the optimizers take different routes, and end around the stage at which they all approximate
+the same n-gram solution.
+
+\subsection{What coincides with the changes in distance}
+\label{sec:res-coincide}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.325\linewidth]{figures/shakespeare/eos.png}\hfill
+\includegraphics[width=0.325\linewidth]{figures/ts10m/eos.png}\hfill
+\includegraphics[width=0.325\linewidth]{figures/ts30m/eos.png}\\[2pt]
+\includegraphics[width=0.3\linewidth]{figures/shakespeare/aux_eos.png}\qquad
+\includegraphics[width=0.3\linewidth]{figures/ts30m/aux_eos.png}
+\caption{Top: sharpness over its stability threshold for the $d=0$ runs on Shakespeare, TinyStories-10M and
+TinyStories-30M: $\lmax\,\eta_s/(2+2\mu)$ for SGD and the preconditioned sharpness times
+$(1-\beta_1)\eta_s/(2+2\beta_1)$ for AdamW; 1 is the edge of stability, dashed lines the first exceedance
+$t^\ast_X$ of the AdamW--SGD pair. Bottom: the same ratio for the embeddings, head and gains alone
+(\cref{sec:method-aux}), at the fork checkpoints of AdamW and Muon, on Shakespeare (left) and TinyStories-30M
+(right). Raw sharpness, batch sharpness and thresholds in \cref{fig:app-sharpness}.}
+\label{fig:sharpness}
+\end{figure}
+
+
+\paragraph{SGD} reaches its threshold $(2+2\mu)/\eta_s$ only around the end of warmup (\cref{fig:sharpness};
+\cref{tab:coincide} in \cref{app:figures}): in the $d=0$ runs $\lmax$ is within 10\% of it, or above, only between steps 21 and 120,
+62 and 1500, and 60 and 658, for warmups of 100, 200 and 400 steps, and at 2--16\% of the measured steps over all data orders.
+After that, $\lmax$ stays below a threshold that rises as the learning rate decays. On Shakespeare the SGD
+runs have large transient spikes (maximum ratio 7.9--956 over the data orders), matching their loss spikes.
+Batch sharpness stays below $\lmax$, and so below the threshold, apart from early transients
+(\cref{fig:app-sharpness}).
+
+\paragraph{AdamW.} The preconditioned sharpness is above its threshold at the first measured steps (ratio 3
+to 21 at step 1), when the second-moment estimate rests on one or a few gradients, so $s_{\rm EoS}=1$ in every
+run. After a dip it returns to near the threshold and stays there for long stretches, until the cosine decay
+raises the threshold away from it: the ratio is at least 0.9 at measured steps up to 425--600 of 1500 on
+Shakespeare, 4500--9500 of 10{,}000 on TinyStories-10M and 9000--19{,}000 of 20{,}000 on TinyStories-30M
+(11--16\%, 50--65\% and 40--69\% of the measured steps). This is the adaptive edge of stability of
+\citet{cohen2022adaptive}.
+
+\paragraph{Muon.} Without a threshold we only note that its $\lmax$ fluctuates widely on Shakespeare (between
+about 10 and 400) and is smooth on TinyStories (\cref{fig:app-sharpness}).
+
+\paragraph{Coincidences.} No edge-of-stability event explains the changes in distance. The first exceedance,
+at steps 1--8, comes before the end of warmup and before SGD's onset; it coincides only with AdamW's onset at
+step 1, which reflects the preconditioner of the first steps rather than an edge of stability. The early
+episodes are short in steps: the $d=0$ runs reach the loss at which they end at steps 9--85 (221 for SGD in
+the TinyStories-10M Muon--SGD pair), within warmup in every pair but that one. For the pairs with SGD this is at
+SGD steps 20--45 (and 221), in the same range as SGD's onset in the $d=0$ runs (steps 21, 62 and 60). But the
+AdamW--Muon pairs return to the floor in the same way without SGD, and AdamW, which reaches that loss at steps
+29, 45 and 60, stays near its threshold long after the distance has returned to the floor. At the one persistent
+split (Muon--SGD, Shakespeare), each SGD run is below its threshold when it reaches loss 2.82 (ratio
+0.18--0.80), and Muon's auxiliary AdamW is far below its own (ratio 0.02 at step 25, the first fork checkpoint
+after Muon reaches 2.82). As a loss level the end of the early episode is similar across the two TinyStories
+sizes (AdamW--Muon: 4.85 and 4.59) and close to the bigram stage (\cref{sec:res-route}), which suggests
+describing it as a stage of learning rather than a step.
+
+\paragraph{The block left to Muon's auxiliary AdamW.} On Shakespeare (\cref{fig:sharpness}, bottom left), the
+embeddings, head and gains of Muon exceed their threshold at the fork checkpoints at steps 300 and 450 (ratio
+2.35 and 2.53) and are below it at the other seven (at most 0.57), while in the AdamW run the same block stays
+at most 0.10 times its threshold. These steps come just before Muon's validation loss starts to rise, and in
+this period Muon's top Hessian eigenvector lies almost entirely in the embeddings (\cref{sec:res-anatomy}). On
+TinyStories-30M it is the other way round: AdamW's block exceeds its threshold at steps 400 and 800 (2.06 and
+1.13) and Muon's stays at most 0.53. In both settings the block that overshoots is trained by the Adam with the
+larger learning rate on these parameters (Shakespeare: Muon's $10^{-3}$ against AdamW's $3\cdot10^{-4}$;
+TinyStories-30M: AdamW's $2\cdot10^{-3}$ against Muon's $1.5\cdot10^{-3}$), which points to the learning rate
+rather than to Muon.
+
+\paragraph{Control.} Matching Muon's auxiliary AdamW to AdamW (\cref{sec:setup}) does not remove the
+memorization: matched Muon still reaches training loss 0.22 with validation loss 2.5, against 1.55 for AdamW,
+so the memorization comes from Muon's updates of the hidden matrices. \todo{edge-of-stability ratio of the
+matched run's auxiliary AdamW (fork checkpoints of \texttt{muon\_matched\_states}) not computed yet.} In function space matched Muon is
+indistinguishable from Muon (first exceedance in 4\% of resamples, ratio at most 1.28; \cref{tab:tstar}), and
+against AdamW it behaves as Muon does: two episodes (4.26--2.85 and 2.70--1.68), no persistent split, and a
+ratio of 1.07 at the lowest common loss (\cref{fig:app-divergence}).
+
+\subsection{Swaps and mode connectivity}
+\label{sec:res-swap}
+
+\begin{figure}[t]
+\centering
+\begin{minipage}[t]{0.49\linewidth}\centering
+\figbox[0.9in]{Swaps: landing coordinate $r$ \eqref{eq:landing} with $D_\JS$ against fork step for the six
+ordered pairs, with the end of the early episode of each pair marked (one panel per setting, or TinyStories-30M
+here and the rest in the appendix).}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.49\linewidth}\centering
+\figbox[0.9in]{Mode connectivity: barrier \eqref{eq:barrier} between $A_0$ and each fork against fork step;
+same-optimizer forks with data order 1 (instability control) and cross-optimizer forks.}
+\end{minipage}
+%% python -m optsplit.analysis.swap --forks 'ts10m_forks/*' --pure 'ts10m_main/*' --out swap
+%% python -m optsplit.analysis.plots swap --swap-json swap.json --split split_adamw_muon.json
+%% python -m optsplit.analysis.lmc --parent ts10m_main/adamw_d0 --forks 'ts10m_forks/adamw_to_*' --out lmc_adamw.json
+%% python -m optsplit.analysis.plots lmc --lmc-json lmc_adamw.json lmc_sgd.json lmc_muon.json
+\caption{Left: where swaps land; 0 is the function of the run that kept its optimizer, 1 that of the run
+trained with the new optimizer from initialization. Right: loss barrier between the parent and its forks.
+\todo{caption details once the swap runs are analysed.}}
+\label{fig:swap}
+\end{figure}
+
+\todo{Describe \cref{fig:swap} (left): $r$ for forks before and after the end of the early episode, for each
+ordered pair; asymmetries between $A\to B$ and $B\to A$; distances $D(F,A)$, $D(F,B)$ against $D(A,B)$; the
+function-metric shifts. Since the final AdamW and Muon functions on TinyStories-30M are no further apart than
+the data-order floor, $r$ for that pair must be read against $D(A,B)$.}
+
+\todo{Describe \cref{fig:swap} (right): the step after which same-optimizer forks become linearly connected (the
+\citet{frankle2020lmc} stability point) for each optimizer; whether cross-optimizer forks stay in the same
+basin after that point; relation to the early episode.}
+
+\subsection{Anatomy of the sharp direction}
+\label{sec:res-anatomy}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.62\linewidth]{figures/ts30m/anatomy.png}
+\caption{Anatomy of the top Hessian eigenvector of the $d=0$ runs on TinyStories-30M \eqref{eq:anatomy}. Top:
+share of the direction $\|v_b\|^2$ by block type. Bottom: each block type's own curvature $s_b$ and the
+cross-block remainder $\chi$ (dashed), as fractions of the eigenvalue. Shakespeare and TinyStories-10M in
+\cref{fig:app-anatomy}.}
+\label{fig:anatomy}
+\end{figure}
+
+On TinyStories-30M (\cref{fig:anatomy}) the sharp direction differs by optimizer. Muon's lies mostly in the
+value--output matrices (about 60--70\% of the direction) throughout training, with most of the rest in the
+MLP matrices. AdamW's lies in the head until about step 4000 and then largely in the gains (30--50\%), with the
+value--output and MLP matrices. SGD's is spread over the MLP, value--output and head blocks. In all three the
+cross-block term $\chi$ is the largest part of the eigenvalue: about 75--85\% for Muon and SGD throughout, and
+for AdamW about 25--40\% while the head dominates and 60--70\% after. The sharp direction is therefore not the
+top eigenvector of a single block but comes from curvature between blocks. On TinyStories-10M
+(\cref{fig:app-anatomy}) Muon's direction is again in the value--output matrices (60--70\%), while AdamW's stays
+mostly in the head (60--75\%). On Shakespeare Muon's direction lies almost entirely (85--97\%) in the
+embeddings from step 200 on, with the embeddings' own curvature making up most of the eigenvalue: the sharp
+direction is in the block that Muon leaves to its auxiliary AdamW, including the period in which that block
+is over its threshold (\cref{sec:res-coincide}). AdamW's direction on Shakespeare is spread over the MLP,
+value--output and embedding blocks, with about 70\% of the eigenvalue from $\chi$. The changes of dominant
+block (AdamW on TinyStories-30M, head to gains around step 4000--5000) happen long after the loss-matched
+distance between optimizers has returned to the floor. \todo{describe the decomposition of the AdamW
+preconditioned operator (\texttt{anatomy\_precond.png}).}
+
+\subsection{Break-even replication}
+\label{sec:res-breakeven}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/breakeven/cifar/curves.png}\\[2pt]
+\includegraphics[width=0.27\linewidth]{figures/breakeven/cifar/trajectories.png}\hfill
+\includegraphics[width=0.71\linewidth]{figures/breakeven/cifar/figures/divergence_0.01_0.1.png}
+%% python -m optsplit.analysis.breakeven --runs 'cifar_breakeven/sgd_lr*_d0'
+\caption{The break-even analysis of \citet{jastrzebski2020breakeven} on CIFAR-10 with plain SGD at
+$\eta\in\{0.001,0.01,0.1\}$, batch 128. Top: $\lambda_H^1$, $\lambda_K^1$, $\lambda_K^\ast/\lambda_K^1$,
+$\operatorname{Tr}\hat K$ and $\|g\|/\|g_5\|$ against step ($d=0$). Bottom left: prediction trajectories
+(PCA then UMAP), starting at the star. Bottom right: the divergence figure of \cref{fig:divergence} for
+$\eta=0.01$ against $\eta=0.1$, with two data orders. Shakespeare in \cref{fig:app-breakeven}.}
+\label{fig:breakeven}
+\end{figure}
+
+\paragraph{CIFAR-10.} The effects reported by \citet{jastrzebski2020breakeven} replicate
+(\cref{fig:breakeven}). The larger the learning rate, the lower the sharpness in the early phase:
+$\lambda_H^1$ levels off at about 1000, 200 and 20 for $\eta=0.001$, 0.01 and 0.1, that is at or below $2/\eta$,
+and the maximum of $\lambda_K^1$ decreases with the learning rate in the same way. The larger rates also give a better-conditioned gradient covariance
+(higher $\lambda_K^\ast/\lambda_K^1$) and a larger $\|g\|/\|g_5\|$. The relation between $\lambda_H^1$ and
+$\lambda_K^1$ and $\Delta L$ is in \cref{fig:app-breakeven}. In prediction space the three runs share a path
+from the initialization; $\eta=0.1$ leaves it first, then $\eta=0.01$. At equal steps the distance between
+$\eta=0.01$ and $0.1$ is far above the data-order floor (bottom right, left panel). At equal training loss,
+however, it is 1.0--1.75 times the floor at every loss below 1.8 (median 1.24); it exceeds 1.5 times the floor
+at three consecutive levels only once (loss 0.50--0.41) and there is no persistent split. For $\eta=0.001$
+against $0.01$ the ratio is 19 near the initialization, where the floor is near zero, and 0.57--2.08 below loss
+1.5 (median 1.04), with four short episodes and no persistent split. As for the optimizers, most of the
+separation in time is one run being faster.
+
+\paragraph{Language models.} On Shakespeare, plain SGD at 0.1 and 0.3 without warmup blows up in the first
+ten or so steps, where the distance between any two runs, floor pairs included, approaches 1 bit; the runs
+recover but reach only training loss 3.09 (the lowest common loss). At equal loss the distance between the two
+rates is at most 1.17 times the floor and no split is found (\cref{tab:tstar}, \cref{fig:app-breakeven}).
+$\lambda_K^\ast/\lambda_K^1$ rises over training at both rates, and $\lambda_H^1$ is lower at 0.3 apart from
+spikes. \todo{Shakespeare at $\eta=0.03$; TinyStories-10M break-even runs still running; CIFAR-10 batch-size
+runs (30 and 300) not analysed yet.}
+
+\subsection{Function metrics}
+\label{sec:res-metrics}
+
+\begin{figure}[t]
+\centering
+\figbox[0.8in]{Function metrics against step for the $d=0$ runs (e.g.\ top input-Hessian eigenvalue, distance from
+initialization, sensitivity), with $t^\ast$ marked.}
+%% python -m optsplit.metrics.run 'ts10m_main/*_d0' 'ts10m_forks/*' --steps all
+%% python -m optsplit.analysis.plots function --runs 'ts10m_main/*_d0' --keys input.hess_top.mean weights.dist_init robustness.sensitivity
+\caption{Function metrics over training. \todo{caption details.}}
+\label{fig:metrics}
+\end{figure}
+
+\todo{Describe \cref{fig:metrics} and a table of final values per optimizer (mean over data orders): which
+metrics separate the optimizers, whether the norms each optimizer is predicted to keep small ($\ell_2$, $\ell_\infty$,
+spectral) are in fact smallest for it, and the shifts of these metrics under swaps.}
+
+%% =================================================================
+\section{Discussion and limitations}
+\label{sec:discussion}
+%% =================================================================
+
+\paragraph{Apart first, together later.} The hypothesis of the title, that optimizers first follow one path
+and separate later, is not what we observe. At equal training loss the optimizers are most different at the
+start, while the data-order floor is still near zero, and the difference disappears around the stage at which
+all of them approximate the bigram statistics of the data. From there on, on TinyStories, two optimizers on the
+same data order are as close as one optimizer on two data orders, down to the lowest loss we reach. One reading
+is that the early phase is governed by the order in which simple statistics are picked up, which depends on the
+optimizer (on Shakespeare SGD and AdamW pass through the unigram model and Muon does not), while afterwards the
+function is set mostly by the data and the optimizer matters mainly through speed. This rests on comparing at
+equal loss: at equal steps all pairs look different for most of training, and on Shakespeare Muon's faster
+memorization dominates the comparison.
+
+\paragraph{What the floor means.} Being within the floor does not mean computing the same function: at the end
+of the TinyStories runs the AdamW--Muon floor is 0.057--0.067 bits. The finding is that changing the optimizer
+perturbs the learned function no more than changing the order of the data, not that it does not perturb it.
+The asymptotic implicit-bias results \citep{gunasekar2018geometry,zhang2024adam,fan2025spectral} describe the
+limit of long training of linear models on separable data. Our TinyStories models see at most 1.2 epochs,
+and by then the loss-matched difference between optimizers is within the data-order noise. The pending swaps and
+mode-connectivity tests (\cref{sec:res-swap}) will say whether the optimizer nonetheless decides the endpoint
+early, as forks into another optimizer could still end at their parent's function.
+
+\paragraph{Break-even point.} On CIFAR-10 we reproduce the sharpness and gradient-noise effects of
+\citet{jastrzebski2020breakeven}, but the separation of trajectories between learning rates is mostly a
+difference in speed: at equal loss, 0.01 and 0.1 stay within 1.75 times the floor. Comparing at equal steps
+overstates how differently two training procedures shape the function.
+
+\paragraph{Edge of stability.} AdamW is at its adaptive edge of stability through much of training whether or
+not the optimizers differ, and SGD meets its threshold only around the end of warmup; neither explains the start
+or the end of the early episode, which ends within warmup and in the same way for AdamW and Muon. The one edge-of-stability event that lines up with a change in function, Muon's
+auxiliary AdamW overshooting its threshold just before Muon memorizes on Shakespeare, is not what drives the
+memorization, which persists in the matched control. The anatomy adds that the sharp direction is optimizer-specific and mostly made of
+curvature between blocks, but its changes do not line up with changes in function distance either.
+
+\paragraph{Limitations.}
+\begin{itemize}
+\item All runs share one initialization; the noise floor varies only the data order. Whether the results
+  depend on the initialization is untested.
+\item Learning rates come from five-point sweeps on one data order, and the Shakespeare AdamW rate is the
+  smallest of its grid. SGD trains poorly at the stable rates on Shakespeare, so comparisons with SGD there stop
+  at loss 2.61, and its large data-order noise on TinyStories makes ``no split'' against SGD a weak statement.
+\item The first exceedance is degenerate (\cref{sec:method-split}); episodes and the persistent split depend on
+  the margin $m_\times$, the run length $k$ and the matching tolerance $\tau$. \todo{sensitivity analysis.}
+\item The loss grid ends at the lowest loss that all runs of a pair reach, so a split below it would be missed.
+\item The thresholds are those of linear stability on a quadratic with a frozen preconditioner; we have no
+  threshold for Muon, and the AdamW ratio at the first steps reflects a preconditioner built from few
+  gradients.
+\item Sharpness is measured on a fixed batch of 32 sequences with 20 Lanczos iterations, in float32, while
+  training uses bfloat16 autocast.
+\item Loss matching and the mode-connectivity barrier use a training probe of 64 sequences.
+\item The landing coordinate is a ratio of distances, not a projection onto the segment between the pure
+  runs.
+\item The models are small (up to 30M parameters) and trained for at most 655M tokens.
+\end{itemize}
+
+%% =================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%% =================================================================
+
+From the same initialization and data order, SGD with momentum, AdamW and Muon do not first share a path and
+then split. At equal training loss they differ most at the start, before data-order noise has built up, and from
+about the bigram stage on their predictions are as close as those of one optimizer trained on two data orders.
+This holds in all three language-model settings and for every pair except Muon--SGD on Shakespeare, where SGD
+barely trains. At the end of TinyStories-30M, replacing AdamW by Muon changes the function no more than
+reshuffling the data. Neither the edge of stability nor the end of warmup explains these transitions. Whether the
+optimizer nonetheless decides the endpoint early, that is, whether a run switched from one optimizer to another
+ends at the function of the first or of the second, is the question the swap and mode-connectivity experiments,
+still running, will answer.
+
+\printbibliography
+
+%% =================================================================
+\clearpage
+\appendix
+\section{Hyperparameters}
+\label{app:hparams}
+%% =================================================================
+
+\begin{table}[ht]
+\centering\small
+\caption{Optimizer hyperparameters, shared by all language-model settings unless noted. The Shakespeare control
+matches Muon's auxiliary AdamW to AdamW: $\beta=(0.9,0.99)$, weight decay 0.1, learning rate $3\cdot10^{-4}$.}
+\label{tab:optim}
+\begin{tabular}{@{}lp{0.27\linewidth}p{0.27\linewidth}p{0.27\linewidth}@{}}
+\toprule
+ & SGD & AdamW & Muon \\
+\midrule
+Update & heavy ball, $\mu=0.9$, not Nesterov & $\beta=(0.9,0.95)$; Shakespeare $(0.9,0.99)$; $\epsilon=10^{-8}$ &
+  Nesterov momentum $0.95$; 5 Newton--Schulz steps (bfloat16); scale $\sqrt{\max(1,n_{\rm out}/n_{\rm in})}$ \\
+Parameters & all & all & matrices in transformer blocks; auxiliary AdamW ($\beta=(0.9,0.95)$, $\epsilon=10^{-8}$) on
+  embeddings, head, gains \\
+Weight decay & none & 0.1 on tensors with $\ge2$ dims, none on gains & none (Muon and auxiliary AdamW) \\
+Clipping & none & none & none \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering\small
+\caption{Learning-rate sweeps (data order 0, five rates per optimizer). Rates used in the main runs in bold.
+Selection: final validation loss for TinyStories, minimum validation loss over training for Shakespeare. The
+auxiliary AdamW of Muon keeps the learning rate of \cref{tab:setup} throughout the sweep. SGD ($\dagger$: best
+on data order 0) uses a lower rate, since its best rate diverged or blew up on other data orders: 0.2 on
+Shakespeare (orders 1 and 2), 0.1 on TinyStories-10M (orders 1--3) and 0.3 on TinyStories-30M (orders 2--4).}
+\label{tab:sweep}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Setting & SGD & AdamW & Muon \\
+\midrule
+Shakespeare-char & \textbf{0.05}, 0.1, 0.15, 0.2$^\dagger$, 0.25 & $\mathbf{3\cdot10^{-4}}$, $10^{-3}$, $2\cdot10^{-3}$,
+  $4\cdot10^{-3}$, $8\cdot10^{-3}$ & 0.005, 0.01, 0.02, \textbf{0.04}, 0.08 \\
+TinyStories-10M & \textbf{0.03}, 0.1$^\dagger$, 0.3, 1, 3 & $3\cdot10^{-4}$, $10^{-3}$, $\mathbf{2\cdot10^{-3}}$,
+  $4\cdot10^{-3}$, $8\cdot10^{-3}$ & 0.005, \textbf{0.01}, 0.02, 0.04, 0.08 \\
+TinyStories-30M & 0.03, \textbf{0.1}, 0.3$^\dagger$, 1, 3 & $3\cdot10^{-4}$, $10^{-3}$, $\mathbf{2\cdot10^{-3}}$,
+  $4\cdot10^{-3}$, $8\cdot10^{-3}$ & 0.005, \textbf{0.01}, 0.02, 0.04, 0.08 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\centering\small
+\caption{Fork steps of the swaps (all six ordered pairs, plus each optimizer into itself with data order 1).}
+\label{tab:forks}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Setting & Fork steps \\
+\midrule
+Shakespeare-char & 25, 50, 100, 200, 300, 450, 600, 800, 1000 \\
+TinyStories-10M & 50, 100, 200, 400, 700, 1000, 1500, 2500, 4000 \\
+TinyStories-30M & 100, 200, 400, 800, 1400, 2000, 3000, 5000, 8000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Break-even runs: plain SGD (momentum 0), constant learning rate, no warmup. CIFAR-10: 100 epochs, i.e.\
+39{,}000 steps at batch 128, 166{,}600 at batch 30 and 16{,}600 at batch 300; data orders 0 and 1.
+Shakespeare and TinyStories-10M: 1{,}500 and 10{,}000 steps at their training batch size, learning rates 0.03,
+0.1 and 0.3; data orders 0, 1 and 2.
+
+%% =================================================================
+\section{Measurement details}
+\label{app:measure}
+%% =================================================================
+
+A grid ``every $N$ + $K$ log'' is $\{0,N,2N,\dots\}\cup\{\mathrm{round}(T^{u}):u\in\text{$K$ evenly spaced
+values in }[0,1]\}\cup\{T\}$, i.e.\ the union of a linear grid and $K$ log-spaced steps between 1 and $T$.
+
+\begin{table}[ht]
+\centering\small
+\caption{Logging grids, probe sizes and measurement settings of the main language-model runs (forks inherit their parent's) and of the CIFAR-10 runs at batch 128.
+Fixed sets of examples are drawn once, from random streams separate from the training batches, and are the
+same for all runs of a setting.}
+\label{tab:grids}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & Shakespeare-char & TinyStories-10M & TinyStories-30M & CIFAR-10 (batch 128) \\
+\midrule
+Prediction steps $\cS$ & every 50 + 40 log & every 250 + 30 log & every 500 + 30 log & every 390 + 40 log \\
+Checkpoints & every 250 + 12 log & every 1000 + 12 log & every 2000 + 12 log & every 3900 + 12 log \\
+Measurement steps $\cM$ & every 50 + 30 log & every 500 + 30 log & every 1000 + 30 log & every 390 + 30 log \\
+Validation probe ($N$) & $64\times256=16{,}384$ & $128\times16=2{,}048$ & $128\times16=2{,}048$ & 10{,}000 images \\
+Training probe & 64 seq.\ (16{,}384 tok.) & 64 seq.\ (16{,}384 tok.) & 64 seq.\ (16{,}384 tok.) & 2{,}000 images \\
+Hessian batch $\mathcal H$ & 32 seq.\ (8{,}192 tok.) & 32 seq.\ (8{,}192 tok.) & 32 seq.\ (8{,}192 tok.) & 2{,}500 images \\
+Lanczos iterations & 20 & 20 & 20 & 20 \\
+Batch sharpness & $8\times64$ seq. & $8\times128$ seq. & $8\times128$ seq. & $8\times128$ images \\
+$\hat K$ (break-even runs) & $25\times64$ seq. & $25\times128$ seq. & -- & $25\times128$ images \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Sharpness.} Lanczos runs for 20 iterations with full reorthogonalization (two Gram--Schmidt passes
+per iteration) from a fixed Gaussian start, and returns the top Ritz pair. Hessian-vector products use double
+backpropagation through one gradient graph, with the exact (math) attention kernel, in float32 without
+autocast, on the model before the update of the measured step.
+
+\paragraph{Split.} $\tau=0.02$, $m_\times=0.5$, $m_+=0$, $k=3$, 1000 bootstrap resamples. The training loss
+of a run is its loss on the training probe at its prediction steps.
+
+\paragraph{Mode connectivity.} Barrier on the 64 sequences of the training probe, at 11 evenly spaced values
+of $\alpha$, between final checkpoints.
+
+\paragraph{Prediction trajectories.} 128 evenly spaced probe positions; top 50 principal components of the
+centered probability vectors, then UMAP.
+
+\subsection{Function metrics}
+\label{app:metrics}
+
+
+The metrics are computed on 1024 fixed validation examples (sequences or test images), drawn separately
+from the probe and shared by all runs; the input-derivative metrics use the first 32.
+
+\paragraph{Input derivatives.} Let $f(x)$ be the loss at the true labels as a function of the input $x$. For
+the language models $x\in\mathbb R^{64\times d}$ is the token-embedding matrix of the first 64 tokens of a
+sequence (position embeddings are added inside the model) and $f$ is the mean next-token cross-entropy over
+these 64 positions; for the CNN $x$ is the normalized image and $f$ its cross-entropy. With $g=\nabla f(x)$,
+$H=\nabla^2f(x)$ and $T[u,u,\cdot]=\nabla_x\big(u^\top H(x)u\big)$, and $z_1,\dots,z_8$ standard Gaussian
+probes:
+\begin{itemize}
+\item gradient norm $\|g\|$;
+\item Jacobian norm $\|J\|_F$ of the softmax output with respect to $x$ \citep{novak2018sensitivity}: exact
+  for the CNN (one vector-Jacobian product per class), and estimated as
+  $\big(\frac18\sum_j\|J^\top z_j\|^2\big)^{1/2}$ over the $64\times V$ outputs for the language models;
+\item Hessian norm $\|H\|_F\approx\big(\frac18\sum_j\|Hz_j\|^2\big)^{1/2}$;
+\item top input-Hessian eigenvalue $\lambda_x=v^\top Hv$, with $v$ from 20 power iterations (the eigenvalue
+  of largest magnitude) \citep{moosavi2019cure};
+\item level-set curvature $\big(\frac18\sum_j\|PHPz_j\|^2\big)^{1/2}/\|g\|\approx\|PHP\|_F/\|g\|$, with
+  $P=I-\hat g\hat g^\top$ the projection orthogonal to the gradient, a projected variant of the normalized
+  curvature of \citet{srinivas2022lowcurv};
+\item third order: the norm $\|T\|_\sigma=\max_{\|u\|=1}T[u,u,u]$, by shifted symmetric power iteration
+  $u\leftarrow(T[u,u,\cdot]+\alpha u)/\|T[u,u,\cdot]+\alpha u\|$ with $\alpha=\|T[u_0,u_0,\cdot]\|$, 20
+  iterations, best of 3 random starts (as $T[u,u,u]$ is odd in $u$, this is also $\max|T[u,u,u]|$); the
+  third derivative along the sharpest direction $T[v,v,v]$, with the sign of $v$ fixed by $v^\top g\ge0$; and
+  the curvature length $|\lambda_x|/\|T[v,v,\cdot]\|$, the distance over which, to first order, $\lambda_x$
+  changes by its own size (for a simple eigenvalue $\nabla_x\lambda_x=T[v,v,\cdot]$).
+\end{itemize}
+Each is reported as mean and standard deviation over the 32 points.
+
+\paragraph{Weight norms.} Over all parameters $\theta$: $\ell_0$ (entries with $|\theta_i|>10^{-8}$),
+$\ell_1$, $\ell_2$, $\ell_3$, $\ell_\infty$. For each weight tensor with at least two dimensions, reshaped
+to a matrix $W$ (output $\times$ input): the spectral norm $\|W\|_2$, nuclear norm $\|W\|_*$ and stable rank
+$\|W\|_F^2/\|W\|_2^2$ \citep{sanyal2020stable}. Distance from initialization $\|\theta-\theta_0\|_2$, also
+relative to $\|\theta_0\|_2$ \citep{nagarajan2019distance}. The log spectral complexity
+$\log\big(\prod_i\|W_i\|_2\cdot(\sum_i(\|(W_i-W_i^0)^\top\|_{2,1}/\|W_i\|_2)^{2/3})^{3/2}\big)$ of
+\citet{bartlett2017spectral}, with the initialization as reference matrices. For the CNN only, the path norm
+as computed by \citet{jiang2020fantastic} \citep[after][]{neyshabur2015norm}: the sum of the outputs on an
+all-ones input of the network with every parameter squared and identity activations.
+
+\paragraph{Accuracy and robustness.} Accuracy on the 1024 validation examples (for the language models, next-
+token accuracy over all positions). For the CNN, accuracy under Gaussian input noise of standard deviation
+0.05, 0.1 and 0.2 (in normalized pixel units) \citep{ford2019noise}. For the language models, a one-token
+substitution sensitivity after \citet{hahn2021sensitivity}: for 32 validation contexts of 64 tokens, we
+replace each position in turn by a uniformly random different token and count how many of the 64
+substitutions change the argmax prediction at the last position; we report this count as a fraction of 64,
+averaged over contexts.
+All derivatives are taken by automatic differentiation in float32, with the exact (math) attention kernel.
+
+%% =================================================================
+\section{Compute}
+\label{app:compute}
+%% =================================================================
+
+All runs used one GPU each on the MIT ORCD cluster \todo{GPU types}. \todo{GPU-hours per suite and total.}
+
+\begin{table}[ht]
+\centering\small
+\caption{Runs per suite and compute.}
+\label{tab:compute}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Suite & Runs & GPU-hours \\
+\midrule
+Learning-rate sweeps (3 settings) & $3\times15$ & \tbd \\
+Main runs (3 settings) & $3\times15$ & \tbd \\
+Forks (3 settings) & $3\times81$ & \tbd \\
+Break-even, Shakespeare and TinyStories-10M & $2\times9$ & \tbd \\
+Break-even, CIFAR-10 & 10 & \tbd \\
+Shakespeare control (matched Muon) & 6 & \tbd \\
+Offline function metrics and mode connectivity & -- & \tbd \\
+\midrule
+Total & 367 & \tbd \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%% =================================================================
+\FloatBarrier
+\section{Additional figures and tables}
+\label{app:figures}
+%% =================================================================
+
+\begin{table}[ht]
+\centering\small
+\caption{Edge of stability in the language models: end of warmup $w$; measured steps at the edge of stability
+($\mathcal Q\ge0.9\,\Theta$; $\lmax$ for SGD, preconditioned sharpness for AdamW) of the $d=0$ run, from first
+to last; onset $s_{\rm EoS}$ over the 5 data orders; fraction of measured steps at the edge of stability over
+the 5 data orders; first exceedance $t^\ast_X$ of the $d=0$ run against the other two optimizers (in the order
+SGD, AdamW, Muon); and its persistent split, if any.}
+\label{tab:coincide}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llcccccc@{}}
+\toprule
+Setting & Run & $w$ & at EoS ($d=0$) & $s_{\rm EoS}$ (all $d$) & fraction of $\cM$ & $t^\ast_X$ & $t^\ast_{{\rm p},X}$ \\
+\midrule
+Shakespeare     & SGD   & 100 & 21--120   & 21     & 2--14\%  & 1 / 1 & 191 (vs Muon) \\
+                & AdamW & 100 & 1--500    & 1      & 11--16\% & 1 / 1 & -- \\
+                & Muon  & 100 & --        & --     & --       & 1 / 2 & 14 (vs SGD) \\
+TinyStories-10M & SGD   & 200 & 62--1500  & 45--500 & 6--12\% & 3 / 1 & -- \\
+                & AdamW & 200 & 1--4500   & 1      & 50--65\% & 1 / 1 & -- \\
+                & Muon  & 200 & --        & --     & --       & 1 / 7 & -- \\
+TinyStories-30M & SGD   & 400 & 60--658   & 60--467 & 10--16\% & 2 / 1 & -- \\
+                & AdamW & 400 & 1--14000  & 1      & 40--69\% & 1 / 1 & -- \\
+                & Muon  & 400 & --        & --     & --       & 1 / 8 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/sweep_shakespeare.png}\\
+\includegraphics[width=\linewidth]{figures/sweep_ts10m.png}\\
+\includegraphics[width=\linewidth]{figures/sweep_ts30m.png}
+\caption{Learning-rate sweeps on Shakespeare (top), TinyStories-10M and TinyStories-30M (bottom), data order 0.
+One panel per optimizer with the validation loss of each rate against step, and a last panel with the minimum
+(Shakespeare) or final (TinyStories) validation loss against the learning rate; $\times$ marks runs that
+diverged. Curves above the plotted range are cut.}
+\label{fig:sweep}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.49\linewidth]{figures/shakespeare/losses.png}\hfill
+\includegraphics[width=0.49\linewidth]{figures/ts10m/losses.png}\\
+\includegraphics[width=0.49\linewidth]{figures/ts30m/losses.png}
+\caption{Training-probe and validation loss of the main runs against step: Shakespeare (top left),
+TinyStories-10M (top right), TinyStories-30M (bottom). Data order 0 thick, orders 1--4 thin.}
+\label{fig:losses}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/shakespeare/divergence_adamw_sgd.png}\\
+\includegraphics[width=\linewidth]{figures/shakespeare/divergence_matched_adamw.png}\\
+\includegraphics[width=\linewidth]{figures/ts30m/divergence_adamw_sgd.png}\\
+\includegraphics[width=\linewidth]{figures/ts30m/divergence_muon_sgd.png}
+\caption{Divergence figures as in \cref{fig:divergence}. Rows: Shakespeare AdamW--SGD; Shakespeare matched
+Muon--AdamW (control); TinyStories-30M AdamW--SGD; TinyStories-30M Muon--SGD.}
+\label{fig:app-divergence}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_adamw_muon.png}\\
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_adamw_sgd.png}\\
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_muon_sgd.png}
+\caption{Divergence figures as in \cref{fig:divergence} for TinyStories-10M. Rows: AdamW--Muon, AdamW--SGD,
+Muon--SGD.}
+\label{fig:app-divergence10}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/shakespeare/decompose_js.png}\\[2pt]
+\includegraphics[width=0.49\linewidth]{figures/ts10m/ngram.png}\hfill
+\includegraphics[width=0.49\linewidth]{figures/ts30m/ngram.png}
+\caption{Top: optimizer against data order at equal steps on Shakespeare, as in \cref{fig:route} (top), for
+the three pairs. Bottom: distance of the $d=0$ runs from the unigram and bigram models on TinyStories-10M
+(left) and TinyStories-30M (right), as in \cref{fig:route} (bottom).}
+\label{fig:app-route}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/shakespeare/sharpness.png}\\
+\includegraphics[width=\linewidth]{figures/ts10m/sharpness.png}\\
+\includegraphics[width=\linewidth]{figures/ts30m/sharpness.png}
+\caption{Sharpness of the $d=0$ runs on Shakespeare (top), TinyStories-10M and TinyStories-30M (bottom), log
+scale: $\lmax$, batch sharpness, for AdamW the preconditioned sharpness, and the thresholds
+$(2+2\mu)/\eta_s$ (SGD) and $(2+2\beta_1)/((1-\beta_1)\eta_s)$ (AdamW, dashed); end of warmup dotted, first
+exceedance $t^\ast_X$ of the AdamW--Muon pair red dashed.}
+\label{fig:app-sharpness}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/shakespeare/anatomy.png}\\[2pt]
+\includegraphics[width=0.78\linewidth]{figures/ts10m/anatomy.png}
+\caption{Anatomy of the top Hessian eigenvector as in \cref{fig:anatomy}, on Shakespeare (top two rows) and
+TinyStories-10M (bottom two rows).}
+\label{fig:app-anatomy}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\linewidth]{figures/breakeven/cifar/scatter.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/cifar/figures/divergence_0.001_0.01.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/shakespeare/curves.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/shakespeare/figures/divergence_0.1_0.3.png}
+\caption{Break-even analysis, continued. First row: CIFAR-10, $\lambda_H^1$ (left) and $\Delta L$ (right)
+against $\lambda_K^1$. Second row: CIFAR-10 divergence figure for $\eta=0.001$ against $0.01$. Third and
+fourth rows: Shakespeare with plain SGD at $\eta\in\{0.1,0.3\}$, the quantities of \cref{fig:breakeven} (top)
+and the divergence figure.}
+\label{fig:app-breakeven}
+\end{figure}
+
+\end{document}

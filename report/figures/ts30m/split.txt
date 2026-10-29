@@ -1,0 +1,45 @@
+adamw vs muon: t* at loss 8.3096 (95% CI 8.3096-8.3096, split found in 100% of bootstraps)
+  ts30m_main/adamw_d0: step 1 (CI [1, 1])
+  ts30m_main/adamw_d1: step 1 (CI [1, 1])
+  ts30m_main/adamw_d2: step 1 (CI [1, 1])
+  ts30m_main/adamw_d3: step 1 (CI [1, 1])
+  ts30m_main/adamw_d4: step 1 (CI [1, 1])
+  ts30m_main/muon_d0: step 8 (CI [8, 8])
+  ts30m_main/muon_d1: step 8 (CI [8, 8])
+  ts30m_main/muon_d2: step 8 (CI [8, 8])
+  ts30m_main/muon_d3: step 8 (CI [8, 8])
+  ts30m_main/muon_d4: step 8 (CI [8, 8])
+  episodes above the floor (loss from, to): 8.310-4.587
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m_main/adamw_d0': None, 'ts30m_main/adamw_d1': None, 'ts30m_main/adamw_d2': None, 'ts30m_main/adamw_d3': None, 'ts30m_main/adamw_d4': None, 'ts30m_main/muon_d0': None, 'ts30m_main/muon_d1': None, 'ts30m_main/muon_d2': None, 'ts30m_main/muon_d3': None, 'ts30m_main/muon_d4': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/split_adamw_muon.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/figures/divergence_adamw_muon.png
+adamw vs sgd: t* at loss 8.3096 (95% CI 8.3096-8.3096, split found in 100% of bootstraps)
+  ts30m_main/adamw_d0: step 1 (CI [1, 1])
+  ts30m_main/adamw_d1: step 1 (CI [1, 1])
+  ts30m_main/adamw_d2: step 1 (CI [1, 1])
+  ts30m_main/adamw_d3: step 1 (CI [1, 1])
+  ts30m_main/adamw_d4: step 1 (CI [1, 1])
+  ts30m_main/sgd_d0: step 2 (CI [2, 2])
+  ts30m_main/sgd_d1: step 2 (CI [2, 2])
+  ts30m_main/sgd_d2: step 2 (CI [2, 2])
+  ts30m_main/sgd_d3: step 2 (CI [2, 2])
+  ts30m_main/sgd_d4: step 2 (CI [2, 2])
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m_main/adamw_d0': None, 'ts30m_main/adamw_d1': None, 'ts30m_main/adamw_d2': None, 'ts30m_main/adamw_d3': None, 'ts30m_main/adamw_d4': None, 'ts30m_main/sgd_d0': None, 'ts30m_main/sgd_d1': None, 'ts30m_main/sgd_d2': None, 'ts30m_main/sgd_d3': None, 'ts30m_main/sgd_d4': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/split_adamw_sgd.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/figures/divergence_adamw_sgd.png
+muon vs sgd: t* at loss 8.4406 (95% CI 8.4406-8.4406, split found in 100% of bootstraps)
+  ts30m_main/muon_d0: step 1 (CI [1, 1])
+  ts30m_main/muon_d1: step 1 (CI [1, 1])
+  ts30m_main/muon_d2: step 2 (CI [2, 2])
+  ts30m_main/muon_d3: step 2 (CI [2, 2])
+  ts30m_main/muon_d4: step 2 (CI [2, 2])
+  ts30m_main/sgd_d0: step 1 (CI [1, 1])
+  ts30m_main/sgd_d1: step 1 (CI [1, 1])
+  ts30m_main/sgd_d2: step 1 (CI [1, 1])
+  ts30m_main/sgd_d3: step 1 (CI [1, 1])
+  ts30m_main/sgd_d4: step 1 (CI [1, 1])
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m_main/muon_d0': None, 'ts30m_main/muon_d1': None, 'ts30m_main/muon_d2': None, 'ts30m_main/muon_d3': None, 'ts30m_main/muon_d4': None, 'ts30m_main/sgd_d0': None, 'ts30m_main/sgd_d1': None, 'ts30m_main/sgd_d2': None, 'ts30m_main/sgd_d3': None, 'ts30m_main/sgd_d4': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/split_muon_sgd.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts30m/figures/divergence_muon_sgd.png
