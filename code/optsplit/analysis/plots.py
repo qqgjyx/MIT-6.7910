@@ -45,10 +45,11 @@ def divergence(runs_a, runs_b, split, path):
     for i, s in enumerate(sorted(A.keys() & B.keys())):
         c = step_curve(A[s], B[s])
         a1.plot(c['step_a'], c[metric], color='C0', label=f"{split['optimizer_a']} vs {split['optimizer_b']}" if i == 0 else None)
-    pairs = [(G[s], G[t]) for G in (A, B) for s, t in combinations(sorted(G), 2)]
-    for i, (r, q) in enumerate(pairs):
-        c = step_curve(r, q)
-        a1.plot(c['step_a'], c[metric], color='0.6', lw=0.8, label='same optimizer, other data order' if i == 0 else None)
+    for G, color in ((A, '0.35'), (B, '0.7')):
+        for i, (s, t) in enumerate(combinations(sorted(G), 2)):
+            c = step_curve(G[s], G[t])
+            a1.plot(c['step_a'], c[metric], color=color, lw=0.8,
+                    label=f'{G[s].optimizer}, other data order' if i == 0 else None)
     steps = [_t_star_step(split, r) for r in A.values()]
     steps = [s for s in steps if s is not None]
     if steps:
