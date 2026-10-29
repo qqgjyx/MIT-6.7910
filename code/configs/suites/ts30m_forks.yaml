@@ -1,10 +1,12 @@
 # Swaps: fork optimizer A's d0 run at each fork step and continue with B (B's state comes warm from A's
 # shadow), for all 6 ordered pairs; plus A continued with another data order (the Frankle et al. 2020
 # instability control for mode connectivity). The A-continued control with the same data order is the
-# parent run itself. Forks start from the parent's config (see scripts/launch.py).
+# parent run itself. Forks start from the parent's config (see scripts/launch.py). To save compute these
+# forks skip the Hessian measurements (the Shakespeare and 10M forks keep them); sgd_to_adamw_at800 and
+# sgd_to_muon_at200 ran with them.
 suite: ts30m_forks
 base: ../base/tinystories_30m.yaml
-overrides: {shadow: [], log.fork_steps: []}
+overrides: {shadow: [], log.fork_steps: [], measure.hessian: false, measure.delta_loss: false}
 runs:
   - {fork.parent: ts30m_main/sgd_d0, optimizer: [adamw, muon], fork.step: [100, 200, 400, 800, 1400, 2000, 3000, 5000, 8000], name: "sgd_to_{optimizer}_at{fork.step}"}
   - {fork.parent: ts30m_main/sgd_d0, optimizer: sgd, train.data_seed: 1, fork.step: [100, 200, 400, 800, 1400, 2000, 3000, 5000, 8000], name: "sgd_to_sgd_d1_at{fork.step}"}
