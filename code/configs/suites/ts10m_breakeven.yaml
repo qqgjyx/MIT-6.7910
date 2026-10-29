@@ -1,6 +1,7 @@
 # Jastrzebski et al. (2020) on our model: plain SGD at a constant learning rate without warmup, three
 # learning rates x three data orders, with the gradient-covariance metrics. The split analysis between two
-# learning rates is their "trajectories separate in prediction space" (Fig. 1).
+# learning rates is their "trajectories separate in prediction space" (Fig. 1). lr 1.0 diverged within 20
+# steps, so the rates are 0.03-0.3.
 suite: ts10m_breakeven
 base: ../base/tinystories_10m.yaml
 overrides:
@@ -9,4 +10,4 @@ overrides:
   schedule: {warmup_steps: 0, decay: constant}
   measure.gradcov: true
 runs:
-  - {optim.sgd.lr: [0.1, 0.3, 1.0], train.data_seed: [0, 1, 2], name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"}
+  - {optim.sgd.lr: [0.03, 0.1, 0.3], train.data_seed: [0, 1, 2], name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"}
