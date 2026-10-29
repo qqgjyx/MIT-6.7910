@@ -1,12 +1,13 @@
 # Main runs: every optimizer from the same initialization, with data orders 0-4 (order 0 is shared across
 # optimizers; the others give each optimizer's seed-to-seed noise floor). The d0 runs accumulate the other
 # optimizers' state in shadow and save fork checkpoints for ts30m_forks.yaml.
-# Learning rates: best final validation loss in ts30m_lrsweep (Muon 1.181, AdamW 1.201, SGD 1.340; Muon
-# 0.005 ties 0.01, which is kept as the interior point).
+# Learning rates: best final validation loss in ts30m_lrsweep (Muon 1.181, AdamW 1.201; Muon 0.005 ties
+# 0.01, which is kept as the interior point). SGD: 0.3 was best on data order 0 (1.340) but diverged on
+# orders 2-4, so it uses 0.1 (1.370).
 suite: ts30m_main
 base: ../base/tinystories_30m.yaml
 overrides:
-  optim.sgd.lr: 0.3
+  optim.sgd.lr: 0.1
   optim.adamw.lr: 2.0e-3
   optim.muon.lr: 0.01
 name: "{optimizer}_d{train.data_seed}"

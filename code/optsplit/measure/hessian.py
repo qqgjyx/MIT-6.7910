@@ -2,6 +2,8 @@
 and the block anatomy of the top eigenvector. Vectors over parameters are flat float32 tensors in
 `model.named_parameters()` order (trainable parameters only)."""
 
+import math
+
 import torch
 
 
@@ -64,6 +66,8 @@ def lanczos(matvec, dim, device, iters=20, n_eigs=1, seed=0):
     if m > 1:
         off = torch.tensor(beta[:m - 1], dtype=torch.float64)
         T += torch.diag(off, 1) + torch.diag(off, -1)
+    if not torch.isfinite(T).all():  # the run is diverging; train.py stops it at the next log step
+        return [math.nan] * n_eigs, torch.full((dim, n_eigs), math.nan, device=device)
     evals, evecs = torch.linalg.eigh(T)
     idx = torch.arange(m - 1, max(m - 1 - n_eigs, -1), -1)
     vecs = Q[:m].T @ evecs[:, idx].to(Q)
