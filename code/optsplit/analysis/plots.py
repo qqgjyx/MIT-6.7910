@@ -41,15 +41,16 @@ def divergence(runs_a, runs_b, split, path):
     floor, with the split threshold 1 + margin_mult."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
+    name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
     fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(13, 3.4))
     for i, s in enumerate(sorted(A.keys() & B.keys())):
         c = step_curve(A[s], B[s])
-        a1.plot(c['step_a'], c[metric], color='C0', label=f"{split['optimizer_a']} vs {split['optimizer_b']}" if i == 0 else None)
+        a1.plot(c['step_a'], c[metric], color='C0', label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
     for G, color in ((A, '0.35'), (B, '0.7')):
         for i, (s, t) in enumerate(combinations(sorted(G), 2)):
             c = step_curve(G[s], G[t])
             a1.plot(c['step_a'], c[metric], color=color, lw=0.8,
-                    label=f'{G[s].optimizer}, other data order' if i == 0 else None)
+                    label=f'{name(G[s])}, other data order' if i == 0 else None)
     steps = [_t_star_step(split, r) for r in A.values()]
     steps = [s for s in steps if s is not None]
     if steps:
