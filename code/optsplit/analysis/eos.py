@@ -28,12 +28,15 @@ def ratio(run):
     return s, lam * np.array([lr[t] for t in s]) / c
 
 
-def onset(run, delta=0.1):
+def at_eos(run, delta=0.1):
+    """Measured steps at which the ratio is >= 1 - delta (None without a threshold)."""
     r = ratio(run)
-    if r is None:
-        return None
-    hit = np.nonzero(r[1] >= 1 - delta)[0]
-    return int(r[0][hit[0]]) if len(hit) else None
+    return None if r is None else r[0][r[1] >= 1 - delta]
+
+
+def onset(run, delta=0.1):
+    s = at_eos(run, delta)
+    return int(s[0]) if s is not None and len(s) else None
 
 
 def main():
@@ -44,12 +47,20 @@ def main():
     args = p.parse_args()
     splits = [json.load(open(f)) for f in args.split]
     for run in load_runs(args.runs):
-        t = onset(run, args.delta)
-        r = ratio(run)
-        peak = f'{np.nanmax(r[1]):.2f}' if r is not None and len(r[1]) else '-'
-        stars = ' '.join(f"t*({s['optimizer_a']}|{s['optimizer_b']})={s['steps'][run.id]}"
-                         for s in splits if run.id in s['steps'])
-        print(f'{run.id:<36} warmup {run.cfg.schedule.warmup_steps:>5}  EoS onset {t}  max ratio {peak}  {stars}')
+        r, s = ratio(run), at_eos(run, args.delta)
+        if r is None or not len(r[0]):
+            eos_txt = 'no threshold'
+        else:
+            span = f'{s[0]}-{s[-1]}' if len(s) else 'never'
+            eos_txt = f'at EoS {span} ({len(s) / len(r[0]):.0%} of measurements), max ratio {np.nanmax(r[1]):.2f}'
+        stars = []
+        for sp in splits:
+            for key, tag in (('steps', 'first'), ('steps_persist', 'persist')):
+                t = sp.get(key, {}).get(run.id)
+                if t is not None:
+                    at = f' ratio {np.interp(t, *r):.2f}' if r is not None and len(r[0]) else ''
+                    stars.append(f"{tag}({sp['optimizer_a']}|{sp['optimizer_b']})={t}{at}")
+        print(f'{run.id:<32} warmup {run.cfg.schedule.warmup_steps:>4}  {eos_txt}  {" ".join(stars)}')
 
 
 if __name__ == '__main__':

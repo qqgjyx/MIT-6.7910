@@ -28,12 +28,16 @@ def _save(fig, path):
 
 
 def _t_star_step(split, run):
-    return (split or {}).get('steps', {}).get(run.id)
+    """The run's step at the persistent split, or at the first exceedance if there is none."""
+    split = split or {}
+    s = split.get('steps_persist', {}).get(run.id)
+    return s if s is not None else split.get('steps', {}).get(run.id)
 
 
 def divergence(runs_a, runs_b, split, path):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
-    Right: loss-matched distance with the floor band and t* (with its CI)."""
+    Right: loss-matched distance with the floor band, the episodes above the floor (shaded), the first
+    exceedance t* (dotted) and the persistent split (dashed, with its CI)."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(9, 3.4))
@@ -54,9 +58,13 @@ def divergence(runs_a, runs_b, split, path):
     a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
     a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
     a2.plot(grid, split['cross'], color='C0')
+    for lo, hi in split.get('episodes', []):
+        a2.axvspan(lo, hi, color='C0', alpha=0.08)
     if np.isfinite(split['t_star_loss']):
-        a2.axvline(split['t_star_loss'], color='r', ls='--')
-        a2.axvspan(*split['ci_loss'], color='r', alpha=0.1)
+        a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
+    if np.isfinite(split.get('persist_loss', np.nan)):
+        a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
+        a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
     a2.set(xlabel='training loss', ylabel=metric)
     a2.invert_xaxis()
     a2.legend(fontsize=7)
@@ -130,13 +138,13 @@ def anatomy(runs, path, precond=False, group='type'):
         M = np.clip([[d.get(n, 0.) for n in names] for d in shares], 0, None)
         M = M / np.maximum(M.sum(1, keepdims=True), 1e-30)
         axes[0, c].stackplot(steps, M.T, labels=names, colors=colors)
-        axes[0, c].set(title=f'{run.id}: direction share', xlabel='step', ylim=(0, 1))
+        axes[0, c].set(title=run.id, xlabel='step', ylabel='share of the direction', ylim=(0, 1))
         lam = np.array([sum(r[key]['self'].values()) + r[key]['cross'] for r in recs])
         selfs = [_group(r[key]['self'], group) for r in recs]
         for n, col in zip(names, colors):
             axes[1, c].plot(steps, [d.get(n, 0.) for d in selfs] / lam, color=col, lw=1)
         axes[1, c].plot(steps, [r[key]['cross'] for r in recs] / lam, 'k--', lw=1, label='cross')
-        axes[1, c].set(title=f'{run.id}: own curvature / eigenvalue', xlabel='step')
+        axes[1, c].set(xlabel='step', ylabel='own curvature / eigenvalue')
     axes[0, -1].legend(fontsize=6, loc='center left', bbox_to_anchor=(1, 0.5))
     axes[1, -1].legend(fontsize=6, loc='center left', bbox_to_anchor=(1, 0.5))
     _save(fig, path)

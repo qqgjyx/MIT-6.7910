@@ -1,5 +1,7 @@
 """Locate the split t* between two optimizers: the first loss level at which their loss-matched
-distance exceeds the seed-to-seed noise floor, with a bootstrap over seeds.
+distance exceeds the seed-to-seed noise floor, with a bootstrap over seeds. Also the episodes (loss ranges)
+during which it stays above, and the persistent split: the start of an episode that lasts to the lowest loss
+both reach (NaN if the distance ends within the floor).
 
 Runs of the two optimizers with the same `train.data_seed` share initialization and batch order and form
 the cross pairs; runs of one optimizer with different data seeds give its noise floor."""
@@ -59,6 +61,24 @@ def first_exceed(grid, cross, floor, margin_mult, margin_add, k):
     return float('nan')
 
 
+def episodes(grid, cross, floor, margin_mult, margin_add, k):
+    """[(first, last) loss level] of each run of >= k consecutive levels above the floor."""
+    over = cross > floor * (1 + margin_mult) + margin_add
+    out, start = [], None
+    for i, o in enumerate(list(over) + [False]):
+        if o and start is None:
+            start = i
+        if not o and start is not None:
+            if i - start >= k:
+                out.append((float(grid[start]), float(grid[i - 1])))
+            start = None
+    return out
+
+
+def persistent(grid, eps):
+    return eps[-1][0] if eps and eps[-1][1] == float(grid[-1]) else float('nan')
+
+
 def _mean(curves):
     curves = [c for c in curves if c is not None]
     if not curves:
@@ -87,16 +107,24 @@ def locate_split(runs_a, runs_b, metric='js', margin_mult=0.5, margin_add=0.0, k
         return fa if fb is None else fb if fa is None else np.fmax(fa, fb)
 
     def estimate(sample):
+        """(first exceedance, persistent split) loss levels."""
         floor = floor_of(sample)
         if floor is None:
-            return float('nan')
-        return first_exceed(grid, _mean([cross[s] for s in sample]), floor, margin_mult, margin_add, k)
+            return float('nan'), float('nan')
+        c = _mean([cross[s] for s in sample])
+        return (first_exceed(grid, c, floor, margin_mult, margin_add, k),
+                persistent(grid, episodes(grid, c, floor, margin_mult, margin_add, k)))
 
-    point = estimate(seeds)
+    def interval(values):
+        found = values[np.isfinite(values)]
+        ci = np.percentile(found, [2.5, 97.5]).tolist() if len(found) else [float('nan')] * 2
+        return ci, float(len(found) / max(n_boot, 1))
+
+    point, point_persist = estimate(seeds)
     rng = np.random.default_rng(seed)
-    boot = np.array([estimate(rng.choice(seeds, len(seeds))) for _ in range(n_boot)])
-    found = boot[np.isfinite(boot)]
-    ci = np.percentile(found, [2.5, 97.5]).tolist() if len(found) else [float('nan')] * 2
+    boot = np.array([estimate(rng.choice(seeds, len(seeds))) for _ in range(n_boot)]).reshape(-1, 2)
+    ci, found = interval(boot[:, 0])
+    ci_persist, found_persist = interval(boot[:, 1])
     all_floors = np.stack(list(floors.values()))
     with np.errstate(all='ignore'):
         floor_lo, floor_hi = np.nanmin(all_floors, 0), np.nanmax(all_floors, 0)
@@ -105,9 +133,12 @@ def locate_split(runs_a, runs_b, metric='js', margin_mult=0.5, margin_add=0.0, k
         metric=metric, margin_mult=margin_mult, margin_add=margin_add, k=k, tol=tol,
         optimizer_a=A[seeds[0]].optimizer, optimizer_b=B[seeds[0]].optimizer, seeds=seeds,
         runs_a=[r.id for r in A.values()], runs_b=[r.id for r in B.values()],
-        t_star_loss=point, ci_loss=ci, boot_found=float(len(found) / max(n_boot, 1)),
+        t_star_loss=point, ci_loss=ci, boot_found=found,
         steps={r.id: step_at_loss(r, point) for r in runs},
         step_ci={r.id: [step_at_loss(r, ci[1]), step_at_loss(r, ci[0])] for r in runs},
+        episodes=episodes(grid, _mean(list(cross.values())), floor_of(seeds), margin_mult, margin_add, k),
+        persist_loss=point_persist, ci_persist=ci_persist, boot_found_persist=found_persist,
+        steps_persist={r.id: step_at_loss(r, point_persist) for r in runs},
         grid=grid.tolist(), cross=_mean(list(cross.values())).tolist(), floor=floor_of(seeds).tolist(),
         floor_lo=floor_lo.tolist(), floor_hi=floor_hi.tolist(),
     )
@@ -132,6 +163,10 @@ def main():
           f"(95% CI {lo:.4f}-{hi:.4f}, split found in {res['boot_found']:.0%} of bootstraps)")
     for rid, s in res['steps'].items():
         print(f'  {rid}: step {s} (CI {res["step_ci"][rid]})')
+    print('  episodes above the floor (loss from, to):', ', '.join(f'{a:.3f}-{b:.3f}' for a, b in res['episodes']))
+    lo, hi = res['ci_persist']
+    print(f"  persistent split at loss {res['persist_loss']:.4f} (95% CI {lo:.4f}-{hi:.4f}, found in "
+          f"{res['boot_found_persist']:.0%} of bootstraps); steps: {res['steps_persist']}")
     suite = res['runs_a'][0].split('/')[0]
     out = Path(args.out or root_dir() / 'analysis' / 'split' / f"{suite}_{res['optimizer_a']}_vs_{res['optimizer_b']}.json")
     out.parent.mkdir(parents=True, exist_ok=True)

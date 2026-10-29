@@ -112,6 +112,11 @@ def test_split_recovers_t_star(root):
     assert T0 < step <= T0 + 6 * EVERY
     assert res['boot_found'] > 0.8  # resamples with a single distinct seed have no floor
     assert res['ci_loss'][1] >= res['t_star_loss'] >= res['ci_loss'][0]
+    assert res['persist_loss'] == res['t_star_loss'] == res['episodes'][-1][0]  # it never comes back
+    grid = [4, 3, 2, 1, 0, -1, -2]
+    eps = split.episodes(grid, np.array([2, 2, 2, 0, 2, 2, 2.]), np.ones(7), 0.5, 0, 3)
+    assert eps == [(4, 2), (0, -2)] and split.persistent(grid, eps) == 0
+    assert np.isnan(split.persistent(grid, eps[:1]))
 
 
 def test_swap_landing(root):
