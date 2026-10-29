@@ -7,6 +7,9 @@ python -m optsplit.analysis.aux_eos shakespeare_main/muon_d0 shakespeare_main/ad
 import argparse
 import json
 
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 import torch
 
 from optsplit.analysis.io import load_runs
@@ -56,6 +59,18 @@ def main():
     res = {r.id: aux_sharpness(r, args.device) for r in load_runs(args.runs)}
     with open(args.out, 'w') as f:
         json.dump(res, f, indent=1)
+    plot(res, args.out.removesuffix('.json') + '.png')
+
+
+def plot(res, path):
+    fig, ax = plt.subplots(figsize=(4.5, 3.2))
+    for rid, rows in res.items():
+        ax.plot([r['step'] for r in rows], [r['ratio'] for r in rows], '-o', ms=3, label=rid)
+    ax.axhline(1, color='k', lw=0.8)
+    ax.set(xscale='log', yscale='log', xlabel='step', ylabel='sharpness / threshold',
+           title='embeddings, head and norms')
+    ax.legend(fontsize=7)
+    fig.savefig(path, dpi=150, bbox_inches='tight')
 
 
 if __name__ == '__main__':
