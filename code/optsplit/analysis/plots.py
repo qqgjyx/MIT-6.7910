@@ -12,6 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
+from optsplit.analysis import eos
 from optsplit.analysis.distance import step_curve
 from optsplit.analysis.io import flatten, load_runs
 from optsplit.analysis.split import by_seed, locate_split
@@ -81,6 +82,23 @@ def sharpness(runs, split, path):
             ax.axvline(_t_star_step(split, run), color='r', ls='--', label='t*')
         ax.set(yscale='log', xlabel='step', title=run.id)
         ax.legend(fontsize=6)
+    _save(fig, path)
+
+
+def eos_ratio(runs, split, path):
+    """Sharpness over its stability threshold (optimizers that have one); 1 is the edge of stability.
+    Dashed: t* of each run."""
+    fig, ax = plt.subplots(figsize=(5, 3.4))
+    for c, run in enumerate(runs):
+        r = eos.ratio(run)
+        if r is None:
+            continue
+        ax.plot(*r, color=f'C{c}', label=run.id)
+        if _t_star_step(split, run) is not None:
+            ax.axvline(_t_star_step(split, run), color=f'C{c}', ls='--', lw=0.8)
+    ax.axhline(1, color='k', lw=0.5)
+    ax.set(xlabel='step', ylabel='sharpness / threshold', xscale='symlog', yscale='log', xlim=(0, None))
+    ax.legend(fontsize=7)
     _save(fig, path)
 
 
@@ -164,6 +182,20 @@ def function_metrics(runs, keys, path):
     _save(fig, path)
 
 
+def losses(runs, path):
+    """Probe training and validation loss against step: one color per optimizer, data order 0 thick."""
+    opts = sorted({r.optimizer for r in runs})
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.4))
+    for run in runs:
+        for ax, key in zip(axes, ('train_loss', 'val_loss')):
+            ax.plot(*run.series('eval', key), color=f'C{opts.index(run.optimizer)}',
+                    lw=1.2 if run.data_seed == 0 else 0.5, label=run.optimizer if run.data_seed == 0 else None)
+    for ax, key in zip(axes, ('train loss', 'validation loss')):
+        ax.set(xlabel='step', ylabel=key, xscale='symlog', xlim=(0, None))
+    axes[0].legend(fontsize=7)
+    _save(fig, path)
+
+
 def sweep(runs, path, select='final'):
     """One panel per optimizer with the validation loss of each learning rate against step, and a last panel
     with the final (or minimum) validation loss against the learning rate; x marks runs that diverged."""
@@ -209,6 +241,10 @@ def fig_sharpness(runs, split=None, out=None, name='sharpness'):
     sharpness(load_runs(runs), _json(split), _path(out, name))
 
 
+def fig_eos(runs, split=None, out=None, name='eos'):
+    eos_ratio(load_runs(runs), _json(split), _path(out, name))
+
+
 def fig_anatomy(runs, precond=False, group='type', out=None, name='anatomy'):
     anatomy(load_runs(runs), _path(out, name), precond, group)
 
@@ -225,12 +261,16 @@ def fig_function(runs, keys, out=None, name='function_metrics'):
     function_metrics(load_runs(runs), keys, _path(out, name))
 
 
+def fig_losses(runs, out=None, name='losses'):
+    losses(load_runs(runs), _path(out, name))
+
+
 def fig_sweep(runs, select='final', out=None, name='sweep'):
     sweep(load_runs(runs), _path(out, name), select)
 
 
-FIGS = dict(divergence=fig_divergence, sharpness=fig_sharpness, anatomy=fig_anatomy, swap=fig_swap,
-            lmc=fig_lmc, function=fig_function, sweep=fig_sweep)
+FIGS = dict(divergence=fig_divergence, sharpness=fig_sharpness, eos=fig_eos, anatomy=fig_anatomy, swap=fig_swap,
+            lmc=fig_lmc, function=fig_function, sweep=fig_sweep, losses=fig_losses)
 
 
 def main():
@@ -251,6 +291,9 @@ def main():
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')
+    s = sub.add_parser('eos', parents=[common])
+    s.add_argument('--runs', nargs='+', required=True)
+    s.add_argument('--split')
     s = sub.add_parser('anatomy', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--precond', action='store_true')
@@ -263,6 +306,8 @@ def main():
     s = sub.add_parser('function', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--keys', nargs='+', required=True, help='dotted keys of function_metrics/*.json')
+    s = sub.add_parser('losses', parents=[common])
+    s.add_argument('--runs', nargs='+', required=True)
     s = sub.add_parser('sweep', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--select', default='final', choices=['final', 'min'],
