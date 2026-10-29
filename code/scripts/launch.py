@@ -17,7 +17,11 @@ have been launched), so forks inherit the parent's model, schedule and measureme
 
 Usage:
     python scripts/launch.py configs/suites/x.yaml [--partition normal|preemptable] [--gpu-type h200]
-        [--per-gpu K] [--time HH:MM:SS] [--max-concurrent N] [--only REGEX] [--dry-run] [--local] [--force]
+        [--per-gpu K] [--time HH:MM:SS] [--max-concurrent N] [--only REGEX] [--after JOBID] [--dry-run]
+        [--local] [--force]
+
+--after JOBID starts the array once job JOBID (e.g. the parents' array) has ended, so forks can be
+submitted together with their parents.
 
 normal = mit_normal_gpu (6 h per job, 2 GPUs per user); preemptable = mit_preemptable (48 h, 4 GPUs,
 jobs can be killed). Both requeue: unfinished runs resume from latest.pt in the next job.
@@ -95,6 +99,8 @@ def main(argv=None):
     ap.add_argument('--cpus', type=int, default=8)
     ap.add_argument('--mem', default='64G')
     ap.add_argument('--only', help='regex on run names')
+    ap.add_argument('--after', help='job id to wait for (the parents of forks); their fork checkpoints '
+                    'are not checked then')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--local', action='store_true', help='run sequentially here instead of submitting')
     ap.add_argument('--force', action='store_true', help='overwrite configs that changed')
@@ -112,7 +118,7 @@ def main(argv=None):
             continue
         if cfg.fork.parent is not None:
             parent = run_dir(cfg.fork.parent) / 'fork' / f'{cfg.fork.step:07d}.pt'
-            if not parent.exists():
+            if not parent.exists() and not args.after:
                 print(f'WARNING: skipping {cfg.name}: missing {parent}')
                 continue
         path = d / 'config.yaml'
@@ -139,13 +145,14 @@ def main(argv=None):
 
     part = PARTITIONS[args.partition]
     jobs = root_dir() / 'jobs' / suite
-    list_file = jobs / f'{time.strftime("%Y%m%d-%H%M%S")}.txt'
+    list_file = jobs / f'{time.strftime("%Y%m%d-%H%M%S")}-{os.getpid()}.txt'
     n_tasks = math.ceil(len(todo) / args.per_gpu)
     gres = 'gpu:1' if args.gpu_type == 'any' else f'gpu:{args.gpu_type}:1'
     cmd = ['sbatch', f'--partition={part["name"]}', f'--time={args.time or part["time"]}',
            f'--array=0-{n_tasks - 1}%{args.max_concurrent or part["max_concurrent"]}',
            f'--gres={gres}', f'--cpus-per-task={args.cpus}', f'--mem={args.mem}',
            f'--job-name={suite}', f'--output={jobs}/logs/%A_%a.out', '--requeue',
+           *([f'--dependency=afterany:{args.after}'] if args.after else []),
            str(CODE_DIR / 'slurm' / 'run_array.sbatch'), str(list_file), str(args.per_gpu)]
     print(' '.join(cmd))
     if args.dry_run:
