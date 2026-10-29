@@ -2,6 +2,7 @@
 # norms are trained by its auxiliary Adam at lr 1e-3, betas (0.9, 0.95) and no weight decay, while AdamW
 # uses 3e-4, (0.9, 0.99) and weight decay 0.1. Here the auxiliary Adam matches AdamW, so the two differ only
 # in how the hidden matrices are trained (and in decay on the norms, which AdamW leaves undecayed).
+# muon_matched_states repeats data order 0 with fork checkpoints, for optsplit.analysis.aux_eos.
 suite: shakespeare_controls
 base: ../base/shakespeare_char.yaml
 overrides:
@@ -12,3 +13,4 @@ overrides:
   optim.muon.adam_weight_decay: 0.1
 runs:
   - {train.data_seed: [0, 1, 2, 3, 4], name: "muon_matched_d{train.data_seed}"}
+  - {train.data_seed: 0, log.fork_steps: [[25, 50, 100, 200, 300, 450, 600, 800, 1000]], name: muon_matched_states}
