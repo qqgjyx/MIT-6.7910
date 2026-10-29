@@ -1,0 +1,14 @@
+# Control for the AdamW-Muon comparison on Shakespeare. In shakespeare_main, Muon's embeddings, head and
+# norms are trained by its auxiliary Adam at lr 1e-3, betas (0.9, 0.95) and no weight decay, while AdamW
+# uses 3e-4, (0.9, 0.99) and weight decay 0.1. Here the auxiliary Adam matches AdamW, so the two differ only
+# in how the hidden matrices are trained (and in decay on the norms, which AdamW leaves undecayed).
+suite: shakespeare_controls
+base: ../base/shakespeare_char.yaml
+overrides:
+  optimizer: muon
+  optim.muon.lr: 0.04
+  optim.muon.adam_lr: 3.0e-4
+  optim.muon.adam_betas: [0.9, 0.99]
+  optim.muon.adam_weight_decay: 0.1
+runs:
+  - {train.data_seed: [0, 1, 2, 3, 4], name: "muon_matched_d{train.data_seed}"}
