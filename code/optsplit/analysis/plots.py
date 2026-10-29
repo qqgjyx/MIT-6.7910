@@ -37,10 +37,11 @@ def _t_star_step(split, run):
 def divergence(runs_a, runs_b, split, path):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band, the episodes above the floor (shaded), the first
-    exceedance t* (dotted) and the persistent split (dashed, with its CI)."""
+    exceedance t* (dotted) and the persistent split (dashed, with its CI). Third: cross distance over the
+    floor, with the split threshold 1 + margin_mult."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(9, 3.4))
+    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(13, 3.4))
     for i, s in enumerate(sorted(A.keys() & B.keys())):
         c = step_curve(A[s], B[s])
         a1.plot(c['step_a'], c[metric], color='C0', label=f"{split['optimizer_a']} vs {split['optimizer_b']}" if i == 0 else None)
@@ -68,6 +69,12 @@ def divergence(runs_a, runs_b, split, path):
     a2.set(xlabel='training loss', ylabel=metric)
     a2.invert_xaxis()
     a2.legend(fontsize=7)
+    with np.errstate(all='ignore'):
+        a3.plot(grid, np.array(split['cross']) / np.array(split['floor']), color='C0')
+    a3.axhline(1 + split['margin_mult'], color='r', lw=0.8, ls='--')
+    a3.axhline(1, color='k', lw=0.5)
+    a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log')
+    a3.invert_xaxis()
     _save(fig, path)
 
 
