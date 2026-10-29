@@ -23,6 +23,7 @@ python -m optsplit.analysis.plots sharpness --runs "$M/*_d0" --split "$OUT/split
 python -m optsplit.analysis.plots anatomy --runs "$M/*_d0" --out "$F"
 python -m optsplit.analysis.plots anatomy --runs "$M/*_d0" --group layer --out "$F" --name anatomy_layer
 python -m optsplit.analysis.plots anatomy --runs "$M/adamw_d0" --precond --out "$F" --name anatomy_precond
+python -m optsplit.analysis.ngram "$M/*_d0" --out "$OUT" | tee "$OUT/ngram.txt"
 if [ "$2" = swap ]; then
     python -m optsplit.analysis.swap --forks "${S}_forks/*" --pure "$M/*" --out "$OUT/swap" > "$OUT/swap.txt"
     python -m optsplit.analysis.plots swap --swap-json "$OUT/swap.json" --split "$OUT/split_adamw_muon.json" --out "$F"
