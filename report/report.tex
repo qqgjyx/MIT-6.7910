@@ -61,7 +61,8 @@ over data orders, and test what coincides with the changes in distance: sharpnes
 threshold, the end of warmup, or a loss level. In all three language-model settings and for every pair, the
 loss-matched distance is 30 to 200 times the floor at high loss, falls back to near the floor around the
 stage where the models pass through the bigram statistics of the data, and stays there: the only persistent
-split is between Muon and SGD on Shakespeare, where SGD barely trains. At equal steps the optimizers do
+split is between Muon and SGD on Shakespeare, where SGD barely trains, and it does not survive a change of
+metric or threshold. At equal steps the optimizers do
 differ, mostly because they progress at different speeds; at the end of TinyStories-30M, replacing AdamW by
 Muon changes the predictions no more than changing the data order. AdamW sits at its adaptive edge of
 stability for much of training whether or not the optimizers differ, and SGD reaches its threshold only
@@ -378,8 +379,8 @@ loss, with the threshold $1+m_\times$.
 t^\ast_{\rm p}(\cD)$ and the episodes of $\cD$. For their uncertainty we draw 1000 bootstrap resamples $S_b$ of
 $|\cD|$ data orders with replacement and report, for $t^\ast$ and $t^\ast_{\rm p}$ separately, the 2.5 and
 97.5 percentiles of the defined values, together with the fraction of resamples in which one is found (a
-resample with a single distinct order has no floor and gives none). The distance is $D_\JS$.
-\todo{$D_{\rm dis}$ estimates not computed yet.}
+resample with a single distinct order has no floor and gives none). The distance is $D_\JS$; $D_{\rm dis}$
+and other values of $m_\times$, $k$ and $\tau$ are checked in \cref{sec:res-split} (300 resamples each).
 
 \paragraph{In steps.} $t^\ast$ is a loss level, which makes it comparable across optimizers that reach it at
 different steps. For each run $X$, $t^\ast_X=\min\{s\in\cS:\bar\ell_X(s)\le t^\ast\}$ is the first step at
@@ -676,7 +677,13 @@ longer, because they progress at different speeds: on TinyStories-30M Muon's los
 first ten steps and then falls faster than AdamW's, and on Shakespeare Muon memorizes the training set while
 AdamW does not (\cref{fig:losses}). \Cref{sec:res-route} separates the two effects.
 
-\todo{agreement between $D_\JS$ and $D_{\rm dis}$; sensitivity to $m_\times$, $k$ and $\tau$ (not run yet).}
+\paragraph{Robustness.} We repeated the estimate for every pair and setting with $D_{\rm dis}$ instead of
+$D_\JS$, and with $D_\JS$ at $m_\times\in\{0.25,1\}$, $k\in\{2,5\}$ and $\tau\in\{0.01,0.05\}$, one change at a
+time (seven variants). On both TinyStories models no variant finds a persistent split for any pair, nor
+does any variant for AdamW and Muon on Shakespeare. The one persistent split, Muon against SGD on Shakespeare, is
+fragile: it is found with $k=2$ (99\% of resamples), $m_\times=0.25$ and both tolerances, but not at the point
+estimate with $D_{\rm dis}$, with $m_\times=1$ (26\% of resamples) or with $k=5$ (42\%). We read it as SGD ending
+slightly off the others where it stalls, not as a clear split.
 
 \subsection{Where the optimizers' routes meet}
 \label{sec:res-route}
@@ -953,7 +960,8 @@ curvature between blocks, but its changes do not line up with changes in functio
   smallest of its grid. SGD trains poorly at the stable rates on Shakespeare, so comparisons with SGD there stop
   at loss 2.61, and its large data-order noise on TinyStories makes ``no split'' against SGD a weak statement.
 \item The first exceedance is degenerate (\cref{sec:method-split}); episodes and the persistent split depend on
-  the margin $m_\times$, the run length $k$ and the matching tolerance $\tau$. \todo{sensitivity analysis.}
+  the margin $m_\times$, the run length $k$ and the matching tolerance $\tau$; the conclusions hold over the
+  variants we tried (\cref{sec:res-split}), except the Shakespeare Muon--SGD split.
 \item The loss grid ends at the lowest loss that all runs of a pair reach, so a split below it would be missed.
 \item The thresholds are those of linear stability on a quadratic with a frozen preconditioner; we have no
   threshold for Muon, and the AdamW ratio at the first steps reflects a preconditioner built from few

@@ -132,6 +132,8 @@ All three optimizers (SGD too) pass through the bigram model at loss ≈ 3.8.
 ![](figures/ts10m/divergence_adamw_muon.png)
 
 - Final val: Muon 1.31, AdamW 1.34, SGD 1.77–1.96 (SGD at 0.03 varies a lot by data order).
+- End of training, equal steps: AdamW vs Muon 0.057 bits = the floors (0.058–0.061); vs SGD 0.14 (SGD is
+  far behind in loss).
 - Every pair: big early gap (up to 100×), back to ≈ 1× by loss 4–6. **No lasting split**, again.
 - EoS: AdamW on its threshold until step ~5–10k; SGD only around the end of warmup (≈ 10% of measurements).
 - Anatomy: Muon's sharp direction in value/output again (60–70%); AdamW's mostly in the **head** (60–75%,
@@ -166,4 +168,4 @@ run length k = 2/5 (default 3), loss-matching tolerance 1%/5% (default 2%).
 - Shakespeare AdamW vs Muon: no lasting split under **any** variant.
 - Shakespeare Muon vs SGD: the lasting split is **fragile** — gone with disagreement, with margin 1.0, or
   with k = 5. Treat it as "SGD sits slightly off, barely above noise", not a clear split.
-- TinyStories: running.
+- TinyStories 10M and 30M: no lasting split for any pair under any of the 7 variants.
