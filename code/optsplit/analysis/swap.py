@@ -1,11 +1,14 @@
 """Where swaps land: for each fork A->B, the distance of its final predictions to pure A (the parent,
 which is also the A-continued control) and pure B (same init and data seed), and the shift of the
-function metrics as a fraction of the pure A to pure B gap."""
+function metrics as a fraction of the pure A to pure B gap. Each distance also comes divided by its
+noise floor: the median final distance between the pure run and the same optimizer's other data orders."""
 
 import argparse
 import csv
 import json
 from pathlib import Path
+
+import numpy as np
 
 from optsplit.analysis.distance import distance
 from optsplit.analysis.io import flatten, load_runs
@@ -41,6 +44,13 @@ def pure_b_of(fork, pures):
     return match[0]
 
 
+def final_floor(run, pures):
+    """Median final JS between `run` and the pure runs of its optimizer with other data orders."""
+    others = [r for r in pures if r.optimizer == run.optimizer and r.init_seed == run.init_seed
+              and r.data_seed != run.data_seed and not r.cfg.fork.parent]
+    return float(np.median([distance(run, run.final_pred_step, r, r.final_pred_step)[0] for r in others]))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--forks', nargs='+', required=True, help='glob patterns of fork run ids')
@@ -49,11 +59,19 @@ def main():
     args = p.parse_args()
 
     pures = load_runs(args.pure)
-    forks = [f for f in load_runs(args.forks) if f.cfg.fork.parent and f.optimizer != f.parent.optimizer]
+    forks = [f for f in load_runs(args.forks) if f.cfg.fork.parent and f.optimizer != f.parent.optimizer and f.done]
     rows = [landing(f, f.parent, pure_b_of(f, pures)) for f in sorted(forks, key=lambda f: (f.id, f.fork_step))]
+    floors = {}
+    for r in rows:
+        for end in ('a', 'b'):
+            run = next(x for x in pures if x.id == r[f'pure_{end}'])
+            floors.setdefault(run.id, final_floor(run, pures))
+            r[f'floor_{end}'] = floors[run.id]
+            r[f'js_to_{end}_over_floor'] = r[f'js_to_{end}'] / floors[run.id]
     for r in rows:
         print(f"{r['opt_a']}->{r['opt_b']} at step {r['fork_step']}: r_js={r['r_js']:.3f} "
-              f"(js to A {r['js_to_a']:.4f}, to B {r['js_to_b']:.4f})")
+              f"(js to A {r['js_to_a']:.4f} = {r['js_to_a_over_floor']:.2f} floors, "
+              f"to B {r['js_to_b']:.4f} = {r['js_to_b_over_floor']:.2f} floors)")
     out = Path(args.out or root_dir() / 'analysis' / 'swap' / forks[0].id.split('/')[0])
     out.parent.mkdir(parents=True, exist_ok=True)
     Path(f'{out}.json').write_text(json.dumps(rows, indent=1))

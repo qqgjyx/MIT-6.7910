@@ -160,18 +160,30 @@ def anatomy(runs, path, precond=False, group='type'):
 
 
 def swap_landing(rows, path, split=None):
-    """Where each fork lands (0 = pure A, 1 = pure B) against the fork step."""
-    fig, ax = plt.subplots(figsize=(5, 3.4))
+    """Left: where each fork lands (0 = pure A, 1 = pure B) against the fork step. Right (if the rows have
+    floors): its distance to pure B (solid) and to pure A (dashed) in units of their noise floors."""
+    floors = 'js_to_b_over_floor' in rows[0]
+    fig, axes = plt.subplots(1, 1 + floors, figsize=(5 * (1 + floors), 3.4), squeeze=False)
+    ax = axes[0, 0]
     for c, pair in enumerate(sorted({(r['opt_a'], r['opt_b']) for r in rows})):
         rs = sorted((r for r in rows if (r['opt_a'], r['opt_b']) == pair), key=lambda r: r['fork_step'])
-        ax.plot([r['fork_step'] for r in rs], [r['r_js'] for r in rs], '-o', color=f'C{c}', label='->'.join(pair))
+        steps = [r['fork_step'] for r in rs]
+        ax.plot(steps, [r['r_js'] for r in rs], '-o', color=f'C{c}', label='->'.join(pair))
         t = (split or {}).get('steps', {}).get(rs[0]['pure_a'])
         if t is not None:
             ax.axvline(t, color=f'C{c}', ls='--', lw=0.8)
+        if floors:
+            axes[0, 1].plot(steps, [r['js_to_b_over_floor'] for r in rs], '-o', ms=3, color=f'C{c}', label=f'to {pair[1]}')
+            axes[0, 1].plot(steps, [r['js_to_a_over_floor'] for r in rs], '--', color=f'C{c}', label=f'to {pair[0]}')
     ax.axhline(0, color='k', lw=0.5)
     ax.axhline(1, color='k', lw=0.5)
     ax.set(xlabel='fork step', ylabel='landing position (JS)', xscale='symlog', xlim=(0, None))
     ax.legend(fontsize=7)
+    if floors:
+        axes[0, 1].axhline(1, color='k', lw=0.5)
+        axes[0, 1].set(xlabel='fork step', ylabel='JS to pure run / its noise floor', xscale='symlog',
+                       yscale='log', xlim=(0, None))
+        axes[0, 1].legend(fontsize=6, ncol=2)
     _save(fig, path)
 
 
