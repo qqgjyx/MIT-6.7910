@@ -150,6 +150,9 @@ def test_trajectories(tmp_path):
     D = trajectories.js_matrix(logp.exp())
     assert D[0, 1].item() == pytest.approx(js_divergence(logp[0], logp[1]), rel=1e-4) and D[2, 2] == 0
     assert trajectories.embed(D.sqrt().numpy(), 'mds').shape == (3, 2)
+    near = np.array([[0, .1, .2, .5], [.1, 0, .1, .4], [.2, .1, 0, .3], [.5, .4, .3, 0]])
+    assert trajectories.thin(near, [0, 1, 2, 3], [4, 3, 2, 1], 0.15) == [0, 2, 3]
+    assert trajectories.thin(near, [0, 1, 2, 3], [4, 3, 2, 1], 0.15, keep=[1]) == [0, 1, 3]
     run = dict(optimizer='adamw', steps=[0, 1], loss=[2., 1.], xy=[[0., 0.], [1., 1.]])
     trajectories.plot({'syn': ({'a_d0': run, 'b_d0': {**run, 'optimizer': 'muon'}}, [1.5])}, tmp_path / 't.png')
 

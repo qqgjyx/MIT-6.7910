@@ -4,6 +4,8 @@ metric) between the predictions of every pair of (run, step) on `--rows` rows of
 show where each run first reaches the training losses `--losses`, so that equal positions along the paths can be
 compared at equal loss.
 python -m optsplit.analysis.trajectories 'ts10m_main/*' --losses 6 4 2.5 [--method umap densmap mds] --out analysis/ts10m
+python -m optsplit.analysis.trajectories 'ts10m_main/adamw_d[012]' 'ts10m_main/muon_d[012]' --start 250 --thin 0.28 \
+    --keep 500 1000 2000 3000 5000 10000 --dist analysis/ts10m/trajectories_dist.npz --method densmap --out DIR
 python -m optsplit.analysis.trajectories --plot TITLE=analysis/ts10m/trajectories.json ... --out DIR"""
 
 import argparse
@@ -54,6 +56,20 @@ def embed(D, method, seed=0):
     return umap.UMAP(metric='precomputed', densmap=method == 'densmap', random_state=seed).fit_transform(D)
 
 
+def thin(D, steps, loss, delta, keep=(), losses=()):
+    """Which of one run's points (in step order; D their distances) to keep, walking them in order: a point is kept
+    if it is at least `delta` from the last kept one. Late in training a run moves little per logged step, so without
+    this its nearest neighbours in the embedding are its own adjacent steps. The first and last points, the one
+    nearest each of the steps `keep` and the first at or below each of `losses` are always kept."""
+    forced = ({0, len(steps) - 1} | {int(np.abs(np.asarray(steps) - s).argmin()) for s in keep} |
+              {next((j for j, l in enumerate(loss) if l <= L), 0) for L in losses})
+    kept = [0]
+    for j in range(1, len(steps)):
+        if j in forced or D[j, kept[-1]] >= delta:
+            kept.append(j)
+    return kept
+
+
 def parse(spec, losses=()):
     """'JSON[@L1,L2,...]' -> (trajectories, losses to mark)."""
     f, _, ls = spec.partition('@')
@@ -62,11 +78,11 @@ def parse(spec, losses=()):
 
 def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
     """One panel; each run's end, or its marker at `name_step` (one of `steps`), is labelled with its data order.
-    Markers where each run first reaches `losses`
-    and at its logged step nearest each of `steps`, with the run's training loss written next to those (and its
-    first point) at `label_steps`. A star marks the shared initialization or, if the runs start later, a dot each
-    run's first point. Each label sits 5 points from its point, in its preferred direction or the nearest turn of it
-    clear of the markers and of the labels placed before."""
+    Markers where each run first reaches `losses` and at its logged step nearest each of `steps`, with the run's
+    training loss written next to those (and its first point) at `label_steps`. A star marks the shared
+    initialization or, if the runs start later, a dot each run's first point. Each label sits 5 points from its
+    point, in its preferred direction or the nearest turn of it inside the axes and clear of the markers and of the
+    labels placed before."""
     opts = sorted({r['optimizer'] for r in d.values()})
     marks = {n: [0] + [int(np.abs(np.array(r['steps']) - s).argmin()) for s in steps] for n, r in d.items()}
     at = {n: np.array(d[n]['xy'])[ix] for n, ix in marks.items()}  # each run's first point and step markers
@@ -106,6 +122,7 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
     taken = [Bbox.from_bounds(*(ax.transData.transform(p) - 2.5 * pt), 5 * pt, 5 * pt)  # the markers
              for ps in at.values() for p in ps]
     side = lambda t, lo, hi: lo if t < -2.5 else hi if t > 2.5 else 'center'
+    box = ax.get_window_extent(ren)
     for s, xy, v, c in todo:
         v = ax.transData.transform(xy + v) - ax.transData.transform(xy)
         turns = np.arctan2(v[1], v[0]) + np.radians([0, 45, -45, 90, -90, 135, -135, 180])
@@ -114,7 +131,7 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
             t = ax.annotate(s, xy, xytext=(dx, dy), textcoords='offset points', fontsize=5, color=c,
                             path_effects=HALO, ha=side(dx, 'right', 'left'), va=side(dy, 'top', 'bottom'))
             b = t.get_window_extent(ren)
-            if not any(b.overlaps(o) for o in taken):
+            if box.contains(b.x0, b.y0) and box.contains(b.x1, b.y1) and not any(b.overlaps(o) for o in taken):
                 break
             t.remove()
         taken.append(b)
@@ -158,6 +175,10 @@ def main():
     p.add_argument('--method', nargs='+', default=['umap'], choices=['umap', 'densmap', 'mds'])
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
+    p.add_argument('--start', type=int, default=0, help='only the points from this step on')
+    p.add_argument('--dist', help='take the distances from the trajectories_dist.npz of an earlier call')
+    p.add_argument('--thin', type=float, help="thin each run's points to at least this distance apart (see `thin`)")
+    p.add_argument('--keep', type=int, nargs='+', default=[], help='with --thin, steps whose points are always kept')
     p.add_argument('--out', required=True, help='output directory')
     p.add_argument('--name', default='trajectories.png', help='file name of the --plot figure (.pdf for vector)')
     args = p.parse_args()
@@ -166,18 +187,28 @@ def main():
         return plot(panels, Path(args.out) / args.name)
 
     runs = [r for r in load_runs(args.runs) if not r.cfg.fork.parent and r.done]
-    n = runs[0].logp(runs[0].pred_steps[0]).shape[0]
-    rows = torch.linspace(0, n - 1, min(args.rows, n)).long()
-    index, P = [], []
-    for r in runs:
-        steps, loss = loss_points(r)
-        index += [(r, s, l) for s, l in zip(steps, loss)]
-        P += [r.logp(int(s))[rows].float().exp().to(args.device) for s in steps]
-    D = np.sqrt(js_matrix(torch.stack(P)).cpu().numpy())
+    index = [(r, s, l) for r in runs for s, l in zip(*loss_points(r)) if s >= args.start]
     path = Path(args.out)
     path.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(path / 'trajectories_dist.npz', dist=D, run=[r.id for r, _, _ in index],
-                        step=[s for _, s, _ in index])
+    if args.dist:  # the distances of an earlier call, between these points
+        z = np.load(args.dist)
+        at = {(r, s): i for i, (r, s) in enumerate(zip(z['run'], z['step']))}
+        ix = [at[r.id, s] for r, s, _ in index]
+        D = z['dist'][np.ix_(ix, ix)]
+    else:
+        n = runs[0].logp(runs[0].pred_steps[0]).shape[0]
+        rows = torch.linspace(0, n - 1, min(args.rows, n)).long()
+        P = [r.logp(int(s))[rows].float().exp().to(args.device) for r, s, _ in index]
+        D = np.sqrt(js_matrix(torch.stack(P)).cpu().numpy())
+        np.savez_compressed(path / 'trajectories_dist.npz', dist=D, run=[r.id for r, _, _ in index],
+                            step=[s for _, s, _ in index])
+    if args.thin:
+        keep = []
+        for r in runs:
+            ix = [i for i, (q, _, _) in enumerate(index) if q is r]
+            _, steps, loss = zip(*(index[i] for i in ix))
+            keep += [ix[j] for j in thin(D[np.ix_(ix, ix)], steps, loss, args.thin, args.keep, args.losses)]
+        index, D = [index[i] for i in keep], D[np.ix_(keep, keep)]
     for method in args.method:
         xy = embed(D, method, args.seed)
         out = {}

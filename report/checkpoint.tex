@@ -56,9 +56,9 @@ if it lasts to the end of training, with a bootstrap over data orders for its lo
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap.pdf}
-\caption{TinyStories-10M. Left: the trajectories of the AdamW and Muon runs on three data orders (d0--d2, at the
-step-500 markers) from step 250 on: densMAP of the Jensen--Shannon distance (the square root
-of the divergence) between the predictions of every pair of logged steps. Black circles: step 250; markers:
+\caption{TinyStories-10M. Left: the AdamW and Muon runs on three data orders (d0--d2, at step 500) from step 250
+on: densMAP of the Jensen--Shannon distance ($\sqrt{\mathrm{JS}}$) between all pairs of logged steps, each run
+thinned to points at least 0.28 apart so its late steps do not crowd out the other runs. Black circles: step 250; markers:
 fixed steps, with each run's training loss written at steps 250, 1000 and 2000. densMAP keeps neighbourhoods but
 not distances. Middle: divergence between AdamW and Muon at equal steps (blue) and the data-order floor (grey);
 dotted: step 250, where the left panel starts. Right: validation loss of AdamW, Muon and SGD, mean over five data

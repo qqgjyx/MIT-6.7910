@@ -62,7 +62,6 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
     if traj:
         trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step)
-        axes[0].get_legend().set_loc('lower right')
         a1, a2, a3 = *axes[1:], None
     else:
         a1, a2, a3 = axes
