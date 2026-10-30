@@ -111,18 +111,18 @@ Muon). The layer that holds the direction keeps changing long after the optimize
 the embeddings and block 1 throughout training, Muon's from block 1 to 2 after step 6000), so it does not mark a
 split.
 
-\paragraph{Result 5: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
-the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metric, JS (bits) $\le$ total
-variation, and by Pinsker, two predictors in $\mathcal F_s$ with excess losses $\Delta L_A,\Delta L_B$ over $q_s$
-have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta L_A}+\sqrt{\Delta L_B})$, whatever the optimizer. So at
-equal loss the bound forces the optimizers together near the bigram optimum and below, but not at higher loss,
-where their routes can differ, nor in a class without a best element, as in the linear control below. The break-even point depends on how
-the update scales with the gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so
-the raw sharpness should scale as the gradient over $\eta$: at one rate, $\lambda\eta$ grows with the gradient
-norm across data orders (log-log slope 1.15--1.61 on TinyStories), and across rates $\lambda$ falls about as
-$1/\eta$ (slope $-0.86$). Muon's update is invariant to the gradient's scale, so its threshold bounds a
-spectral-norm sharpness by $2\|\nabla L\|_*/\eta$ \citep{islamov2026noneuclidean}; its top Hessian eigenvalue
-also falls about as $1/\eta$ (slope $-0.84$). Stability caps curvature but does not choose between functions of equal loss.\looseness=-1
+\paragraph{Result 5: why the optimizers meet (proof sketch).} \textbf{Two models whose loss is close to the best
+achievable loss must make nearly the same predictions, whichever optimizer trained them.} This follows from
+Pinsker's inequality: for predictors that see only the last $s$ tokens, with best element $q_s$, two predictors
+with excess losses $\Delta L_A,\Delta L_B$ over $q_s$ have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta
+L_A}+\sqrt{\Delta L_B})$, since $\sqrt{\mathrm{JS}}$ is a metric and JS (bits) is at most the total variation. The
+bound says nothing at high loss, or when no best predictor exists: on separable data the loss can fall forever,
+gradient descent and Adam reach different max-margin solutions \citep{soudry2018separable,zhang2024adam}, and our
+linear control below does split. \textbf{The stability thresholds limit how sharp the loss gets, not which
+function of a given loss is reached.} SGD's threshold is $(2+2\mu)/\eta$ on $H$; AdamW's applies to $P^{-1}H$
+\citep{cohen2022adaptive}; Muon's, whose update ignores the gradient's scale, bounds a spectral-norm sharpness by
+$2\|\nabla L\|_*/\eta$ \citep{islamov2026noneuclidean}. We find all three top eigenvalues falling about as
+$1/\eta$ (slopes $-0.96$, $-0.86$, $-0.84$ on TinyStories-10M).
 
 \paragraph{Pipeline check and controls.} On CIFAR-10 the break-even effects replicate: the sharpness levels off
 at or below $2/\eta$ and lower for larger rates, and the gradient covariance is better conditioned; but at equal
