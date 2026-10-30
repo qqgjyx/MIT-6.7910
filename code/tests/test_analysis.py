@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import torch
 
-from optsplit.analysis import breakeven, lmc, plots, split, swap
+from optsplit.analysis import breakeven, cka, lmc, plots, split, swap
 from optsplit.analysis.distance import js_divergence, loss_curve, step_curve, top1_agreement
 from optsplit.analysis.io import Run, load_runs
 from optsplit.config import load_config, save_config
@@ -126,6 +126,13 @@ def test_swap_landing(root):
     r_late = swap.landing(late, late.parent, swap.pure_b_of(late, pures))
     assert r_early['r_js'] > 0.95 and r_late['r_js'] < 0.05
     assert r_early['fm.input.jac_fro'] == pytest.approx(1.0)
+
+
+def test_cka():
+    x = torch.randn(200, 8, dtype=torch.float64)
+    q, _ = torch.linalg.qr(torch.randn(8, 8, dtype=torch.float64))
+    assert cka.cka(x, 3 * x @ q + 1) == pytest.approx(1.0)
+    assert cka.cka(x, torch.randn(200, 8, dtype=torch.float64)) < 0.2
 
 
 def test_lmc_barrier():
