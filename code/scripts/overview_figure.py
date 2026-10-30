@@ -23,10 +23,14 @@ def label(res):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--panel', nargs='+', action='append', required=True, metavar=('TITLE', 'JSON'))
+    p.add_argument('--cols', type=int, default=3)
     p.add_argument('--out', required=True)
     args = p.parse_args()
-    fig, axes = plt.subplots(1, len(args.panel), figsize=(3.3 * len(args.panel), 3), squeeze=False)
-    for ax, (title, *files) in zip(axes[0], args.panel):
+    rows = -(-len(args.panel) // args.cols)
+    fig, axes = plt.subplots(rows, args.cols, figsize=(3.3 * args.cols, 2.8 * rows), squeeze=False)
+    for ax in axes.flat[len(args.panel):]:
+        ax.axis('off')
+    for ax, (title, *files) in zip(axes.flat, args.panel):
         lo, hi = np.inf, 0
         for f in files:
             f, _, lab = f.partition('=')
@@ -40,7 +44,8 @@ def main():
         ax.set(xscale='log' if hi / lo > 10 else 'linear', yscale='log', xlabel='training loss', title=title)
         ax.invert_xaxis()
         ax.legend(fontsize=6)
-    axes[0, 0].set_ylabel('distance / data-order floor')
+    for ax in axes[:, 0]:
+        ax.set_ylabel('distance / data-order floor')
     fig.tight_layout()
     fig.savefig(args.out, dpi=150, bbox_inches='tight')
     print(f'wrote {args.out}')

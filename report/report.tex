@@ -110,15 +110,15 @@ bounds when that is possible.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/overview.png}
+\includegraphics[width=0.85\linewidth]{figures/overview.png}
 %% python scripts/overview_figure.py --panel Shakespeare split_adamw_muon.json ... --out overview.png
 \caption{Overview. Function distance between two optimizers (or two SGD learning rates or batch sizes) at
 equal training loss, over the distance between two runs of one of them with different data orders (training
 progresses to the right). The red line is the threshold $1+m_\times=1.5$ of the split rule. In all language-model
 settings the ratio is largest at the start and falls to about 1 by the bigram stage; the one persistent split,
 Muon--SGD on Shakespeare, is where SGD stalls. The same holds for SGD learning rates and batch sizes on CIFAR-10
-and TinyStories-10M. Red, left: AdamW--Muon trained to memorization (8000 steps\extra). Right: a linear model on
-separable data, where gradient descent and Adam have different limits\extra; there the rule finds a persistent
+and TinyStories-10M (bottom left). Red, top left: AdamW--Muon trained to memorization (8000 steps\extra). Bottom
+middle: a linear model on separable data, where gradient descent and Adam have different limits\extra; there the rule finds a persistent
 split, near interpolation.}
 \label{fig:overview}
 \end{figure}
@@ -1135,7 +1135,7 @@ optimizer is at its limit after $10^5$ steps: Adam's normalized margins exceed S
 does, our runs may simply stop too early. On Shakespeare we therefore trained AdamW and Muon for 8000 steps instead
 of 1500 (same learning rates, cosine schedule over the longer run, five data orders each), so that both memorize:
 AdamW's training loss falls to 0.09 and its validation loss rises to 4.6. The loss-matched ratio
-(\cref{fig:app-long}; \cref{fig:overview}, left, red) has a single early episode (loss 4.23--2.64) and then falls
+(\cref{fig:app-long}; \cref{fig:overview}, top left, red) has a single early episode (loss 4.23--2.64) and then falls
 steadily to 1.0 at the lowest common loss, 0.09; with top-1 disagreement the picture is the same (episode
 4.23--2.85, no persistent split). At the final step the two optimizers on the same data order are as far apart as
 two data orders of either (0.359 bits against floors of 0.355 and 0.324). Memorizing the training set, AdamW and
