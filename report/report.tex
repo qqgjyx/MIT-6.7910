@@ -1102,7 +1102,7 @@ against 0.87--1.0, and 0.78--0.97 against 0.85--0.98 after the others, 0.82--0.8
 final LayerNorm. SGD's representations are not even reproducible across its own data orders (0.57--0.83), and
 pairs with SGD are lower still. On Shakespeare, where Muon memorizes, AdamW and Muon differ clearly (0.40--0.87).
 Another initialization moves the representations as much as another data order. So the optimizer's mark fades
-from the weights (barriers twice the data-order ones) through the representations (a small CKA gap) to the
+from the weights (larger barriers, spread over more layers) through the representations (a small CKA gap) to the
 outputs (none).
 
 \begin{figure}[t]
@@ -1265,7 +1265,8 @@ when the new optimizer is too slow to move away from it.
 \paragraph{Function space and weight space.} The mode-connectivity barriers tell a different story from the
 function distances. After a change of optimizer a fork needs a later fork step to stay linearly connected to its
 parent than after a change of data order, and AdamW and Muon trained from the same initialization on the same
-data have a barrier more than twice that between two data orders, although their functions are as close.
+data have a larger barrier than two data orders (3.9 against 1.6--1.7 nats on TinyStories-10M, 4.3 against
+1.8--3.3 on TinyStories-30M), spread over more layers, although their functions are as close.
 Different optimizers thus reach functions that are equivalent up to data-order noise in regions of weight space
 that are further apart, in the sense of linear connectivity, than those reached with different data. The weights
 also carry the geometry each optimizer is biased towards: more even entries for AdamW than for SGD, and more even
