@@ -35,14 +35,16 @@ def _t_star_step(split, run):
 
 
 def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps=False, max_loss=None, traj_steps=(),
-               traj_label_steps=()):
+               traj_label_steps=(), val_runs=None, mark_step=None):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
     above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
     Third: cross distance over the floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and
     losses to mark, from `trajectories.parse`; `traj_steps`: steps to mark, with the training loss at those of
     `traj_label_steps`), the UMAP of the prediction trajectories comes first instead of the third panel.
-    `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there."""
+    `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there. With
+    `val_runs`, their validation loss by optimizer (mean over data orders, band from min to max, up to `max_loss`)
+    replaces the loss-matched panel; `mark_step` draws a dotted line at that step instead of t*."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
@@ -60,33 +62,47 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
     if traj:
         trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps)
+        axes[0].get_legend().set_loc('lower right')
         a1, a2, a3 = *axes[1:], None
     else:
         a1, a2, a3 = axes
     lines(a1, step_curve, 'step_a')
     steps = [_t_star_step(split, r) for r in A.values()]
     steps = [s for s in steps if s is not None]
-    if steps:
+    if mark_step is not None:  # e.g. where the trajectories of the first panel start, instead of t*
+        a1.axvline(mark_step, color='0.5', ls=':', lw=0.8)
+    elif steps:
         a1.axvline(np.median(steps), color='r', ls='--', label='t*')
     a1.set(xlabel='step', ylabel=metric, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
     a1.legend(fontsize=7)
     grid = np.array(split['grid'])
-    if pairs:
-        lines(a2, loss_curve, 'loss')
+    if val_runs:  # validation loss per optimizer: mean over the data orders, band from min to max
+        lowest = np.inf
+        for c, o in enumerate(sorted({r.optimizer for r in val_runs})):
+            s, v = zip(*(r.series('eval', 'val_loss') for r in val_runs if r.optimizer == o))
+            v = np.array(v)
+            a2.fill_between(s[0], v.min(0), v.max(0), color=f'C{c}', alpha=0.2, lw=0)
+            a2.plot(s[0], v.mean(0), color=f'C{c}', label=o)
+            lowest = min(lowest, v.min())
+        a2.set(xlabel='step', ylabel='validation loss', xscale=a1.get_xscale(), xlim=(0, None),
+               ylim=(lowest - 0.05, max_loss))
     else:
-        a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
-        a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
-        a2.plot(grid, split['cross'], color='C0')
-    for lo, hi in split.get('episodes', []):
-        a2.axvspan(lo, hi, color='C0', alpha=0.08)
-    top = max_loss or np.inf  # lines above it would be off the panel but still in the legend
-    if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
-        a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
-    if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
-        a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
-        a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
-    a2.set(xlabel='training loss', ylabel=metric, xlim=(None, max_loss))
-    a2.invert_xaxis()
+        if pairs:
+            lines(a2, loss_curve, 'loss')
+        else:
+            a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
+            a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
+            a2.plot(grid, split['cross'], color='C0')
+        for lo, hi in split.get('episodes', []):
+            a2.axvspan(lo, hi, color='C0', alpha=0.08)
+        top = max_loss or np.inf  # lines above it would be off the panel but still in the legend
+        if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
+            a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
+        if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
+            a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
+            a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
+        a2.set(xlabel='training loss', ylabel=metric, xlim=(None, max_loss))
+        a2.invert_xaxis()
     a2.legend(fontsize=7)
     if a3 is not None:
         with np.errstate(all='ignore'):
@@ -318,11 +334,11 @@ def _json(path):
 
 
 def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, linear_steps=False, max_loss=None,
-                   traj_steps=(), traj_label_steps=(), out=None, name='divergence'):
+                   traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
                _path(out, name), traj and trajectories.parse(traj), pairs, linear_steps, max_loss, traj_steps,
-               traj_label_steps)
+               traj_label_steps, val_runs and load_runs(val_runs), mark_step)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -386,6 +402,8 @@ def main():
     s.add_argument('--max-loss', type=float, help='start the loss axes at this training loss')
     s.add_argument('--traj-steps', type=int, nargs='+', help='steps to mark on the trajectories')
     s.add_argument('--traj-label-steps', type=int, nargs='+', help='of those, steps to write the training loss at')
+    s.add_argument('--val-runs', nargs='+', help='runs whose validation loss replaces the loss-matched panel')
+    s.add_argument('--mark-step', type=int, help='dotted line at this step on the step axis instead of t*')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')
