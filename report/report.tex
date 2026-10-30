@@ -177,7 +177,8 @@ first results, mostly to test explanations of them, and is marked with \dag\ in 
 the persistent split (as $t^\ast$ turned out to be degenerate), the decomposition into optimizer and data order
 and the n-gram references, the edge of stability of Muon's auxiliary AdamW and the matched control, the
 robustness checks, the floor-normalized swap scores and the barriers to pure runs, the scale-free weight metrics
-($\|\theta\|_\infty/\|\theta\|_2$ and the stable rank) and their shifts under swaps, the break-even runs on the
+($\|\theta\|_\infty/\|\theta\|_2$ and the stable rank) and their shifts under swaps, the representation
+similarity, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
 initialization, token frequency, a linear positive control, and Shakespeare runs trained into memorization).
 
@@ -592,7 +593,10 @@ for the language models), from first to third order: gradient norm, Jacobian nor
 quantities. \emph{Weight norms}: those linear theory predicts each optimizer keeps small ($\ell_2$,
 $\ell_\infty$, spectral), and norm-based measures compared by \citet{jiang2020fantastic}. \emph{Accuracy and
 robustness}: Gaussian input noise for the CNN \citep{ford2019noise} and one-token substitution sensitivity
-\citep{hahn2021sensitivity} for the language models.
+\citep{hahn2021sensitivity} for the language models. \emph{Representations}\extra: linear CKA
+\citep{kornblith2019cka} between the final hidden states of two runs after each transformer block and after the
+final LayerNorm, on 64 training sequences, for pairs of pure runs that differ only in the optimizer, only in the
+data order, or in the initialization.
 
 \subsection{Break-even replication}
 \label{sec:method-breakeven}
@@ -1079,6 +1083,27 @@ On Shakespeare (\cref{tab:app-metrics-shk}) AdamW's learning rate of $3\times10^
 initialization. Muon again has the largest stable rank (99 against 48 and 63), and, as it memorizes, twice to
 four times the substitution sensitivity of the others (0.19 against 0.10 and 0.05).
 
+\paragraph{Representations\extra.} Between weights and outputs sit the hidden states (\cref{fig:cka}). On
+TinyStories, AdamW and Muon trained on the same data have less similar representations than two data orders of
+either optimizer, but not by much outside the first block: linear CKA 0.69 and 0.66 after the first block
+against 0.87--1.0, and 0.78--0.97 against 0.85--0.98 after the others, 0.82--0.85 against 0.85--0.88 after the
+final LayerNorm. SGD's representations are not even reproducible across its own data orders (0.57--0.83), and
+pairs with SGD are lower still. On Shakespeare, where Muon memorizes, AdamW and Muon differ clearly (0.40--0.87).
+Another initialization moves the representations as much as another data order. So the optimizer's mark fades
+from the weights (barriers twice the data-order ones) through the representations (a small CKA gap) to the
+outputs (none).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/cka.png}
+%% python -m optsplit.analysis.cka 'S_main/*' 'S_initseed/*' --out analysis/S
+\caption{Linear CKA between the final hidden states of two pure runs after each transformer block (the last
+point is the final LayerNorm), averaged over pairs. Solid: other optimizer, same initialization and data order;
+dashed: same optimizer, other data order; dotted: same optimizer, other initialization (not run on
+TinyStories-30M).}
+\label{fig:cka}
+\end{figure}
+
 \paragraph{Metrics under swaps\extra.} \Cref{fig:swap-metrics} places each fork's final metrics between those of
 pure A (0) and pure B (1). The weight metrics follow whichever optimizer moved the weights more, not the one that
 decides the function. Forks into SGD keep the old optimizer's $\|\theta\|_\infty/\|\theta\|_2$ and input
@@ -1207,7 +1232,9 @@ data have a barrier more than twice that between two data orders, although their
 Different optimizers thus reach functions that are equivalent up to data-order noise in regions of weight space
 that are further apart, in the sense of linear connectivity, than those reached with different data. The weights
 also carry the geometry each optimizer is biased towards: more even entries for AdamW than for SGD, and more even
-singular values for Muon (\cref{sec:res-metrics}). Part of the barriers may be scale: the optimizers move the
+singular values for Muon (\cref{sec:res-metrics}), and after a swap that geometry is a mixture weighted by
+how far each optimizer moved the weights, even when the function is entirely the second optimizer's. The hidden
+states sit in between, with a small optimizer effect on TinyStories. Part of the barriers may be scale: the optimizers move the
 weights by very different amounts (on TinyStories Muon's end 5--6.6 initial norms from the initialization, AdamW's
 2.7--2.8 and SGD's 0.4--0.6), and interpolating between weights of different scales can raise the loss without any
 change in function.

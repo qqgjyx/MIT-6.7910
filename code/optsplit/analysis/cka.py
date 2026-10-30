@@ -46,30 +46,38 @@ def group(a, b):
     return f'{a.optimizer}, other init' if a.init_seed != b.init_seed else f'{a.optimizer}, other data'
 
 
-def plot(summary, path):
-    """One line per group: solid for other optimizer, dashed for other data, dotted for other init."""
-    fig, ax = plt.subplots(figsize=(5, 3.4))
+def plot(panels, path):
+    """One panel per {title: summary}, one line per group: solid for other optimizer, dashed for other data,
+    dotted for other init; each optimizer keeps its color."""
+    fig, axes = plt.subplots(1, len(panels), figsize=(4.2 * len(panels), 3.2), squeeze=False, sharey=True)
     style = lambda g: ':' if 'init' in g else '--' if 'data' in g else '-'
-    colors = {}
-    for g, ys in sorted(summary.items()):
-        color = colors.setdefault(g.split(',')[0], f'C{len(colors)}')
-        ax.plot(range(len(ys)), ys, style(g), marker='o', ms=3, color=color, label=g)
-    ax.set(xlabel='block (last: final LayerNorm)', ylabel='linear CKA')
-    ax.legend(fontsize=6, ncol=2)
+    for ax, (title, summary) in zip(axes[0], panels.items()):
+        colors = {}
+        for g in sorted(summary, key=lambda g: ('-' in g, g)):
+            color = colors.setdefault(g.split(',')[0], f'C{len(colors)}')
+            ax.plot(range(len(summary[g])), summary[g], style(g), marker='o', ms=3, color=color, label=g)
+        ax.set(xlabel='block (last: final LayerNorm)', title=title)
+    axes[0, 0].set_ylabel('linear CKA')
+    handles = {l: h for ax in axes[0] for h, l in zip(*ax.get_legend_handles_labels())}
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    fig.savefig(path, dpi=150)
+    fig.legend(handles.values(), handles.keys(), loc='upper center', bbox_to_anchor=(0.5, 0), ncol=5, fontsize=7)
+    fig.savefig(path, dpi=150, bbox_inches='tight')
     print(f'wrote {path}')
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('runs', nargs='+', help='glob patterns of run ids')
+    p.add_argument('runs', nargs='*', help='glob patterns of run ids')
+    p.add_argument('--plot', nargs='+', metavar='TITLE=JSON', help='only plot earlier cka.json files side by side')
     p.add_argument('--n', type=int, default=64, help='training sequences')
     p.add_argument('--chunk', type=int, default=16)
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--out', required=True, help='output directory')
     args = p.parse_args()
+    if args.plot:
+        panels = {t: json.loads(Path(f).read_text())['summary'] for t, f in (a.split('=', 1) for a in args.plot)}
+        return plot(panels, Path(args.out) / 'cka.png')
 
     runs = [r for r in load_runs(args.runs) if not r.cfg.fork.parent and r.done]
     model, batches = setup(runs[0].cfg, args.n, args.chunk, 0, args.device)
@@ -86,7 +94,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / 'cka.json').write_text(json.dumps(dict(summary=summary, pairs=rows), indent=1))
-    plot(summary, out / 'figures' / 'cka.png')
+    plot({out.name: summary}, out / 'figures' / 'cka.png')
 
 
 if __name__ == '__main__':

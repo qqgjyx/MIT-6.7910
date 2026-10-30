@@ -143,6 +143,14 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - Shakespeare: AdamW (lr 3e-4) barely leaves the init (0.25×) and has SGD's ℓ∞/ℓ2 — the bias only shows once
   the weights move. Muon again has the most even singular values.
 
+**[extra] Representations** (linear CKA of hidden states; solid: other optimizer, dashed: other data):
+
+![](figures/cka.png)
+
+- TinyStories: AdamW vs Muon slightly less similar than two data orders (mostly in the first block).
+- SGD isn't even reproducible across its own data orders. Shakespeare: AdamW and Muon clearly differ.
+- Ladder: **weights** (clear mark) → **representations** (small mark) → **outputs** (none).
+
 **[extra] Metrics under swaps** (0 = like the old optimizer, 1 = like the new):
 
 ![](figures/ts10m/swap_metrics.png)
