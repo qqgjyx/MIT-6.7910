@@ -310,7 +310,7 @@ $\varphi(t)=0.1+0.45\,(1+\cos(\pi\,(t-w)/(T-w)))$ after, $T$ being the last step
   rate (\cref{tab:setup}).
 \end{itemize}
 Gradient clipping is off, since it would hide edge-of-stability dynamics. Training steps of the language
-models use bfloat16 autocast; all measurements (\cref{sec:methods}) are in float32.
+models use bfloat16 autocast; all measurements (\cref{sec:methods}) are in float32, with TF32 matrix products on the GPU.
 
 \paragraph{Learning rates.} For each setting and optimizer we ran five learning rates (grids in
 \cref{tab:sweep}) on data order 0, with the schedule and length of the main runs and no measurements, and
@@ -475,7 +475,7 @@ the same loss meet there in function space.
 \subsection{Sharpness and stability thresholds}
 \label{sec:method-sharpness}
 
-At each $s\in\cM$, before the update of that step, we measure on $\theta_s$ (in float32):
+At each $s\in\cM$, before the update of that step, we measure on $\theta_s$ (in float32, with TF32 matrix products):
 
 \paragraph{Sharpness.} $\lmax$ is the largest eigenvalue of the Hessian $H=\nabla^2L_{\mathcal H}(\theta_s)$ of
 the mean cross-entropy on a fixed batch $\mathcal H$ of training examples (32 sequences of 256 tokens for
@@ -655,11 +655,12 @@ trajectories in prediction space.
 \subsection{Learning-rate sweeps}
 \label{sec:res-sweep}
 
-\Cref{fig:sweep} (\cref{app:figures}) shows the sweeps. In all three settings Muon reaches the lowest
+\Cref{fig:sweep} (\cref{app:figures}) shows the sweeps. On both TinyStories models Muon reaches the lowest
 validation loss, then AdamW, then SGD: best final validation loss 1.305, 1.339 and 1.914 on TinyStories-10M and
 1.181, 1.201 and 1.340 on TinyStories-30M (SGD at its best rate on data order 0; 1.957 and 1.370 at the rates
-we use), and best minimum validation loss 1.54, 1.56 and 2.44 on Shakespeare (2.50 for SGD at 0.05, about the
-loss at which all three optimizers pass the bigram model, \cref{sec:res-route}). SGD at 1 and 3 diverged on
+we use), and in the main runs AdamW takes 1.35 and 1.22 times as many steps as Muon to reach its own final
+validation loss. On Shakespeare AdamW reaches the lowest, then Muon, then SGD: best minimum validation loss
+1.54, 1.56 and 2.44 (2.50 for SGD at 0.05, about the loss at which all three optimizers pass the bigram model, \cref{sec:res-route}). SGD at 1 and 3 diverged on
 both TinyStories models. Without dropout the Shakespeare runs overfit, Muon fastest: its validation loss is
 lowest near step 500 and ends at 2.84--2.88 in the main runs, against 1.54--1.55 for AdamW (\cref{fig:losses}).
 
@@ -1610,7 +1611,7 @@ curvature between blocks, but its changes do not line up with changes in functio
 \item The thresholds are those of linear stability on a quadratic with a frozen preconditioner; Muon has no
   threshold (\cref{sec:theory}), and the AdamW ratio at the first steps reflects a preconditioner built from few
   gradients.
-\item Sharpness is measured on a fixed batch of 32 sequences with 20 Lanczos iterations, in float32, while
+\item Sharpness is measured on a fixed batch of 32 sequences with 20 Lanczos iterations, in float32 with TF32 matrix products, while
   training uses bfloat16 autocast.
 \item Loss matching and the mode-connectivity barrier use a training probe of 64 sequences.
 \item The landing coordinate is a ratio of distances, not a projection onto the segment between the pure
@@ -1751,7 +1752,7 @@ $\hat K$ (break-even runs) & $25\times64$ seq. & $25\times128$ seq. & -- & $25\t
 \paragraph{Sharpness.} Lanczos runs for 20 iterations with full reorthogonalization (two Gram--Schmidt passes
 per iteration) from a fixed Gaussian start, and returns the top Ritz pair. Hessian-vector products use double
 backpropagation through one gradient graph, with the exact (math) attention kernel, in float32 without
-autocast, on the model before the update of the measured step.
+autocast but with TF32 matrix products, on the model before the update of the measured step.
 
 \paragraph{Split.} $\tau=0.02$, $m_\times=0.5$, $m_+=0$, $k=3$, 1000 bootstrap resamples. The training loss
 of a run is its loss on the training probe at its prediction steps.
