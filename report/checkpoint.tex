@@ -43,7 +43,7 @@ Shakespeare (10.8M parameters) and TinyStories-10M and -30M (14M and 30M paramet
 \citep{jordan2024muon}, at learning rates from a sweep, from a shared initialization and with five data orders
 per optimizer. Along training we logged the next-token probability distributions on fixed held-out contexts,
 and the top eigenvalue of the Hessian and, for AdamW, of the preconditioned Hessian \citep{cohen2022adaptive},
-both computed with the Lanczos method \citep{lanczos1950}. We swapped optimizers at nine fork steps with warm
+both computed with the Lanczos method \citeyearpar{lanczos1950}. We swapped optimizers at nine fork steps with warm
 optimizer states, measured linear mode connectivity, and replicated the CIFAR-10 break-even analysis
 \citep{jastrzebski2020breakeven}. In total 392 runs, about 103 GPU-hours. Items added beyond the plan are
 marked \extra.
