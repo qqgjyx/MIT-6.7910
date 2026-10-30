@@ -299,7 +299,7 @@ def sweep(runs, path, select='final'):
 
 
 def _path(out, name):
-    return Path(out or root_dir() / 'analysis' / 'figures') / f'{name}.png'
+    return Path(out or root_dir() / 'analysis' / 'figures') / (name if Path(name).suffix else f'{name}.png')
 
 
 def _json(path):
@@ -358,7 +358,7 @@ def main():
         return
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument('--out', help='output directory')
-    common.add_argument('--name', help='file name (without .png)')
+    common.add_argument('--name', help='file name; .png unless it has another extension (.pdf for vector output)')
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest='fig', required=True)
     s = sub.add_parser('divergence', parents=[common])
