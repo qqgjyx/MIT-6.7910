@@ -3,7 +3,7 @@ the distance used everywhere else: UMAP of the Jensen-Shannon distance (the squa
 metric) between the predictions of every pair of (run, step) on `--rows` rows of the validation probe. Markers
 show where each run first reaches the training losses `--losses`, so that equal positions along the paths can be
 compared at equal loss.
-python -m optsplit.analysis.trajectories 'ts10m_main/*' --losses 6 4 2.5 --out analysis/ts10m
+python -m optsplit.analysis.trajectories 'ts10m_main/*' --losses 6 4 2.5 [--method umap densmap mds] --out analysis/ts10m
 python -m optsplit.analysis.trajectories --plot TITLE=analysis/ts10m/trajectories.json ... --out DIR"""
 
 import argparse
@@ -37,6 +37,17 @@ def js_matrix(P, batch=32):
         for j in range(i + 1, len(P), batch):
             D[i, j:j + batch] = entropy((P[i] + P[j:j + batch]) / 2) - (h[i] + h[j:j + batch]) / 2
     return (D + D.T).clamp_min(0)
+
+
+def embed(D, method, seed=0):
+    """2-D coordinates from the distance matrix D: UMAP keeps each point's nearest neighbours, densMAP (UMAP that
+    also keeps how spread out each neighbourhood is) and metric MDS (which fits all distances at once) keep more of
+    the distances."""
+    if method == 'mds':
+        from sklearn.manifold import MDS
+        return MDS(dissimilarity='precomputed', random_state=seed).fit_transform(D)
+    import umap
+    return umap.UMAP(metric='precomputed', densmap=method == 'densmap', random_state=seed).fit_transform(D)
 
 
 def parse(spec, losses=()):
@@ -84,15 +95,16 @@ def main():
                    help='only plot earlier trajectories.json files, side by side, each with its own losses')
     p.add_argument('--losses', type=float, nargs='+', default=[], help='training losses to mark on each path')
     p.add_argument('--rows', type=int, default=512, help='probe rows used for the distance')
+    p.add_argument('--method', nargs='+', default=['umap'], choices=['umap', 'densmap', 'mds'])
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--out', required=True, help='output directory')
+    p.add_argument('--name', default='trajectories.png', help='file name of the --plot figure (.pdf for vector)')
     args = p.parse_args()
     if args.plot:
         panels = {t: parse(f, args.losses) for t, f in (a.split('=', 1) for a in args.plot)}
-        return plot(panels, Path(args.out) / 'trajectories.png')
+        return plot(panels, Path(args.out) / args.name)
 
-    import umap
     runs = [r for r in load_runs(args.runs) if not r.cfg.fork.parent and r.done]
     n = runs[0].logp(runs[0].pred_steps[0]).shape[0]
     rows = torch.linspace(0, n - 1, min(args.rows, n)).long()
@@ -101,18 +113,22 @@ def main():
         steps, loss = loss_points(r)
         index += [(r, s, l) for s, l in zip(steps, loss)]
         P += [r.logp(int(s))[rows].float().exp().to(args.device) for s in steps]
-    D = js_matrix(torch.stack(P)).cpu().numpy()
-    xy = umap.UMAP(metric='precomputed', random_state=args.seed).fit_transform(np.sqrt(D))
-    out = {}
-    for (r, s, l), z in zip(index, xy):
-        d = out.setdefault(r.id, dict(optimizer=r.optimizer, steps=[], loss=[], xy=[]))
-        d['steps'].append(int(s))
-        d['loss'].append(float(l))
-        d['xy'].append([float(v) for v in z])
+    D = np.sqrt(js_matrix(torch.stack(P)).cpu().numpy())
     path = Path(args.out)
     path.mkdir(parents=True, exist_ok=True)
-    (path / 'trajectories.json').write_text(json.dumps(out))
-    plot({path.name: (out, args.losses)}, path / 'figures' / 'trajectories.png')
+    np.savez_compressed(path / 'trajectories_dist.npz', dist=D, run=[r.id for r, _, _ in index],
+                        step=[s for _, s, _ in index])
+    for method in args.method:
+        xy = embed(D, method, args.seed)
+        out = {}
+        for (r, s, l), z in zip(index, xy):
+            d = out.setdefault(r.id, dict(optimizer=r.optimizer, steps=[], loss=[], xy=[]))
+            d['steps'].append(int(s))
+            d['loss'].append(float(l))
+            d['xy'].append([float(v) for v in z])
+        name = 'trajectories' if method == 'umap' else f'trajectories_{method}'
+        (path / f'{name}.json').write_text(json.dumps(out))
+        plot({f'{path.name}, {method}': (out, args.losses)}, path / 'figures' / f'{name}.png')
 
 
 if __name__ == '__main__':

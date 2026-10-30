@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from optsplit.analysis import eos, trajectories
-from optsplit.analysis.distance import step_curve
+from optsplit.analysis.distance import loss_curve, step_curve
 from optsplit.analysis.io import flatten, load_runs
 from optsplit.analysis.split import by_seed, locate_split
 from optsplit.config import load_yaml, root_dir
@@ -34,29 +34,34 @@ def _t_star_step(split, run):
     return s if s is not None else split.get('steps', {}).get(run.id)
 
 
-def divergence(runs_a, runs_b, split, path, traj=None):
+def divergence(runs_a, runs_b, split, path, traj=None, pairs=False):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
-    Right: loss-matched distance with the floor band, the episodes above the floor (shaded), the first
-    exceedance t* (dotted) and the persistent split (dashed, with its CI). Third: cross distance over the
-    floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and losses to mark, from
-    `trajectories.parse`), the UMAP of the prediction trajectories comes first instead of the third panel."""
+    Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
+    above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
+    Third: cross distance over the floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and
+    losses to mark, from `trajectories.parse`), the UMAP of the prediction trajectories comes first instead of the
+    third panel."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
+
+    def lines(ax, curve, x):
+        for i, s in enumerate(sorted(A.keys() & B.keys())):
+            c = curve(A[s], B[s])
+            ax.plot(c[x], c[metric], color='C0', label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
+        for G, color in ((A, '0.35'), (B, '0.7')):
+            for i, (s, t) in enumerate(combinations(sorted(G), 2)):
+                c = curve(G[s], G[t])
+                ax.plot(c[x], c[metric], color=color, lw=0.8,
+                        label=f'{name(G[s])}, other data order' if i == 0 else None)
+
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
     if traj:
         trajectories.draw(axes[0], *traj)
         a1, a2, a3 = *axes[1:], None
     else:
         a1, a2, a3 = axes
-    for i, s in enumerate(sorted(A.keys() & B.keys())):
-        c = step_curve(A[s], B[s])
-        a1.plot(c['step_a'], c[metric], color='C0', label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
-    for G, color in ((A, '0.35'), (B, '0.7')):
-        for i, (s, t) in enumerate(combinations(sorted(G), 2)):
-            c = step_curve(G[s], G[t])
-            a1.plot(c['step_a'], c[metric], color=color, lw=0.8,
-                    label=f'{name(G[s])}, other data order' if i == 0 else None)
+    lines(a1, step_curve, 'step_a')
     steps = [_t_star_step(split, r) for r in A.values()]
     steps = [s for s in steps if s is not None]
     if steps:
@@ -64,9 +69,12 @@ def divergence(runs_a, runs_b, split, path, traj=None):
     a1.set(xlabel='step', ylabel=metric, xscale='symlog', xlim=(0, None))
     a1.legend(fontsize=7)
     grid = np.array(split['grid'])
-    a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
-    a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
-    a2.plot(grid, split['cross'], color='C0')
+    if pairs:
+        lines(a2, loss_curve, 'loss')
+    else:
+        a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
+        a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
+        a2.plot(grid, split['cross'], color='C0')
     for lo, hi in split.get('episodes', []):
         a2.axvspan(lo, hi, color='C0', alpha=0.08)
     if np.isfinite(split['t_star_loss']):
@@ -306,10 +314,10 @@ def _json(path):
     return json.loads(Path(path).read_text()) if path else None
 
 
-def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, out=None, name='divergence'):
+def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
-               _path(out, name), traj and trajectories.parse(traj))
+               _path(out, name), traj and trajectories.parse(traj), pairs)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -368,6 +376,7 @@ def main():
     s.add_argument('--metric', default='js', choices=['js', 'disagree'])
     s.add_argument('--traj', metavar='JSON[@L1,L2,...]',
                    help='trajectories.json from optsplit.analysis.trajectories: its UMAP replaces the ratio panel')
+    s.add_argument('--pairs', action='store_true', help='loss-matched panel with every pair instead of the floor band')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')

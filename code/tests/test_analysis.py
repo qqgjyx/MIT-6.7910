@@ -149,6 +149,7 @@ def test_trajectories(tmp_path):
     logp = torch.log_softmax(torch.randn(3, 5, V, generator=gen), -1)
     D = trajectories.js_matrix(logp.exp())
     assert D[0, 1].item() == pytest.approx(js_divergence(logp[0], logp[1]), rel=1e-4) and D[2, 2] == 0
+    assert trajectories.embed(D.sqrt().numpy(), 'mds').shape == (3, 2)
     run = dict(optimizer='adamw', steps=[0, 1], loss=[2., 1.], xy=[[0., 0.], [1., 1.]])
     trajectories.plot({'syn': ({'a_d0': run, 'b_d0': {**run, 'optimizer': 'muon'}}, [1.5])}, tmp_path / 't.png')
 
@@ -169,7 +170,7 @@ def test_figures(root, tmp_path, monkeypatch):
     res = split.locate_split(runs_a, runs_b, n_boot=20)
     plots.divergence(runs_a, runs_b, res, tmp_path / 'div.png')
     traj = {r.id: dict(optimizer=r.optimizer, steps=[0, 1], loss=[2., 1.], xy=[[0., 0.], [1., 1.]]) for r in runs_a}
-    plots.divergence(runs_a, runs_b, res, tmp_path / 'div_traj.png', (traj, [1.5]))
+    plots.divergence(runs_a, runs_b, res, tmp_path / 'div_traj.png', (traj, [1.5]), pairs=True)
     plots.sharpness(runs_a[:1] + runs_b[:1] + load_runs('syn/fast_d0'), res, tmp_path / 'sharp.png')
     plots.anatomy(runs_a[:1] + runs_b[:1], tmp_path / 'anat.png')
     plots.anatomy(runs_a[:1], tmp_path / 'anat_layer.png', group='layer')
