@@ -34,13 +34,13 @@ def _t_star_step(split, run):
     return s if s is not None else split.get('steps', {}).get(run.id)
 
 
-def divergence(runs_a, runs_b, split, path, traj=None, pairs=False):
+def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps=False, max_loss=None):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
     above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
     Third: cross distance over the floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and
     losses to mark, from `trajectories.parse`), the UMAP of the prediction trajectories comes first instead of the
-    third panel."""
+    third panel. `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
@@ -66,7 +66,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False):
     steps = [s for s in steps if s is not None]
     if steps:
         a1.axvline(np.median(steps), color='r', ls='--', label='t*')
-    a1.set(xlabel='step', ylabel=metric, xscale='symlog', xlim=(0, None))
+    a1.set(xlabel='step', ylabel=metric, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
     a1.legend(fontsize=7)
     grid = np.array(split['grid'])
     if pairs:
@@ -77,12 +77,13 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False):
         a2.plot(grid, split['cross'], color='C0')
     for lo, hi in split.get('episodes', []):
         a2.axvspan(lo, hi, color='C0', alpha=0.08)
-    if np.isfinite(split['t_star_loss']):
+    top = max_loss or np.inf  # lines above it would be off the panel but still in the legend
+    if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
         a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
-    if np.isfinite(split.get('persist_loss', np.nan)):
+    if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
         a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
         a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
-    a2.set(xlabel='training loss', ylabel=metric)
+    a2.set(xlabel='training loss', ylabel=metric, xlim=(None, max_loss))
     a2.invert_xaxis()
     a2.legend(fontsize=7)
     if a3 is not None:
@@ -90,7 +91,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False):
             a3.plot(grid, np.array(split['cross']) / np.array(split['floor']), color='C0')
         a3.axhline(1 + split['margin_mult'], color='r', lw=0.8, ls='--')
         a3.axhline(1, color='k', lw=0.5)
-        a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log')
+        a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log', xlim=(None, max_loss))
         a3.invert_xaxis()
     _save(fig, path)
 
@@ -314,10 +315,11 @@ def _json(path):
     return json.loads(Path(path).read_text()) if path else None
 
 
-def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, out=None, name='divergence'):
+def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, linear_steps=False, max_loss=None,
+                   out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
-               _path(out, name), traj and trajectories.parse(traj), pairs)
+               _path(out, name), traj and trajectories.parse(traj), pairs, linear_steps, max_loss)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -377,6 +379,8 @@ def main():
     s.add_argument('--traj', metavar='JSON[@L1,L2,...]',
                    help='trajectories.json from optsplit.analysis.trajectories: its UMAP replaces the ratio panel')
     s.add_argument('--pairs', action='store_true', help='loss-matched panel with every pair instead of the floor band')
+    s.add_argument('--linear-steps', action='store_true', help='linear step axis instead of symlog')
+    s.add_argument('--max-loss', type=float, help='start the loss axes at this training loss')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')
