@@ -338,7 +338,7 @@ def fig_swap(swap_json, split=None, out=None, name='swap'):
     rows = _json(swap_json)
     swap_landing(rows, _path(out, name), _json(split))
     if any(k.startswith('fm.') for k in rows[0]):
-        swap_metrics(rows, _path(out, f'{name}_metrics'))
+        swap_metrics(rows, _path(out, f'{Path(name).stem}_metrics{Path(name).suffix}'))
 
 
 def fig_lmc(lmc_json, out=None, name='lmc'):

@@ -78,7 +78,7 @@ therefore the reverse of the hypothesis: the optimizers' functions differ early 
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.82\linewidth,trim=0 198 0 0,clip]{figures/overview.png}
+\includegraphics[width=0.82\linewidth]{figures/overview_top.pdf}
 \caption{Loss-matched distance between optimizers over the data-order floor (training progresses to the right);
 red dashed, the threshold 1.5. Red, left: AdamW--Muon trained into memorization (8000 steps). Hyperparameters
 in \cref{app:hparams-fig2}.}
@@ -101,7 +101,7 @@ not: after a change of optimizer, a fork needs a later fork step to stay linearl
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.74\linewidth]{figures/ts10m/swap.png}
+\includegraphics[width=0.74\linewidth]{figures/ts10m/swap.pdf}
 \caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right:
 its distance to pure $B$ (solid) and to pure $A$ (dashed) in units of their floors; below 1 means
 indistinguishable from that optimizer. Hyperparameters in \cref{app:hparams-fig3}.}
