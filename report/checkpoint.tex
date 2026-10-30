@@ -73,10 +73,10 @@ at step 250, 1.77 vs 1.95 at step 1000) and stays below AdamW to the end (right)
 steps to reach its final validation loss. Towards the end of training all six runs gather in one cluster, as their
 divergences shrink.
 
-\paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} After warmup, at equal training loss, any two
-optimizers, SGD included, predict about as differently on both TinyStories models as one optimizer trained on two
-data orders. On TinyStories-10M, changing the learning rate from $\tfrac14$ to 4 times its value gives the same
-picture. So we find no split.
+\paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} After warmup, when their training loss is about
+the same, two runs with different optimizers, SGD included, are about as far apart as two runs of one optimizer
+with different data orders, on both TinyStories models. The same holds for one optimizer at different learning
+rates ($\tfrac14$ to 4 times its rate, TinyStories-10M). So we find no split.
 
 \begin{figure}[h]
 \centering
