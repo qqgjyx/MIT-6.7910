@@ -39,12 +39,12 @@ def barrier(alphas, losses):
     return float(np.max(losses - ((1 - alphas) * losses[0] + alphas * losses[-1])))
 
 
-def setup(cfg, n, chunk, seed, device):
+def setup(cfg, n, chunk, seed, device, split='train'):
     from optsplit.data import build_data
     data = build_data(cfg, device)
     model = build_model(cfg, vocab_size=getattr(data, 'vocab_size', None),
                         num_classes=getattr(data, 'num_classes', None)).to(device).eval()
-    x, y = data.fixed_batch('train', n, seed)
+    x, y = data.fixed_batch(split, n, seed)
     return model, [(x[i:i + chunk], y[i:i + chunk]) for i in range(0, n, chunk)]
 
 

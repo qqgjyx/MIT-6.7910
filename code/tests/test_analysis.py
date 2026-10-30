@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import torch
 
-from optsplit.analysis import breakeven, cka, lmc, lmc_layers, lr_robust, plots, split, swap
+from optsplit.analysis import breakeven, cka, lmc, lmc_layers, lr_robust, ood, plots, split, swap
 from optsplit.analysis.distance import js_divergence, loss_curve, step_curve, top1_agreement
 from optsplit.analysis.io import Run, load_runs
 from optsplit.config import load_config, save_config
@@ -133,6 +133,16 @@ def test_cka():
     q, _ = torch.linalg.qr(torch.randn(8, 8, dtype=torch.float64))
     assert cka.cka(x, 3 * x @ q + 1) == pytest.approx(1.0)
     assert cka.cka(x, torch.randn(200, 8, dtype=torch.float64)) < 0.2
+
+
+def test_ood(tmp_path):
+    x = torch.arange(20).reshape(2, 10)
+    xs = ood.inputs(x, vocab=50)
+    assert torch.equal(xs['shuffled'].sort(1).values, x) and xs['random'].max() < 50
+    summary = {'adamw, other data': {'random': 0.1}, 'muon, other data': {'random': 0.2},
+               'adamw-muon': {'random': 0.3}}
+    assert ood.ratios(summary) == {'adamw-muon': {'random': pytest.approx(1.5)}}
+    ood.plot({'syn': summary}, tmp_path / 'ood.png')
 
 
 def test_lmc_barrier():
