@@ -11,13 +11,9 @@ from pathlib import Path
 import numpy as np
 
 from optsplit.analysis.distance import distance
-from optsplit.analysis.io import flatten, load_runs
+from optsplit.analysis.fm_table import final_metrics
+from optsplit.analysis.io import load_runs
 from optsplit.config import root_dir
-
-
-def final_function_metrics(run):
-    fm = run.function_metrics
-    return flatten(fm[max(fm)]) if fm else {}
 
 
 def landing(fork, pure_a, pure_b):
@@ -30,7 +26,7 @@ def landing(fork, pure_a, pure_b):
                agree_to_a=ag_a, agree_to_b=ag_b, agree_ab=ag_ab,
                r_js=js_a / (js_a + js_b) if js_a + js_b > 0 else float('nan'),
                r_disagree=(1 - ag_a) / (2 - ag_a - ag_b) if ag_a + ag_b < 2 else float('nan'))
-    fm_f, fm_a, fm_b = (final_function_metrics(r) for r in (fork, pure_a, pure_b))
+    fm_f, fm_a, fm_b = (final_metrics(r) or {} for r in (fork, pure_a, pure_b))
     for k in fm_f.keys() & fm_a.keys() & fm_b.keys():
         gap = fm_b[k] - fm_a[k]
         row[f'fm.{k}'] = (fm_f[k] - fm_a[k]) / gap if gap != 0 else float('nan')

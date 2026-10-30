@@ -188,6 +188,29 @@ def swap_landing(rows, path, split=None):
     _save(fig, path)
 
 
+SWAP_METRICS = {'weights.dist_init_rel': 'distance moved from init', 'linf_over_l2': 'l_inf / l2 of the weights',
+                'stable_rank_hidden_mean': 'stable rank, hidden matrices', 'input.jac_fro.mean': 'input Jacobian'}
+
+
+def swap_metrics(rows, path, keys=SWAP_METRICS):
+    """Final function metrics of each fork as a fraction of the pure A to pure B gap (0 = like pure A, 1 = like
+    pure B) against the fork step, one panel per metric, one line per pair; clipped to [-0.5, 1.5]."""
+    fig, axes = plt.subplots(1, len(keys), figsize=(3.4 * len(keys), 3.2), squeeze=False, sharey=True)
+    pairs = sorted({(r['opt_a'], r['opt_b']) for r in rows})
+    for ax, (k, title) in zip(axes[0], keys.items()):
+        for c, pair in enumerate(pairs):
+            rs = sorted((r for r in rows if (r['opt_a'], r['opt_b']) == pair), key=lambda r: r['fork_step'])
+            ax.plot([r['fork_step'] for r in rs], [r.get(f'fm.{k}', np.nan) for r in rs], '-o', ms=3,
+                    color=f'C{c}', label='->'.join(pair))
+        ax.axhline(0, color='k', lw=0.5)
+        ax.axhline(1, color='k', lw=0.5)
+        ax.set(xlabel='fork step', title=title, xscale='log', ylim=(-0.5, 1.5))
+        ax.title.set_fontsize(9)
+    axes[0, 0].set_ylabel('0 = old optimizer, 1 = new')
+    axes[0, 0].legend(fontsize=6)
+    _save(fig, path)
+
+
 def lmc(results, path):
     """Loss barrier between the parent's and each fork's final weights against the fork step, one panel per
     parent, one line per (fork's source optimizer, fork's optimizer); dotted lines: the barrier to the other pure
@@ -293,7 +316,10 @@ def fig_anatomy(runs, precond=False, group='type', out=None, name='anatomy'):
 
 
 def fig_swap(swap_json, split=None, out=None, name='swap'):
-    swap_landing(_json(swap_json), _path(out, name), _json(split))
+    rows = _json(swap_json)
+    swap_landing(rows, _path(out, name), _json(split))
+    if any(k.startswith('fm.') for k in rows[0]):
+        swap_metrics(rows, _path(out, f'{name}_metrics'))
 
 
 def fig_lmc(lmc_json, out=None, name='lmc'):

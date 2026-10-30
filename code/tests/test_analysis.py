@@ -58,7 +58,7 @@ def write_run(root, name, optimizer, seed, steps=STEPS, speed=1.0, diverge=False
             }) + '\n')
     (d / 'function_metrics').mkdir()
     for t in (0, T // 2, T):
-        fm = {'input': {'jac_fro': 1 + t / T + (optimizer == 'muon')}, 'weights': {'l2': 10 + seed}}
+        fm = {'input': {'jac_fro': 1 + t / T + (optimizer == 'muon')}, 'weights': {'l2': 10 + seed, 'linf': 1}}
         (d / 'function_metrics' / f'{t:07d}.json').write_text(json.dumps(fm))
     return Run(f'syn/{name}')
 
@@ -149,6 +149,7 @@ def test_figures(root, tmp_path, monkeypatch):
     pures = load_runs('syn/*_d*')
     rows = [swap.landing(f, f.parent, swap.pure_b_of(f, pures)) for f in load_runs('syn/swap_*')]
     plots.swap_landing(rows, tmp_path / 'swap.png', res)
+    plots.swap_metrics(rows, tmp_path / 'swap_metrics.png', {'input.jac_fro': 'Jacobian'})
     plots.lmc([{'parent': 'syn/adamw_d0', 'optimizer': 'adamw',
                 'forks': [{'fork': f'syn/adamw_to_muon_at{s}', 'fork_step': s, 'optimizer': 'muon', 'barrier': s / T}
                           for s in (300, 1500)]}], tmp_path / 'lmc.png')
@@ -164,7 +165,7 @@ def test_figures(root, tmp_path, monkeypatch):
     spec.write_text(f"- {{fig: sharpness, runs: ['syn/muon_d0'], out: '{tmp_path}', name: spec_sharp}}\n")
     monkeypatch.setattr(sys, 'argv', ['plots', str(spec)])
     plots.main()
-    for f in ('div', 'sharp', 'anat', 'anat_layer', 'swap', 'lmc', 'fm', 'be_curves', 'be_scatter', 'be_traj',
+    for f in ('div', 'sharp', 'anat', 'anat_layer', 'swap', 'swap_metrics', 'lmc', 'fm', 'be_curves', 'be_scatter', 'be_traj',
               'spec_sharp', 'sweep', 'eos', 'losses'):
         assert (tmp_path / f'{f}.png').stat().st_size > 0
 
