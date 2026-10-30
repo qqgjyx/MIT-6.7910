@@ -70,8 +70,8 @@ stability for much of training whether or not the optimizers differ, and SGD rea
 around the end of warmup. On CIFAR-10 we replicate the break-even effects of \citet{jastrzebski2020breakeven}
 on sharpness and gradient noise, but at equal loss two learning rates differ by only 1.0 to 1.75 times the
 floor. Switching optimizer at nine times during training, the run ends at the function of the new optimizer
-whenever that optimizer is the faster one, so the endpoint is not decided early; in weight space, however, runs
-with the same function can lie in regions that are not linearly connected. A second initialization reproduces
+whenever that optimizer is the faster one, so the endpoint is not decided early; in weight space, however, a
+change of optimizer separates the solutions more than a change of data order. A second initialization reproduces
 the results, and on a linear model with known, different limits the same test does find a split, near
 interpolation.
 \end{abstract}
@@ -154,7 +154,7 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   fast enough to: forks from SGD to AdamW or Muon land on the new optimizer even after 4000 steps, while forks
   into SGD after step 200 stay near their parent. In weight space the optimizer leaves a mark that function space
   does not show: forks that change the optimizer stay linearly connected to their parent only from a later fork
-  step than forks that change the data order, and forks from SGD to AdamW never do.
+  step than forks that change the data order, and AdamW and Muon end further apart than two data orders.
 \item \textbf{The anatomy of the sharp direction}: which parameter blocks carry the top Hessian eigenvector
   and its curvature, by optimizer and over training (\cref{sec:res-anatomy}). It differs by optimizer
   (embeddings for Muon on Shakespeare, value--output matrices for Muon on TinyStories, head or norms for
@@ -893,9 +893,22 @@ fork to stay in the parent's basin: from the AdamW parent the Muon and SGD forks
 step 2500, from the Muon parent the AdamW fork is still at 0.055 at step 4000, and from the SGD parent the AdamW
 fork is never connected (barrier 3.4--6.1 at every fork step) and the Muon fork only approaches it (0.53 at step
 4000). The pure runs, which share only the initialization, have barriers of 1.6--3.9. Weight space thus keeps a
-mark of the optimizer that function space does not: an SGD$\to$AdamW fork at step 4000 computes AdamW's
-function to within the floor, yet lies in a different linearly connected region than the SGD run it was
-forked from. \todo{Shakespeare and TinyStories-30M swaps and LMC.}
+mark of the optimizer that function space does not. At the end of training the pure AdamW and Muon runs on the
+same data order are as close in function as two data orders of one optimizer (\cref{sec:res-route}), yet the
+barrier between them is 3.9 nats, against 1.6 and 1.7 between the two data orders of AdamW and of Muon; and the
+fork from AdamW to Muon at step 1000, which ends within the floor of both pure runs, has a barrier of 0.17 to its
+parent, against 0.035 for the fork that keeps AdamW and changes the data order.
+
+On Shakespeare (\cref{fig:app-swap}, bottom) the forks that keep AdamW and change the data order are connected
+to their parent from step 300 on (0.015, then 0), and even the pure AdamW runs with two data orders have a
+barrier of only 0.12: at $3\cdot10^{-4}$ AdamW stays close to the initialization. Forks from AdamW into Muon or
+SGD keep barriers of 1.4--3.3 up to step 600, and those into Muon are still at 0.27 at step 1000; forks from SGD
+into Muon stay at 1.3--1.7 up to step 800. The exception is the Muon parent: its forks with another data order
+are connected only from step 800 (barrier 3.5 at step 25, 0.06 at 800), later than its forks into AdamW and SGD
+(0.9 and 0.7 at step 100, 0.01 at 800). Muon on Shakespeare is unstable to the data order for half of training,
+while it memorizes, and its forks into slower optimizers move the weights less after the fork. Apart from this
+case, a change of optimizer separates the solutions in weight space more than a change of data order does,
+although it does not in function space. \todo{TinyStories-30M swaps and LMC.}
 
 \subsection{Anatomy of the sharp direction}
 \label{sec:res-anatomy}
@@ -1084,11 +1097,13 @@ when the new optimizer is too slow to move away from it.
 
 \paragraph{Function space and weight space.} The mode-connectivity barriers tell a different story from the
 function distances. After a change of optimizer a fork needs a later fork step to stay linearly connected to its
-parent than after a change of data order, and forks from SGD into AdamW never do, although they compute AdamW's
-function to within the floor. Different optimizers can thus reach the same function, up to data-order noise, in
-regions of weight space that are not linearly connected. Part of this may be scale: AdamW and Muon move the
-weights much further from the initialization than SGD (\cref{sec:res-metrics}), and interpolating between weights
-of different scales can raise the loss without any change in function.
+parent than after a change of data order, and AdamW and Muon trained from the same initialization on the same
+data have a barrier more than twice that between two data orders, although their functions are as close.
+Different optimizers thus reach functions that are equivalent up to data-order noise in regions of weight space
+that are further apart, in the sense of linear connectivity, than those reached with different data. Part of this
+may be scale: the optimizers move the weights by different amounts (on Shakespeare Muon's weights end 7 times
+their initial norm away from the initialization, AdamW's and SGD's a quarter; \cref{sec:res-metrics}), and
+interpolating between weights of different scales can raise the loss without any change in function.
 
 \paragraph{Break-even point.} On CIFAR-10 we reproduce the sharpness and gradient-noise effects of
 \citet{jastrzebski2020breakeven}, but the separation of trajectories between learning rates is mostly a
@@ -1137,7 +1152,8 @@ barely trains. At the end of TinyStories-30M, replacing AdamW by Muon changes th
 reshuffling the data or the initialization. Neither the edge of stability nor the end of warmup explains these
 transitions. Switching optimizers during training does not reveal an early decision either: the run ends at the
 function of the optimizer it switches to whenever that one is faster, even late in training. The optimizer does
-leave a mark in weight space, where runs with the same function can lie in different linearly connected regions.
+leave a mark in weight space: runs whose functions are as close as two data orders are further apart in linear
+connectivity when they differ in optimizer.
 A linear model on separable data, where the limits of training are known to differ, shows that our test can
 detect a split, and places it near interpolation, a regime the language models here do not reach.
 
@@ -1486,8 +1502,9 @@ Shakespeare, at the fork checkpoints of AdamW, Muon, and Muon with its auxiliary
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.75\linewidth]{figures/shakespeare/swap.png}
-\caption{Swaps on Shakespeare, as in \cref{fig:swap} (top).}
+\includegraphics[width=0.75\linewidth]{figures/shakespeare/swap.png}\\[2pt]
+\includegraphics[width=\linewidth]{figures/shakespeare/lmc.png}
+\caption{Swaps (top) and mode connectivity (bottom) on Shakespeare, as in \cref{fig:swap}.}
 \label{fig:app-swap}
 \end{figure}
 

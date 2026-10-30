@@ -16,8 +16,9 @@ threshold). Training goes left → right.*
 - Most "separation in time" is one optimizer (or lr) being faster. Same for the break-even replication.
 - **Edge of stability doesn't explain any of it.** AdamW sits at its threshold whether or not the
   optimizers differ; SGD only around the end of warmup.
-- **Swaps:** whoever trains last decides the function (if it's fast enough). But in **weight space** the
-  optimizer leaves a mark: same function, different basin.
+- **Swaps:** whoever trains last decides the function (if it's faster). But in **weight space** the
+  optimizer leaves a mark: AdamW and Muon end as close in function as two data orders, but further apart in
+  linear connectivity.
 - The detector does find a split where theory says there is one (linear model), but only near interpolation.
 
 ## 1. [planned] Learning-rate sweeps
@@ -104,8 +105,11 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 ![](figures/ts10m/lmc.png)
 
 - Same optimizer, other data: one basin if forked after step ~1000 (10% of training).
-- Other optimizer: needs a later fork (~2500–4000). SGD → AdamW: **never** (barrier 3–6 nats), although
-  that fork computes AdamW's function. **Same function, different basin.**
+- Other optimizer: needs a later fork (~2500–4000). SGD → AdamW: never.
+- Pure AdamW vs pure Muon (same data): barrier 3.9, vs 1.6 between two AdamW data orders — yet their
+  functions are equally close. **The optimizer leaves a mark in weight space, not in function space.**
+- Shakespeare (`figures/shakespeare/lmc.png`): same, except Muon itself is unstable to the data order until
+  step ~800 (it's memorizing).
 
 ## 5. [planned] Break-even replication (CIFAR-10, plain SGD)
 
