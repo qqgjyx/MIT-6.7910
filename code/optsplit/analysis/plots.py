@@ -324,6 +324,37 @@ def sweep(runs, path, select='final'):
     _save(fig, path)
 
 
+PAIR_COLORS = {('adamw', 'muon'): 'C0', ('adamw', 'sgd'): 'C4', ('muon', 'sgd'): 'C5'}
+GREYS = dict(adamw='0.25', muon='0.5', sgd='0.75')
+
+
+def loss_pairs(runs, path, max_loss=None):
+    """One panel per pair of optimizers: Jensen-Shannon divergence at equal training loss (up to `max_loss`)
+    between the two on each data order (in the pair's colour) and between two data orders of each (in its grey)."""
+    G = {o: by_seed([r for r in runs if r.optimizer == o]) for o in sorted({r.optimizer for r in runs})}
+    pairs = list(combinations(G, 2))
+    fig, axes = plt.subplots(1, len(pairs), figsize=(3.4 * len(pairs), 2.4), sharey=True, squeeze=False)
+
+    def line(ax, a, b, **kw):
+        c = loss_curve(a, b)
+        ok = c['loss'] <= (max_loss or np.inf)
+        ax.plot(c['loss'][ok], c['js'][ok], lw=0.7, **kw)
+
+    for ax, (o, p) in zip(axes[0], pairs):
+        for i, s in enumerate(sorted(G[o].keys() & G[p].keys())):
+            line(ax, G[o][s], G[p][s], color=PAIR_COLORS[o, p], zorder=3, label=f'{o} vs {p}' if i == 0 else None)
+        for q in (o, p):
+            for i, (s, t) in enumerate(combinations(sorted(G[q]), 2)):
+                line(ax, G[q][s], G[q][t], color=GREYS[q], label=f'{q}, two data orders' if i == 0 else None)
+        ax.set(xlabel='training loss', xlim=(None, max_loss))
+        ax.invert_xaxis()
+    axes[0, 0].set_ylabel('Jensen-Shannon divergence')
+    h = {l: x for ax in axes[0] for x, l in zip(*ax.get_legend_handles_labels())}
+    labels = sorted(h, key=lambda l: 'vs' not in l)  # the pairs of optimizers, then the greys
+    fig.legend([h[l] for l in labels], labels, fontsize=7, loc='center left', bbox_to_anchor=(1, 0.5))
+    _save(fig, path)
+
+
 def _path(out, name):
     return Path(out or root_dir() / 'analysis' / 'figures') / (name if Path(name).suffix else f'{name}.png')
 
@@ -376,8 +407,12 @@ def fig_sweep(runs, select='final', out=None, name='sweep'):
     sweep(load_runs(runs), _path(out, name), select)
 
 
+def fig_pairs(runs, max_loss=None, out=None, name='divergence_pairs'):
+    loss_pairs(load_runs(runs), _path(out, name), max_loss)
+
+
 FIGS = dict(divergence=fig_divergence, sharpness=fig_sharpness, eos=fig_eos, anatomy=fig_anatomy, swap=fig_swap,
-            lmc=fig_lmc, function=fig_function, sweep=fig_sweep, losses=fig_losses)
+            lmc=fig_lmc, function=fig_function, sweep=fig_sweep, losses=fig_losses, pairs=fig_pairs)
 
 
 def main():
@@ -429,7 +464,10 @@ def main():
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--select', default='final', choices=['final', 'min'],
                    help='validation loss to compare learning rates by (min for runs that overfit)')
-    args = {k: v for k, v in vars(p.parse_args()).items() if v is not None}
+    s = sub.add_parser('pairs', parents=[common])
+    s.add_argument('--runs', nargs='+', required=True)
+    s.add_argument('--max-loss', type=float, help='start the loss axis at this training loss')
+    args ={k: v for k, v in vars(p.parse_args()).items() if v is not None}
     FIGS[args.pop('fig')](**args)
 
 

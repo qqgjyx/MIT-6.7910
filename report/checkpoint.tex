@@ -74,15 +74,18 @@ steps to reach its final validation loss. Towards the end of training all six ru
 divergences shrink.
 
 \paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} After warmup, when their training loss is about
-the same, two runs with different optimizers, SGD included, are about as far apart as two runs of one optimizer
-with different data orders, on both TinyStories models. The same holds for one optimizer at different learning
-rates ($\tfrac14$ to 4 times its rate, TinyStories-10M). So we find no split.
+the same, two runs with different optimizers are about as far apart as two runs of one optimizer with different
+data orders, with one exception: on TinyStories-10M, SGD is up to about 1.5 times as far from AdamW or Muon at
+losses 4--2.5 (1.3 times on average), then within 1.1 times below loss 2.5. On TinyStories-30M every pair stays
+within 1.1 times. The same holds for one optimizer at different learning rates ($\tfrac14$ to 4 times its rate,
+TinyStories-10M). So we find no lasting split.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.82\linewidth]{figures/overview_top.pdf}
-\caption{Loss-matched distance between optimizers over the data-order floor (training progresses to the right);
-red dashed, the threshold 1.5. Hyperparameters in \cref{app:hparams-fig2}.}
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_pairs.pdf}
+\caption{TinyStories-10M: Jensen--Shannon divergence between two optimizers at equal training loss, for each data
+order (colour), and between two data orders of the same optimizer (grey; one tone per optimizer). SGD's curves end
+at its lowest training loss. Hyperparameters in \cref{app:hparams-fig1}.}
 \label{fig:overview}
 \end{figure}
 
