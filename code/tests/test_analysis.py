@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import torch
 
-from optsplit.analysis import breakeven, cka, lmc, lmc_layers, lr_robust, ood, plots, split, swap
+from optsplit.analysis import breakeven, cka, lmc, lmc_layers, lr_robust, ood, plots, split, swap, trajectories
 from optsplit.analysis.distance import js_divergence, loss_curve, step_curve, top1_agreement
 from optsplit.analysis.io import Run, load_runs
 from optsplit.config import load_config, save_config
@@ -143,6 +143,14 @@ def test_ood(tmp_path):
                'adamw-muon': {'random': 0.3}}
     assert ood.ratios(summary) == {'adamw-muon': {'random': pytest.approx(1.5)}}
     ood.plot({'syn': summary}, tmp_path / 'ood.png')
+
+
+def test_trajectories(tmp_path):
+    logp = torch.log_softmax(torch.randn(3, 5, V, generator=gen), -1)
+    D = trajectories.js_matrix(logp.exp())
+    assert D[0, 1].item() == pytest.approx(js_divergence(logp[0], logp[1]), rel=1e-4) and D[2, 2] == 0
+    run = dict(optimizer='adamw', steps=[0, 1], loss=[2., 1.], xy=[[0., 0.], [1., 1.]])
+    trajectories.plot({'syn': ({'a_d0': run, 'b_d0': {**run, 'optimizer': 'muon'}}, [1.5])}, tmp_path / 't.png')
 
 
 def test_lmc_barrier():
