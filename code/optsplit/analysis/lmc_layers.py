@@ -32,15 +32,23 @@ def layerwise(model, sd_a, sd_b, batches, n_alphas):
     return out
 
 
+def kind(row):
+    a, b = (x.split('/')[-1].rsplit('_', 1)[0] for x in (row['a'], row['b']))
+    return f'{a}, data orders' if a == b else f'{a}–{b}'
+
+
 def plot(panels, path):
-    """One row of bars per {title: rows}, one bar per pair of runs in each parameter group."""
+    """One row of bars per {title: rows}: the mean barrier of each kind of pair (two optimizers on the same data
+    order, or two data orders of one optimizer) in each parameter group, with the standard deviation over pairs."""
     fig, axes = plt.subplots(len(panels), 1, figsize=(8, 2.6 * len(panels)), squeeze=False)
     for ax, (title, rows) in zip(axes[:, 0], panels.items()):
         groups = list(rows[0]['barriers'])
-        width = 0.8 / len(rows)
-        for i, r in enumerate(rows):
-            label = ' vs '.join(x.split('/')[-1] for x in (r['a'], r['b']))
-            ax.bar(np.arange(len(groups)) + i * width, [r['barriers'][g] for g in groups], width, label=label)
+        kinds = list(dict.fromkeys(map(kind, rows)))
+        width = 0.8 / len(kinds)
+        for i, k in enumerate(kinds):
+            b = np.array([[r['barriers'][g] for g in groups] for r in rows if kind(r) == k])
+            ax.bar(np.arange(len(groups)) + i * width, b.mean(0), width, yerr=b.std(0) if len(b) > 1 else None,
+                   error_kw=dict(lw=0.6), label=f'{k} ({len(b)})')
         ax.set_xticks(np.arange(len(groups)) + 0.4 - width / 2, groups, fontsize=7)
         ax.set(ylabel='loss barrier (nats)', title=title)
     axes[0, 0].legend(fontsize=6, ncol=2)
@@ -53,7 +61,8 @@ def plot(panels, path):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('pairs', nargs='*', help="'<run a>:<run b>' run ids")
-    p.add_argument('--plot', nargs='+', metavar='TITLE=JSON', help='only plot earlier lmc_layers.json files')
+    p.add_argument('--plot', nargs='+', metavar='TITLE=JSON[,JSON...]', help='only plot earlier lmc_layers.json '
+                   'files, several per panel if comma-separated')
     p.add_argument('--n', type=int, default=64, help='training examples for the loss')
     p.add_argument('--chunk', type=int, default=16)
     p.add_argument('--alphas', type=int, default=11)
@@ -61,7 +70,8 @@ def main():
     p.add_argument('--out', required=True, help='output directory')
     args = p.parse_args()
     if args.plot:
-        panels = {t: json.loads(Path(f).read_text()) for t, f in (a.split('=', 1) for a in args.plot)}
+        panels = {t: [r for f in fs.split(',') for r in json.loads(Path(f).read_text())]
+                  for t, fs in (a.split('=', 1) for a in args.plot)}
         return plot(panels, Path(args.out) / 'lmc_layers.png')
 
     pairs = [tuple(map(Run, s.split(':'))) for s in args.pairs]

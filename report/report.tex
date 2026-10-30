@@ -1524,7 +1524,10 @@ All derivatives are taken by automatic differentiation in float32, with the exac
 \label{app:compute}
 %% =================================================================
 
-All runs used one GPU each on the MIT ORCD cluster \todo{GPU types}. \todo{GPU-hours per suite and total.}
+All runs used one NVIDIA L40S GPU each on the MIT ORCD cluster. The project took 102 GPU-hours in all, 60\% of
+them for the forks (\cref{tab:compute}), and 49 CPU core-hours for the offline analyses that run on CPU (mode
+connectivity, representations, swap landing and the split statistics). Twelve smoke-test runs (0.2 GPU-hours) are
+not counted.
 
 \begin{table}[ht]
 \centering\small
@@ -1534,15 +1537,17 @@ All runs used one GPU each on the MIT ORCD cluster \todo{GPU types}. \todo{GPU-h
 \toprule
 Suite & Runs & GPU-hours \\
 \midrule
-Learning-rate sweeps (3 settings) & $3\times15$ & \tbd \\
-Main runs (3 settings) & $3\times15$ & \tbd \\
-Forks (3 settings) & $3\times81$ & \tbd \\
-Break-even, Shakespeare and TinyStories-10M & $2\times9$ & \tbd \\
-Break-even, CIFAR-10 & 10 & \tbd \\
-Shakespeare control (matched Muon) & 6 & \tbd \\
-Offline function metrics and mode connectivity & -- & \tbd \\
+Learning-rate sweeps (3 settings) & $3\times15$ & 9.0 \\
+Main runs (3 settings) & $3\times15$ & 16.7 \\
+Forks (3 settings) & $3\times81$ & 61.1 \\
+Break-even, Shakespeare and TinyStories-10M & $12+9$ & 2.5 \\
+Break-even, CIFAR-10 & 10 & 1.1 \\
+Shakespeare control (matched Muon)\extra & 6 & 0.5 \\
+Second initialization, Shakespeare and TinyStories-10M\extra & $2\times6$ & 1.0 \\
+Shakespeare trained into memorization\extra & 10 & 0.5 \\
+Offline function metrics & -- & 9.2 \\
 \midrule
-Total & 367 & \tbd \\
+Total & 392 & 101.6 \\
 \bottomrule
 \end{tabular}
 \end{table}
