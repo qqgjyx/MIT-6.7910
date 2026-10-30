@@ -16,10 +16,11 @@ threshold). Training goes left → right.*
 - Most "separation in time" is one optimizer (or lr) being faster. Same for the break-even replication.
 - **Edge of stability doesn't explain any of it.** AdamW sits at its threshold whether or not the
   optimizers differ; SGD only around the end of warmup.
-- **Swaps:** whoever trains last decides the function (if it's faster). But in **weight space** the
+- **Swaps:** whoever trains last decides the function (if it's fast enough). But in **weight space** the
   optimizer leaves a mark: AdamW and Muon end as close in function as two data orders, but further apart in
   linear connectivity, and with each optimizer's geometry in the weights. [extra] Ladder: weights (clear
-  mark) → hidden representations (small) → outputs (none).
+  mark) → hidden representations (small) → outputs (none, even
+  off the data distribution).
 - [extra] Holds at every stable learning rate of the sweeps, not just the tuned ones.
 - The detector does find a split where theory says there is one (linear model), but only near interpolation.
   Training AdamW and Muon into memorization still gives no split.
@@ -98,12 +99,13 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 
 - AdamW ↔ Muon: within the floor of **both** pure runs at every switch step. Nothing to tell apart.
 - SGD → AdamW/Muon: lands on the new optimizer even after 4000 SGD steps. SGD leaves no trace.
-- AdamW/Muon → SGD: late switches stay near the old optimizer — SGD is too slow to undo it.
+- AdamW/Muon → SGD: switches up to step 200 land on SGD; from step 1500 on they end closer to the old
+  optimizer — SGD is too slow to undo it.
 - Shakespeare (`figures/shakespeare/swap.png`): Muon is the fast one. Anything → Muon lands on Muon;
   Muon → AdamW/SGD keeps Muon's mark; SGD → AdamW keeps SGD's (AdamW at 3e-4 is slow there).
-- 30M (`figures/ts30m/swap.png`): same, except switches into SGD land on SGD up to step 3000 (SGD's lr is
-  3× higher there).
-- Rule: **the last optimizer decides the function only if it's faster than the first.**
+- 30M (`figures/ts30m/swap.png`): same, except switches into SGD land near SGD up to step 3000 (SGD's lr
+  is 3× higher there).
+- Rule: **the last optimizer decides the function if it's fast enough to get there in the steps left.**
 
 **[planned] Linear mode connectivity** (loss barrier, parent's final weights vs fork's final weights):
 
@@ -163,9 +165,10 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 
 - TinyStories: AdamW vs Muon slightly less similar than two data orders (mostly in the first block).
 - SGD isn't even reproducible across its own data orders. Shakespeare: AdamW and Muon clearly differ.
-- Ladder: **weights** (clear mark) → **representations** (small mark) → **outputs** (none).
+- Ladder: **weights** (clear mark) → **representations** (small mark) → **outputs** (none, even off-distribution).
 
-**[extra] Metrics under swaps** (0 = like the old optimizer, 1 = like the new):
+**[planned] Metrics under swaps** (0 = like the old optimizer, 1 = like the new; ℓ∞/ℓ2 and stable rank are
+[extra]):
 
 ![](figures/ts10m/swap_metrics.png)
 
@@ -174,13 +177,24 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - AdamW ↔ Muon late switches: functions identical, weights a mixture (stable rank only 0.3–0.45 of the way).
   **The weights remember the training history; the function doesn't.**
 
+**[extra] Off the data distribution** (final functions on validation text, the same text with shuffled
+tokens, and random tokens; distance between optimizers ÷ distance between data orders):
+
+![](figures/ood.png)
+
+- Off-distribution every pair of runs differs 4–7× more, but AdamW vs Muon stays at **0.9–1.07×** the
+  data-order distance everywhere. No hidden optimizer bias in how they extrapolate.
+- SGD's gap (at equal steps) shrinks off-distribution: it's about fitting the data less, not extrapolating
+  differently.
+
 ## 5. [planned] Break-even replication (CIFAR-10, plain SGD)
 
 ![](figures/breakeven/cifar/curves.png)
 
 - Replicates: larger lr → lower sharpness (≈ 2/η) and better-conditioned gradient noise; runs share a path,
   then the large lr leaves first.
-- **But** at equal loss, lr 0.01 vs 0.1 are only 1.0–1.75× the floor. The "separation" is speed.
+- **But** at equal loss, lr 0.01 vs 0.1 are only 1.0–1.75× the floor (0.001 vs 0.01: up to ~2×). The
+  "separation" is speed.
 
 **[extra] Transfer and batch size:**
 - TinyStories 10M, lr 0.03/0.1/0.3: sharpness and noise effects replicate (not the noise conditioning). At
