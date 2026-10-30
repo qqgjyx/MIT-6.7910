@@ -18,7 +18,9 @@ threshold). Training goes left → right.*
   optimizers differ; SGD only around the end of warmup.
 - **Swaps:** whoever trains last decides the function (if it's faster). But in **weight space** the
   optimizer leaves a mark: AdamW and Muon end as close in function as two data orders, but further apart in
-  linear connectivity.
+  linear connectivity, and with each optimizer's geometry in the weights. [extra] Ladder: weights (clear
+  mark) → hidden representations (small) → outputs (none).
+- [extra] Holds at every stable learning rate of the sweeps, not just the tuned ones.
 - The detector does find a split where theory says there is one (linear model), but only near interpolation.
   Training AdamW and Muon into memorization still gives no split.
 

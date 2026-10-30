@@ -71,8 +71,9 @@ around the end of warmup. On CIFAR-10 we replicate the break-even effects of \ci
 on sharpness and gradient noise, but at equal loss two learning rates differ by only 1.0 to 1.75 times the
 floor. Switching optimizer at nine times during training, the run ends at the function of the new optimizer
 whenever that optimizer is the faster one, so the endpoint is not decided early; in weight space, however, a
-change of optimizer separates the solutions more than a change of data order. A second initialization reproduces
-the results, and on a linear model with known, different limits the same test does find a split, near
+change of optimizer separates the solutions more than a change of data order, and the weights carry the geometry
+of whichever optimizer moved them most, while the hidden representations differ only slightly. A second
+initialization and the other learning rates of the sweeps reproduce the results, and on a linear model with known, different limits the same test does find a split, near
 interpolation; AdamW and Muon trained into memorization on Shakespeare still do not split.
 \end{abstract}
 
@@ -1314,7 +1315,9 @@ reshuffling the data or the initialization. Neither the edge of stability nor th
 transitions. Switching optimizers during training does not reveal an early decision either: the run ends at the
 function of the optimizer it switches to whenever that one is faster, even late in training. The optimizer does
 leave a mark in weight space: runs whose functions are as close as two data orders are further apart in linear
-connectivity when they differ in optimizer.
+connectivity when they differ in optimizer, and they carry the geometry of whichever optimizer moved them most;
+the hidden representations differ only slightly. None of this depends on the tuned learning rates: on
+TinyStories every stable rate of the sweeps is within the data-order floor of the tuned runs.
 A linear model on separable data, where the limits of training are known to differ, shows that our test can
 detect a split, and places it near interpolation; but AdamW and Muon trained on Shakespeare until they memorize
 the training set do not split either, so for these models the absence of a split is not only a matter of
