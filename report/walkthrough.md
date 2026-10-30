@@ -169,3 +169,59 @@ run length k = 2/5 (default 3), loss-matching tolerance 1%/5% (default 2%).
 - Shakespeare Muon vs SGD: the lasting split is **fragile** — gone with disagreement, with margin 1.0, or
   with k = 5. Treat it as "SGD sits slightly off, barely above noise", not a clear split.
 - TinyStories 10M and 30M: no lasting split for any pair under any of the 7 variants.
+
+## 6. [extra] Rare vs frequent tokens
+
+Probe positions binned by how frequent the target token is (quintiles, rare → frequent).
+
+![](figures/ts10m/tokens.png)
+
+- SGD's loss gap is mostly on **rare** tokens (10M: +1.16 nats on the rarest fifth vs +0.11 on the most
+  frequent; 30M: +0.48 vs +0.07), as Kunstner et al. (2024) predict for SGD vs Adam.
+- At equal steps, SGD's distance from AdamW/Muon is largest on rare tokens (1.8–2.1× floor vs 1.4×).
+- At **equal loss** it's ≈ 1× the floor in every bin, for every pair. So the rare-token gap is SGD being
+  slower on rare tokens, not learning a different function there.
+
+## 7. [extra] Positive control: a case where theory says they *should* split
+
+Logistic regression on separable data: GD → l2 max-margin, Adam → l_inf max-margin (known limits).
+
+![](figures/linear/linear_control.png)
+
+- Same detector, same thresholds: within the floor for most of training, then a **persistent split** below
+  loss ~1e-3 (ratio up to 3×). So the method can find a split; in the linear case it also comes late,
+  near interpolation — a regime our language models never reach.
+
+## 8. CIFAR batch size (break-even, B = 30 vs 300 at lr 0.05)
+
+- Replicates: smaller batch → lower sharpness (λ_H ≈ 12 vs ≈ 50).
+- At equal loss: median 1.2× the floor (0.7–2.1), no split.
+
+**TinyStories 10M, SGD lr 0.03 / 0.1 / 0.3:** larger lr → lower sharpness (λ_H ≈ 125 / 35 / 20) and lower
+gradient noise (Tr K), as predicted; the noise conditioning (λ*_K/λ_K) does *not* improve with lr here.
+At equal loss: up to ~150× the floor at loss 7.5, back to 1× by loss 4 — the optimizer story again.
+
+![](figures/breakeven/ts10m/figures/divergence_0.03_0.1.png)
+
+## 9. Swaps: train with A until step t, then switch to B (TinyStories 10M)
+
+Each fork vs the pure runs, in units of the data-order noise floor (solid: to the new optimizer, dashed: to
+the old one).
+
+![](figures/ts10m/swap.png)
+
+- AdamW ↔ Muon: the result is within the floor of **both** pure runs at every switch step — nothing to tell
+  apart.
+- SGD → AdamW/Muon: lands on the new optimizer (≈ 1 floor) even after 4000 SGD steps. SGD leaves no trace.
+- AdamW/Muon → SGD: early switches land on pure SGD; later ones stay near the old optimizer, because SGD is
+  too slow to move away from what was already learned.
+
+**Linear mode connectivity:** loss barrier between the parent's final weights and the fork's final weights.
+
+![](figures/ts10m/lmc.png)
+
+- Same optimizer, other data order: in one basin if forked after step ~1000–1500 (barrier < 0.05).
+- Other optimizer: needs a later fork (AdamW parent: ~2500–4000). Muon → AdamW still 0.05 at 4000.
+- SGD parent → AdamW: **never** connected (barrier 4–6 nats), although in function space that fork lands
+  right on AdamW. **Same function, different basin.**
+- Dotted: pure runs (only the init shared): barrier 1.6–3.9, as expected.

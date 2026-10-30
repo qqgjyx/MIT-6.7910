@@ -801,33 +801,49 @@ ratio of 1.07 at the lowest common loss (\cref{fig:app-divergence}).
 
 \begin{figure}[t]
 \centering
-\begin{minipage}[t]{0.49\linewidth}\centering
-\figbox[0.9in]{Swaps: landing coordinate $r$ \eqref{eq:landing} with $D_\JS$ against fork step for the six
-ordered pairs, with the end of the early episode of each pair marked (one panel per setting, or TinyStories-30M
-here and the rest in the appendix).}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.49\linewidth}\centering
-\figbox[0.9in]{Mode connectivity: barrier \eqref{eq:barrier} between $A_0$ and each fork against fork step;
-same-optimizer forks with data order 1 (instability control) and cross-optimizer forks.}
-\end{minipage}
+\includegraphics[width=0.75\linewidth]{figures/ts10m/swap.png}\\[2pt]
+\includegraphics[width=\linewidth]{figures/ts10m/lmc.png}
 %% python -m optsplit.analysis.swap --forks 'ts10m_forks/*' --pure 'ts10m_main/*' --out swap
-%% python -m optsplit.analysis.plots swap --swap-json swap.json --split split_adamw_muon.json
-%% python -m optsplit.analysis.lmc --parent ts10m_main/adamw_d0 --forks 'ts10m_forks/adamw_to_*' --out lmc_adamw.json
-%% python -m optsplit.analysis.plots lmc --lmc-json lmc_adamw.json lmc_sgd.json lmc_muon.json
-\caption{Left: where swaps land; 0 is the function of the run that kept its optimizer, 1 that of the run
-trained with the new optimizer from initialization. Right: loss barrier between the parent and its forks.
-\todo{caption details once the swap runs are analysed.}}
+%% python -m optsplit.analysis.plots swap --swap-json swap.json
+%% python -m optsplit.analysis.lmc --parent ts10m_main/adamw_d0 --forks 'ts10m_forks/adamw_to_*' --others 'ts10m_main/*_d0' ts10m_main/adamw_d1 --out lmc_adamw.json
+%% python -m optsplit.analysis.plots lmc --lmc-json lmc_adamw.json lmc_muon.json lmc_sgd.json
+\caption{Swaps and mode connectivity on TinyStories-10M. Top left: landing coordinate $r$
+\eqref{eq:landing} with $D_\JS$ against the fork step, for the six ordered pairs; 0 is the final function of the
+parent (optimizer kept), 1 that of the pure run of the new optimizer (same batches). Top right: the fork's
+distance to the pure run of the new optimizer (solid) and of the old one (dashed), each over that pure run's
+final data-order floor. Bottom: barrier \eqref{eq:barrier} between the final weights of each $d=0$ parent and of
+its forks against the fork step; ``other data'' are the forks that keep the optimizer and change the data
+order. Dotted: barrier to the pure runs of the other optimizers and to the parent's optimizer with data order
+1, which share only the initialization.}
 \label{fig:swap}
 \end{figure}
 
-\todo{Describe \cref{fig:swap} (left): $r$ for forks before and after the end of the early episode, for each
-ordered pair; asymmetries between $A\to B$ and $B\to A$; distances $D(F,A)$, $D(F,B)$ against $D(A,B)$; the
-function-metric shifts. Since the final AdamW and Muon functions on TinyStories-30M are no further apart than
-the data-order floor, $r$ for that pair must be read against $D(A,B)$.}
+\paragraph{Swaps.} On TinyStories-10M (\cref{fig:swap}, top) the forks fall into three groups.
+\emph{AdamW$\leftrightarrow$Muon}: at every fork step from 50 to 4000 the fork ends within the floor of the
+pure run of the new optimizer (0.86--0.95 floors) and, increasingly with the fork step, also of the parent's
+(0.92 floors at step 50, 0.20 at step 4000), so $r$ falls from 0.5 to 0.18. Since the two pure runs are
+themselves within the floor of each other at the end (\cref{sec:res-route}), these swaps cannot reveal an
+imprint of either optimizer. \emph{SGD$\to$AdamW and SGD$\to$Muon} land on the new optimizer (0.91--1.08 floors
+from its pure run) at every fork step up to 4000, and stay 1.7--2.0 floors from pure SGD: 4000 steps of SGD
+leave no trace that AdamW or Muon do not erase. \emph{AdamW$\to$SGD and Muon$\to$SGD} land on pure SGD when
+forked by step 200 (0.91--1.01 floors), but later forks stay with the parent (0.66--0.79 floors from it at step
+4000) and move away from pure SGD (1.7--1.8 floors): SGD at its stable rate is too slow to undo what the
+adaptive optimizer has already learned. In function space the last optimizer decides the endpoint whenever it
+is fast enough to do so, and none of the forks keeps an imprint of an early phase that the later optimizer
+could have reached on its own.
 
-\todo{Describe \cref{fig:swap} (right): the step after which same-optimizer forks become linearly connected (the
-\citet{frankle2020lmc} stability point) for each optimizer; whether cross-optimizer forks stay in the same
-basin after that point; relation to the early episode.}
+\paragraph{Mode connectivity.} Forks that keep the optimizer and change the data order
+(\cref{fig:swap}, bottom) become linearly connected to their parent at about the same time for AdamW and Muon:
+the barrier falls below 0.05 nats for forks from step 1000 (AdamW 0.035, Muon 0.046) and to 0 from step 2500,
+the stability point of \citet{frankle2020lmc} at 10--25\% of training. For SGD the same barrier jumps between 0.4
+and 7.9 up to step 1500, like its data-order noise (\cref{sec:res-split}), and is 0 from step 2500. A change of optimizer needs a later
+fork to stay in the parent's basin: from the AdamW parent the Muon and SGD forks reach 0.03 and 0.01 nats only at
+step 2500, from the Muon parent the AdamW fork is still at 0.055 at step 4000, and from the SGD parent the AdamW
+fork is never connected (barrier 3.4--6.1 at every fork step) and the Muon fork only approaches it (0.53 at step
+4000). The pure runs, which share only the initialization, have barriers of 1.6--3.9. Weight space thus keeps a
+mark of the optimizer that function space does not: an SGD$\to$AdamW fork at step 4000 computes AdamW's
+function to within the floor, yet lies in a different linearly connected region than the SGD run it was
+forked from. \todo{Shakespeare and TinyStories-30M swaps and LMC.}
 
 \subsection{Anatomy of the sharp direction}
 \label{sec:res-anatomy}
@@ -895,8 +911,20 @@ ten or so steps, where the distance between any two runs, floor pairs included, 
 recover but reach only training loss 3.09 (the lowest common loss). At equal loss the distance between the two
 rates is at most 1.17 times the floor and no split is found (\cref{tab:tstar}, \cref{fig:app-breakeven}).
 $\lambda_K^\ast/\lambda_K^1$ rises over training at both rates, and $\lambda_H^1$ is lower at 0.3 apart from
-spikes. \todo{Shakespeare at $\eta=0.03$; TinyStories-10M break-even runs still running; CIFAR-10 batch-size
-runs (30 and 300) not analysed yet.}
+spikes. At $\eta=0.03$ the runs do not blow up; against 0.1 the ratio exceeds the floor in one episode (loss
+3.74--3.28, at most 5.2 times the floor, in 68\% of resamples) and is 0.90 at the lowest common loss, 3.13. On
+TinyStories-10M the three rates reproduce the sharpness and noise effects: $\lambda_H^1$ levels off at about 125,
+35 and 20 for $\eta=0.03$, 0.1 and 0.3, and $\lambda_K^1$ and $\operatorname{Tr}\hat K$ decrease with the
+learning rate; but $\lambda_K^\ast/\lambda_K^1$ is, if anything, higher at the smallest rate, the opposite of
+CIFAR-10. In prediction space 0.03 against 0.1 shows the pattern of the optimizer pairs: up to 151 times the
+floor at loss 7.4, one episode down to loss 5.14, and 0.97 times the floor (median) below loss 4, down to the
+lowest common loss 2.92 (\cref{fig:app-breakeven2}). The rate 0.3 recovers slowly from its initial blow-up, so
+0.1 against 0.3 is compared only down to loss 4.80 (one episode, 7.78--6.24, ratio 1.07 at the end).
+
+\paragraph{Batch size.} On CIFAR-10 at $\eta=0.05$, batch 30 against 300 also replicates the sharpness effect
+(the smaller batch levels off at a lower $\lambda_H^1$, about 12 against 50), and at equal loss the two batch
+sizes are 0.66--2.14 times the floor below loss 2 (median 1.22; at most 3.1 near the initialization), with no
+episode and no persistent split (\cref{fig:app-breakeven2}).
 
 \subsection{Function metrics}
 \label{sec:res-metrics}
@@ -1296,12 +1324,24 @@ TinyStories-10M (bottom two rows).}
 \includegraphics[width=0.6\linewidth]{figures/breakeven/cifar/scatter.png}\\
 \includegraphics[width=\linewidth]{figures/breakeven/cifar/figures/divergence_0.001_0.01.png}\\
 \includegraphics[width=\linewidth]{figures/breakeven/shakespeare/curves.png}\\
-\includegraphics[width=\linewidth]{figures/breakeven/shakespeare/figures/divergence_0.1_0.3.png}
+\includegraphics[width=\linewidth]{figures/breakeven/shakespeare/figures/divergence_0.03_0.1.png}
 \caption{Break-even analysis, continued. First row: CIFAR-10, $\lambda_H^1$ (left) and $\Delta L$ (right)
 against $\lambda_K^1$. Second row: CIFAR-10 divergence figure for $\eta=0.001$ against $0.01$. Third and
-fourth rows: Shakespeare with plain SGD at $\eta\in\{0.1,0.3\}$, the quantities of \cref{fig:breakeven} (top)
-and the divergence figure.}
+fourth rows: Shakespeare with plain SGD at $\eta\in\{0.03,0.1,0.3\}$, the quantities of \cref{fig:breakeven}
+(top) and the divergence figure for 0.03 against 0.1.}
 \label{fig:app-breakeven}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/breakeven/ts10m/curves.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/ts10m/figures/divergence_0.03_0.1.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/cifar_bs/curves.png}\\
+\includegraphics[width=\linewidth]{figures/breakeven/cifar_bs/figures/divergence_bs30_bs300.png}
+\caption{Break-even analysis, continued. First two rows: TinyStories-10M with plain SGD at
+$\eta\in\{0.03,0.1,0.3\}$, the quantities of \cref{fig:breakeven} and the divergence figure for 0.03 against
+0.1. Last two rows: CIFAR-10 at $\eta=0.05$ with batch sizes 30 and 300.}
+\label{fig:app-breakeven2}
 \end{figure}
 
 \end{document}
