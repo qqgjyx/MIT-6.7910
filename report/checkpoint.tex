@@ -22,7 +22,6 @@
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{1.0ex \@plus .3ex \@minus .2ex}{-1em}{\normalfont\normalsize\bfseries}}
 \renewcommand\maketitle{\begin{center}{\large\bfseries\@title\par}\vspace{3pt}\@author\quad\textperiodcentered\quad\@date\end{center}}
 \makeatother
-\newcommand{\extra}{\textsuperscript{\dag}}
 
 \title{Together First, Apart Later? When Optimizers Start to Learn Different Functions\\[1pt]
 \normalfont Initial checkpoint, MIT 6.7910, Fall 2026}
@@ -45,13 +44,12 @@ per optimizer. Along training we logged the next-token probability distributions
 and the top eigenvalue of the Hessian and, for AdamW, of the preconditioned Hessian \citep{cohen2022adaptive},
 both computed with the Lanczos method \citeyearpar{lanczos1950}. We swapped optimizers at nine fork steps with warm
 optimizer states, measured linear mode connectivity, and replicated the CIFAR-10 break-even analysis
-\citep{jastrzebski2020breakeven}. In total 392 runs, about 103 GPU-hours. Items added beyond the plan are
-marked \extra.
+\citep{jastrzebski2020breakeven}. In total 392 runs, about 103 GPU-hours.
 
 \paragraph{Method.} The distance between two runs is the mean Jensen--Shannon divergence of their next-token
 predictions. We compare runs at equal \emph{training loss}, so that one optimizer being faster is not counted
 as a difference, and divide by a noise floor: the distance between two runs of the same optimizer that differ
-only in data order. A split is a stretch of loss levels where this ratio exceeds 1.5; it is persistent\extra\
+only in data order. A split is a stretch of loss levels where this ratio exceeds 1.5; it is persistent
 if it lasts to the end of training, with a bootstrap over data orders for its location.
 
 \begin{figure}[h]
@@ -76,7 +74,7 @@ therefore the reverse of the hypothesis: the optimizers' functions differ early 
 \centering
 \includegraphics[width=0.85\linewidth,trim=0 198 0 0,clip]{figures/overview.png}
 \caption{Loss-matched distance between optimizers over the data-order floor (training progresses to the right);
-red dashed, the threshold 1.5. Red, left\extra: AdamW--Muon trained into memorization (8000 steps).}
+red dashed, the threshold 1.5. Red, left: AdamW--Muon trained into memorization (8000 steps).}
 \label{fig:overview}
 \end{figure}
 
@@ -97,7 +95,7 @@ not: after a change of optimizer, a fork needs a later fork step to stay linearl
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ts10m/swap.png}
-\caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right\extra:
+\caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right:
 its distance to pure $B$ (solid) and to pure $A$ (dashed) in units of their floors; below 1 means
 indistinguishable from that optimizer.}
 \label{fig:swap}
@@ -112,7 +110,7 @@ re-met, so they do not mark a split.
 
 \paragraph{Pipeline check and controls.} On CIFAR-10 the break-even effects replicate: the sharpness levels off
 at or below $2/\eta$ and lower for larger rates, and the gradient covariance is better conditioned; but at equal
-loss two learning rates differ by at most about twice the floor. Controls\extra: a second initialization
+loss two learning rates differ by at most about twice the floor. Controls: a second initialization
 reproduces the results, and on a linear model on separable data, where gradient descent and Adam have different
 max-margin limits \citep{soudry2018separable,zhang2024adam}, the same test does find a persistent split.
 
