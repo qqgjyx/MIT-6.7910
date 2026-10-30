@@ -910,7 +910,19 @@ are connected only from step 800 (barrier 3.5 at step 25, 0.06 at 800), later th
 (0.9 and 0.7 at step 100, 0.01 at 800). Muon on Shakespeare is unstable to the data order for half of training,
 while it memorizes, and its forks into slower optimizers move the weights less after the fork. Apart from this
 case, a change of optimizer separates the solutions in weight space more than a change of data order does,
-although it does not in function space. \todo{TinyStories-30M swaps and LMC.}
+although it does not in function space.
+
+\paragraph{Do swaps end in the new optimizer's basin?\extra} A fork into $B$ that ends at $B$'s function need not end
+in the region of weight space of the pure $B$ run. We computed the barrier between the final weights of each pure
+$d=0$ run and of every fork into its optimizer (\cref{fig:app-lmc-into}). On TinyStories-10M the forks into AdamW
+(2.9--8.0 nats) and into Muon (3.5--6.5) are further from the pure run than the same optimizer with another data
+order from the initialization (1.6 and 1.7), at every fork step from 50 on, while the forks into SGD (2.4--3.4)
+are within SGD's own data-order barrier (3.4). The forks from AdamW into Muon, for instance, end within Muon's
+data-order floor in function space at every fork step, but 3.7--4.3 nats of barrier away from pure Muon. On
+Shakespeare the forks into AdamW (0.8--2.4) are far above AdamW's data-order barrier (0.12), while those into Muon
+(2.3--6.6) and SGD (0.9--2.3) are comparable to Muon's (4.0) and SGD's (0.95). As few as 50 steps of another
+optimizer at the start can move the endpoint further in weight space than a different order of all the data,
+while in function space they leave no trace. \todo{TinyStories-30M swaps and LMC.}
 
 \subsection{Anatomy of the sharp direction}
 \label{sec:res-anatomy}
@@ -1588,6 +1600,16 @@ Shakespeare, at the fork checkpoints of AdamW, Muon, and Muon with its auxiliary
 \includegraphics[width=\linewidth]{figures/shakespeare/lmc.png}
 \caption{Swaps (top) and mode connectivity (bottom) on Shakespeare, as in \cref{fig:swap}.}
 \label{fig:app-swap}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/ts10m/lmc_into.png}\\[2pt]
+\includegraphics[width=\linewidth]{figures/shakespeare/lmc_into.png}
+%% python -m optsplit.analysis.lmc --parent ts10m_main/muon_d0 --forks 'ts10m_forks/*_to_muon_at*' --any-parent --out lmc_into_muon.json
+\caption{Barrier between the final weights of each pure $d=0$ run and of every fork into its optimizer, against
+the fork step, on TinyStories-10M (top) and Shakespeare (bottom).}
+\label{fig:app-lmc-into}
 \end{figure}
 
 \end{document}

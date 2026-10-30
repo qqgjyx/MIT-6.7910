@@ -112,6 +112,15 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - Shakespeare (`figures/shakespeare/lmc.png`): same, except Muon itself is unstable to the data order until
   step ~800 (it's memorizing).
 
+**[extra] Do swaps end in the new optimizer's basin?** Barrier between pure B and every fork into B:
+
+![](figures/ts10m/lmc_into.png)
+
+- **No, never** — not even when switching at step 50. Forks into AdamW/Muon are 3–8 nats away from pure
+  AdamW/Muon, more than two data orders from init (1.6). Yet in function space they land right on B.
+- So 50 steps of another optimizer moves the endpoint further in weight space than reshuffling all the data,
+  while leaving no trace in the function.
+
 ## 4b. [planned] Function metrics (TinyStories, final, mean of 5 data orders)
 
 | 10M | SGD | AdamW | Muon |
