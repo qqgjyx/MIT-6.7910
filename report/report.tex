@@ -177,6 +177,14 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   new data order and reproduces the episodes; SGD's loss gap on rare tokens is a matter of speed; and on a linear
   model, where theory predicts different limits, the same detector finds a persistent split near interpolation,
   while AdamW and Muon trained into memorization on Shakespeare still do not split.
+\item \textbf{A model of the results}\extra\ (\cref{sec:theory}): at equal loss, predictors of one n-gram class
+  lie within a distance of the class optimum set by the excess loss, whatever the optimizer, so the optimizers
+  can differ only before the bigram stage, where their update geometries pick different routes, or where the
+  class has no best predictor; near it, the distance between optimizers is mostly data-order noise. Weight
+  symmetries let each optimizer end at its own point of the set of weights computing one function, which
+  explains the barriers. SGD and AdamW have break-even points, Muon has none on the matrices it trains, and a
+  stability cap on curvature does not choose between functions of equal loss. A toy bigram model reproduces
+  these effects exactly.
 \end{enumerate}
 \paragraph{Planned and added analyses.} The project plan comprised the learning-rate sweeps, the divergence
 curves at equal steps and at equal loss against the data-order floor, the first exceedance $t^\ast$ with a
@@ -191,7 +199,7 @@ robustness checks, the anatomy of AdamW's preconditioned operator, the floor-nor
 similarity, the layer-wise barriers, the comparison off the data distribution, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
 initialization, token frequency, a linear positive control, Shakespeare runs trained into memorization, and
-other learning rates).
+other learning rates), and the model of the results in \cref{sec:theory} with its toy model.
 
 Code: \url{https://github.com/qqgjyx/MIT-6.7910} (\texttt{code/}).
 
@@ -495,8 +503,8 @@ measure it for every optimizer and compare it with $(2+2\mu)/\eta_s$ for SGD.
 \paragraph{Muon.} We have no stability threshold for Muon, and report its $\lmax$ and batch sharpness without
 one. Its update on a hidden matrix is orthogonalized, with all singular values near one whatever the size of
 the gradient, so the quadratic argument above, where the step scales with the gradient, does not carry over
-directly. This is a limitation. What we can test is the part of the model that Muon leaves to its auxiliary
-AdamW (\cref{sec:method-aux}).
+directly; \cref{sec:theory} shows that it has no such threshold at all. What we can test is the part of the
+model that Muon leaves to its auxiliary AdamW (\cref{sec:method-aux}).
 
 \paragraph{One-step loss change.} $\Delta L(s)=\ell_X(s)-\ell_X(s+1)$ on the training probe, used in the
 break-even analysis.
@@ -1310,6 +1318,182 @@ Shakespeare, 3.8 on TinyStories). Blue below 1, red above; ``--'': diverged or n
 \label{fig:lr-robust}
 \end{figure}
 
+\FloatBarrier
+%% =================================================================
+\section{A model of the results\extra}
+\label{sec:theory}
+%% =================================================================
+
+The results share one pattern: the optimizers differ in how they get somewhere (speed, route, weights,
+curvature), but from the bigram stage on not in which function they compute at a given training loss. Here we
+give a simple model of this pattern and of the role of the break-even point, with proofs or derivations, a toy
+model in which every quantity is exact (\cref{fig:toy}), and checks against the measurements.
+
+\paragraph{Setup.} Contexts $c\sim\cD$ have next tokens $y\sim q(\cdot\mid c)$, and a predictor $\pi$ has loss
+$L(\pi)=\mathbb E_c\,\mathbb E_{y\sim q(\cdot\mid c)}[-\log\pi(y\mid c)]$. For a statistic $s$ of the context
+(nothing, the last token, the last $k$ tokens), let $\mathcal F_s$ be the predictors that depend on $c$ only
+through $s(c)$: the unigram, bigram, \dots\ predictors. $\mathcal F_s$ is convex; its best element is the n-gram
+model of the data, $q_s(\cdot\mid s)=\mathbb E[q(\cdot\mid c)\mid s(c)=s]$, with loss the n-gram entropy $H_s$,
+and by the tower property every $\pi\in\mathcal F_s$ satisfies
+\begin{equation}
+L(\pi)=H_s+\mathbb E_s\,\KL\big(q_s(\cdot\mid s)\,\|\,\pi(\cdot\mid s)\big).
+\label{eq:pythagoras}
+\end{equation}
+
+\paragraph{Proposition 1 (funnel).} \emph{If $\pi_A,\pi_B\in\mathcal F_s$ have excess losses $\Delta
+L_A=L(\pi_A)-H_s$ and $\Delta L_B$ (in nats), then, with $\JS$ in bits,}
+\begin{equation}
+\mathbb E_s\JS(\pi_A,\pi_B)\le\sqrt2\big(\sqrt{\Delta L_A}+\sqrt{\Delta L_B}\big),\qquad\text{and}\qquad
+\mathbb E_s\JS(\pi_A,\pi_B)\le\frac{\Delta L_A+\Delta L_B}{2\ln2}\,(1+o(1))\ \text{ as }\Delta L_A,\Delta L_B\to0.
+\label{eq:funnel}
+\end{equation}
+\emph{Proof.} $\sqrt{\JS}$ is a metric \citep{endres2003metric}. For one outcome with probabilities $p,q$ the
+divergence (in nats) is $\frac{p+q}{2}(\ln2-h(t))$ with $t=p/(p+q)$ and $h$ the binary entropy, and $\ln2-h(t)\le
+\ln2\,|2t-1|$ because the left side is convex and the two agree at $t\in\{0,\frac12,1\}$; summing, $\JS$ in bits
+is at most the total variation $\mathrm{TV}$. With Pinsker's inequality $\mathrm{TV}\le\sqrt{\KL/2}$,
+$\JS(\pi_A,\pi_B)\le(\sqrt{\JS(\pi_A,q_s)}+\sqrt{\JS(q_s,\pi_B)})^2\le2\,\mathrm{TV}(\pi_A,q_s)+2\,\mathrm{TV}(q_s,\pi_B)
+\le\sqrt2(\sqrt{\KL(q_s\|\pi_A)}+\sqrt{\KL(q_s\|\pi_B)})$; take the mean over $s$, use Jensen's inequality and
+\eqref{eq:pythagoras}. For the second bound, $\JS(q,\pi)$ in nats and $\KL(q\|\pi)$ are $\frac18$ and
+$\frac12$ of $\sum_y(\pi(y)-q(y))^2/q(y)$ to leading order, and $(a+b)^2\le2a^2+2b^2$. $\square$
+
+Within a class, all predictors with a given loss thus lie in a shell around $q_s$ that shrinks with the excess
+loss, whichever optimizer produced them. Two optimizers can be far apart at equal loss only when the loss is far
+above the optimum of the class their functions lie in, or when the class has no best element: on separable data
+the loss tends to zero along directions chosen by each optimizer's implicit bias
+\citep{soudry2018separable,zhang2024adam}, which is where the linear control splits (\cref{sec:res-controls}).
+Networks learn the statistics of their data roughly in order of complexity \citep{belrose2024statistics}, and ours
+pass close to the bottom of the bigram funnel: on Shakespeare all three optimizers come within 0.036--0.041 bits
+of $q_2$ at losses 2.46--2.48, 0.01--0.03 nats above the bigram entropy of the training split ($H_2=2.452$), where
+the AdamW--Muon ratio is 0.91 (\cref{sec:res-route}). In the toy below, where the model can only represent
+bigram predictors, \eqref{eq:funnel} holds exactly, and the loss-matched distance between optimizers falls with
+the excess loss as the second bound allows (\cref{fig:toy}, bottom left).
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\linewidth]{figures/toy/toy_model.png}\\[2pt]
+\includegraphics[width=0.75\linewidth]{figures/toy/toy_swaps.png}
+%% PYTHONPATH=code python code/scripts/toy_model.py --text input.txt --out figures/toy
+\caption{Toy model\extra: next-character logits $AB\,e_c+b$ for the previous character $c$ on Shakespeare
+($V=65$, inner width 128, initialization $\mathcal N(0,0.02^2)$ for $A,B$ and $b=0$), batch 128, 2000 steps with
+the schedule of the language models, learning rates from a sweep (SGD 0.3, AdamW 0.01, Muon 0.03 on $A,B$ with
+AdamW at 0.01 on $b$), five data orders. Top: training loss with the unigram and bigram entropies; loss-matched
+distance over the floor (red: 1.5; dotted: $H_2$); $\JS$ of the $d=0$ runs from the unigram (dashed) and bigram
+(solid) models. Bottom: loss-matched $\JS$ between optimizers against the excess loss over $H_2$, with the two
+bounds of \eqref{eq:funnel}; sharpness over its threshold; raw sharpness. Last row: swaps from $d=0$ at eight fork
+steps, distance to pure $B$ (solid) and $A$ (dashed) in floors, and distance to pure $B$ against the gap
+between the final losses.}
+\label{fig:toy}
+\end{figure}
+
+\paragraph{The toy model.} Logits $AB\,e_c+b$ for the previous character $c$, trained on the bigram pairs of
+Shakespeare (\cref{fig:toy}). The function is the $65\times65$ table of next-character distributions, all
+losses are exact, and the class of reachable predictors is $\mathcal F_{\rm bigram}$, so its only funnel is the
+bigram one. The bias plays the part of directions that are trained from the first step, the product $AB$ that of
+directions that must first leave the saddle at zero. It reproduces the main observations: a loss-matched
+distance up to 40 times the floor (18 for AdamW--Muon) that falls below 1.5 at loss 2.62--2.69 and ends below 1
+at $H_2$, with no persistent split; the order in which the routes pass the unigram model; forks that end on the
+optimizer they switch to; and barriers between optimizers well above those between data orders.
+
+\paragraph{Routes before the funnel.} Near the initialization the gradient of the loss with respect to the
+product is $G_0=-\sum_ap(a)(q(\cdot\mid a)-u)e_a^\top$, with $u$ uniform and $p$ the frequency of the context;
+its top singular direction is close to the unigram direction $(q_1-u)p^\top$. With SGD, $b$ learns the unigram at
+once and, for gradient flow from a small balanced initialization, each singular value of $AB$ grows as
+$\dot s_k\approx2\sigma_ks_k$, with $\sigma_k$ the singular values of $G_0$ \citep{saxe2014exact}: exponentially,
+at rates proportional to $\sigma_k$, so the modes are picked up one at a time, strongest first, and the route
+passes through the unigram model before adding the bigram modes. Muon updates $A$ by $-\eta\,\mathrm{msign}(GB^\top)$
+and $B$ by $-\eta\,\mathrm{msign}(A^\top G)$, which move every singular direction in the range of the gradient
+at the same speed whatever $\sigma_k$: all modes of $AB$ grow together, the route heads for the spectrally
+flattened target and stays away from the unigram model. AdamW normalizes each coordinate, which makes it free of
+scale like Muon but in the coordinate basis: $b$ and $AB$ move at the same speed, and the route passes near the
+unigram model, less closely than SGD's. In the toy the closest approach to the unigram model is 0.036 bits for
+SGD, 0.064 for AdamW and 0.18 for Muon, the order measured on the Shakespeare transformers (0.001, 0.054, 0.111;
+\cref{sec:res-route}). At this stage the mean gradient dominates the mini-batch noise. Two data orders of one
+optimizer differ by a random walk, of squared size $\propto\eta^2t\sigma^2/B$ after $t$ steps, while two optimizers
+drift apart linearly in $t$, so the ratio of their squared distances grows like $t$ times the squared
+signal-to-noise ratio of the gradient: the ratio to the floor is largest before the funnel, as in
+\cref{fig:overview}.
+
+\paragraph{Proposition 2 (the floor near the funnel).} Near $q_s$ write each run's function as
+$\pi=q_s+\mu_X+\xi_X^d$, with $\mu_X$ common to all data orders of optimizer $X$ and $\xi^d_X$ a zero-mean part
+due to data order $d$. To second order $\JS(\pi,\pi')=\frac1{8\ln2}\|\pi-\pi'\|_F^2$ in bits, with
+$\|\delta\|_F^2=\mathbb E_s\sum_y\delta(y\mid s)^2/q_s(y\mid s)$, so
+\begin{equation}
+F_X=\tfrac1{4\ln2}\mathbb E\|\xi_X\|_F^2,\quad
+C_{\rm other}=\tfrac{F_A+F_B}2+\tfrac1{8\ln2}\|\mu_A-\mu_B\|_F^2,\quad
+C_{\rm same}=C_{\rm other}-\tfrac1{4\ln2}\mathbb E\langle\xi^d_A,\xi^d_B\rangle_F,
+\label{eq:decomp}
+\end{equation}
+for the floor $F_X$ and the cross distances on other and on the same data orders. The cross distance over the
+larger floor is therefore at most about one plus the optimizer's own term $\frac1{8\ln2}\|\mu_A-\mu_B\|_F^2$ over
+the floor, and below one when two optimizers respond alike to the same batches. The measurements at equal steps
+(\cref{sec:res-route}) fit this: for AdamW--Muon on TinyStories-30M at step 20{,}000, $C_{\rm other}=0.0556$ bits
+exceeds the mean of the floors (0.0547, 0.0512) by 0.0027, 5\% of the floor, and $C_{\rm same}=0.0511$; at step
+10{,}000 the excess is 0.0039 (5\%), and on TinyStories-10M at step 10{,}000 it is 0.0037 (6\%) with
+$C_{\rm same}=0.0574$ against 0.0632. In the toy the excess is 6\% of the floor. Most of the distance between two
+optimizers is data-order noise, and part of it is shared when they see the same batches.
+
+\paragraph{Swaps.} A fork from $A$ to $B$ is a run of $B$ from another starting point. In the regime of
+Proposition~2 it differs from pure $B$ on the same data order through its mean part, which the loss bounds, so it
+lands on $B$ once it reaches $B$'s loss, that is whenever $B$ is fast enough to get there in the remaining steps,
+and otherwise keeps a loss, and with it a function, set by the parent's progress. In the toy every optimizer
+reaches $H_2$, all forks end within 0.81 floors of pure $B$, and the distance to pure $B$ grows with the gap
+between the final losses (\cref{fig:toy}, last row). In the transformers SGD is the one optimizer too slow to undo
+its parent's progress, and the forks into it are the ones that stay near their parent (\cref{sec:res-swap}).
+
+\paragraph{Weight space.} The function $AB+b$ is unchanged by $(A,B)\mapsto(AR,R^{-1}B)$ for invertible $R$, and
+by any change of $A$ and $B$ that leaves their product unchanged: each function is a high-dimensional fiber of
+weights. Gradient flow conserves $A^\top A-BB^\top$ \citep{du2018balanced}, so SGD from a small initialization
+stays near the balanced point of the fiber, which minimizes $\|A\|_F^2+\|B\|_F^2$ for its product
+($\|A\|_F^2+\|B\|_F^2\ge2\|AB\|_*$, with equality for balanced factors). Normalized updates do not conserve it
+and end elsewhere on the fiber. Two points of one fiber compute the same function, but the segment between them
+leaves it, since $(\alpha A_1+(1-\alpha)A_2)(\alpha B_1+(1-\alpha)B_2)\ne A_1B_1$ in general, so a loss barrier
+between optimizers is compatible with equal functions. In the toy the imbalance $\|A^\top A-BB^\top\|_F/\|A^\top
+A\|_F$ is 0.39 (SGD), 0.91 (AdamW) and 2.1 (Muon), SGD has the smallest $\ell_2$ norm (27, against 43 for AdamW
+and 36 for Muon), and the barriers between optimizers on one data order (0.013--0.024 nats) are 20--50 times
+those between data orders of SGD or AdamW, at a function distance below the floor. This is the parameter-space
+implicit bias of the asymptotic theory acting along the fiber rather than on the function, and it accounts for
+the weights carrying each optimizer's geometry and for the barriers between AdamW and Muon while their functions
+agree (\cref{sec:res-swap,sec:res-metrics}).
+
+\paragraph{Break-even points by optimizer.} \citet{jastrzebski2020breakeven} model the early phase by one
+quadratic direction whose curvature grows until the step becomes unstable along it. Where this happens depends
+on how the update scales with the gradient.
+(i) SGD with momentum is linear in the gradient; along an eigenvector of $H$ with eigenvalue $\lambda$ it is
+stable if and only if $\eta\lambda<2+2\mu$, so its break-even sharpness is $(2+2\mu)/\eta$, lower for larger
+rates (their first conjecture).
+(ii) AdamW is linear in the gradient only for a frozen preconditioner, and $P$ changes over about
+$1/(1-\beta_2)$ steps. The threshold applies to $\lmax(P^{-1}H)$ \citep{cohen2022adaptive}, so the raw sharpness at
+break-even is about $38\,p/\eta$, with $p$ the preconditioner along the sharp direction, of the size of the
+gradient's root mean square. On TinyStories-30M $\lmax\approx5$ at $\eta=1.5\times10^{-3}$ gives $p\approx2\times10^{-4}$,
+and AdamW sits at the lowest raw sharpness of the three (5--10, against 12--20 for Muon and 20--30 for SGD;
+\cref{fig:app-sharpness}). A growing oscillation also raises $v$ and with it $P$, so AdamW stabilizes itself
+through its preconditioner as well as through the curvature.
+(iii) Muon's update $\mathrm{msign}(M)$ does not change when the gradient is scaled, so it has no linear regime.
+On a quadratic $\frac\lambda2\|X\|_F^2$ in a matrix $X$, without momentum, $X\leftarrow X-\eta\,\mathrm{msign}(X)$
+maps each singular value $s$ to $|s-\eta|$: the iterates enter $\{\|X\|_2\le\eta\}$ and stay there for every
+$\lambda>0$. No curvature makes Muon diverge; the curvature sets only the excess loss of the oscillation, at most
+$\frac\lambda2\eta^2\operatorname{rank}X$. Momentum changes the path but not this: the step has spectral norm
+$\eta$ whatever the curvature. Muon therefore has no break-even point on the matrices it trains, only on the
+part left to its auxiliary AdamW (\cref{sec:method-aux}); there is no threshold to compare with in
+\cref{sec:method-sharpness}.
+
+\paragraph{Why the break-even point does not decide the function.} Stability caps the curvature along the
+few sharpest directions of each optimizer's operator. This moves the run along the fiber of weights and sets how
+fast the loss falls, but it does not choose between functions with the same loss: by Proposition~1, a function in
+a stage class is pinned by its loss up to the excess loss. An oscillation of amplitude $a$ along the sharpest
+direction costs $\frac12\lambda a^2$ of loss, so it moves the function no more than that excess allows, and
+equally in floor pairs and in cross pairs. This is why the edge-of-stability events (AdamW at its threshold for
+much of training, SGD only early) do not line up with changes in the loss-matched distance
+(\cref{sec:res-coincide}), and why on CIFAR-10 the break-even effects on sharpness and gradient noise replicate
+while two learning rates stay within 1.75 floors at equal loss (\cref{sec:res-breakeven}).
+
+\paragraph{Predictions not yet tested.} A persistent split needs a class without a best element, as when
+training into interpolation; AdamW and Muon memorize Shakespeare without splitting, so either their implicit
+biases agree on held-out text or the runs are not yet in that regime. AdamW's raw sharpness at its threshold
+should scale with the gradient's root mean square over $\eta$, while Muon's should not scale as $1/\eta$ across
+learning rates. The optimizer's own term in \eqref{eq:decomp} should shrink with the excess loss over the current
+stage.
+
 %% =================================================================
 \section{Discussion and limitations}
 \label{sec:discussion}
@@ -1322,7 +1506,7 @@ all of them approximate the bigram statistics of the data. From there on, on Tin
 same data order are as close as one optimizer on two data orders, down to the lowest loss we reach. One reading
 is that the early phase is governed by the order in which simple statistics are picked up, which depends on the
 optimizer (on Shakespeare SGD and AdamW pass through the unigram model and Muon does not), while afterwards the
-function is set mostly by the data and the optimizer matters mainly through speed. This rests on comparing at
+function is set mostly by the data and the optimizer matters mainly through speed (\cref{sec:theory} makes this precise). This rests on comparing at
 equal loss: at equal steps all pairs look different for most of training, and on Shakespeare Muon's faster
 memorization dominates the comparison.
 
@@ -1380,8 +1564,8 @@ curvature between blocks, but its changes do not line up with changes in functio
   the margin $m_\times$, the run length $k$ and the matching tolerance $\tau$; the conclusions hold over the
   variants we tried (\cref{sec:res-split}), except the Shakespeare Muon--SGD split.
 \item The loss grid ends at the lowest loss that all runs of a pair reach, so a split below it would be missed.
-\item The thresholds are those of linear stability on a quadratic with a frozen preconditioner; we have no
-  threshold for Muon, and the AdamW ratio at the first steps reflects a preconditioner built from few
+\item The thresholds are those of linear stability on a quadratic with a frozen preconditioner; Muon has no
+  threshold (\cref{sec:theory}), and the AdamW ratio at the first steps reflects a preconditioner built from few
   gradients.
 \item Sharpness is measured on a fixed batch of 32 sequences with 20 Lanczos iterations, in float32, while
   training uses bfloat16 autocast.

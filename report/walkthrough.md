@@ -268,3 +268,30 @@ Every lr-sweep run vs the tuned run of each optimizer (same data), at equal loss
 - TinyStories: **every stable lr** (27× range for AdamW, 8× Muon, 3–10× SGD) is within ~1× of all three tuned
   optimizers. Only lrs about to diverge stand out.
 - So "no split" isn't an artifact of the chosen lrs.
+
+## 12. [extra] A model of the results (theory + toy)
+
+Why do the optimizers differ early, meet at the bigram stage, and still differ in weights?
+
+![](figures/toy/toy_model.png)
+
+*Toy: bigram model `logits = A·B·onehot(prev char) + b` on Shakespeare, same 3 optimizers, 5 data orders. Every
+quantity is exact.*
+
+- **Funnel (proved):** within an n-gram class, two predictors at the same loss are at most
+  ~(excess loss over that class's best predictor) apart, **whatever the optimizer**. So at the bigram stage
+  they *must* meet. A split needs a class with no best predictor (interpolation), as in the linear control.
+- **Routes before the funnel:** SGD learns modes one at a time, strongest first, so it passes *through* the
+  unigram model. Muon moves all modes at the same speed, so it skips it. AdamW is in between. Distance to the
+  unigram model: toy 0.036 / 0.064 / 0.18 bits, real Shakespeare 0.001 / 0.054 / 0.111. ✓
+- **Floor:** near the funnel, cross distance = mean of the floors + an optimizer term. Measured: that term is
+  only **5–6% of the floor** (TinyStories 10M and 30M, and the toy).
+- **Weights:** many weight settings give the same function. SGD stays balanced (smallest ℓ2), while Adam and Muon
+  end elsewhere among them. So you get barriers between optimizers with *equal* functions (toy: 20–50× the
+  data-order barriers).
+- **Break-even points:**
+  - SGD: (2+2μ)/η.
+  - AdamW: about 38·(gradient scale)/η, which is why it has the lowest raw sharpness.
+  - **Muon: none.** Its step size doesn't depend on the gradient's size, so no curvature makes it diverge.
+  - Stability caps curvature, not *which* function you have at a given loss, which is why EoS never lines up
+    with the split.
