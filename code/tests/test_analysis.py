@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 import torch
 
-from optsplit.analysis import breakeven, cka, lmc, plots, split, swap
+from optsplit.analysis import breakeven, cka, lmc, lr_robust, plots, split, swap
 from optsplit.analysis.distance import js_divergence, loss_curve, step_curve, top1_agreement
 from optsplit.analysis.io import Run, load_runs
 from optsplit.config import load_config, save_config
@@ -175,6 +175,16 @@ def test_figures(root, tmp_path, monkeypatch):
     for f in ('div', 'sharp', 'anat', 'anat_layer', 'swap', 'swap_metrics', 'lmc', 'fm', 'be_curves', 'be_scatter', 'be_traj',
               'spec_sharp', 'sweep', 'eos', 'losses'):
         assert (tmp_path / f'{f}.png').stat().st_size > 0
+
+
+def test_lr_robust(root, tmp_path, monkeypatch):
+    monkeypatch.setattr(sys, 'argv', ['lr_robust', '--sweep', 'syn/adamw_d0', 'syn/fast_d0', '--main', 'syn/adamw_d*',
+                                      'syn/muon_d*', '--below', '2.5', '--out', str(tmp_path)])
+    lr_robust.main()
+    rows = json.loads((tmp_path / 'lr_robust.json').read_text())
+    same = next(r for r in rows if r['run'] == 'syn/adamw_d0' and r['ref'] == 'syn/adamw_d0')
+    assert same['median_late'] == 0 and len(rows) == 4
+    assert (tmp_path / 'figures' / 'lr_robust.png').stat().st_size > 0
 
 
 def test_split_cli(root, tmp_path, monkeypatch):
