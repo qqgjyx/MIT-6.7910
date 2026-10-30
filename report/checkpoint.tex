@@ -103,14 +103,13 @@ indistinguishable from it. Hyperparameters in \cref{app:hparams-fig3}.}
 \label{fig:swap}
 \end{figure}
 
-\paragraph{Result 4 (moonshot): the sharp direction at the edge of stability.} Restricted to the steps at each
-optimizer's threshold and averaged over the five data orders, the top eigenvector of the operator that sets the
-threshold lies at the input end: the embeddings and first three blocks carry 75--90\% of it in all settings.
-SGD's lies mostly in the first block; AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings on TinyStories (about
-60\%), where rare tokens make $P^{-1}$ largest; Muon's, whose threshold is not on $H$, in its first three blocks (on
-Shakespeare in the embeddings, left to its auxiliary AdamW). Except in the embeddings, 66--83\% of the
-eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after warmup,
-when the optimizers are already at the floor, so it does not mark a split.
+\paragraph{Result 4 (moonshot): the sharp direction at the edge of stability.} At each optimizer's
+threshold, the top eigenvector of the operator that sets it lies at the input end: SGD's in blocks 1--2 (66\%), AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings (68\%), where rare tokens make $P^{-1}$ largest,
+and Muon's, which has no threshold on $H$ \citep{islamov2026noneuclidean}, in blocks 1--3 (84\%). Except in
+AdamW's embeddings, most of the eigenvalue comes from curvature \emph{between} layers (66\% for SGD, 71\% for
+Muon). The layer that holds the direction keeps changing long after the optimizers have re-met (AdamW's between
+the embeddings and block 1 throughout training, Muon's from block 1 to 2 after step 6000), so it does not mark a
+split.
 
 \paragraph{Result 5: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
 the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metric, JS (bits) $\le$ total
