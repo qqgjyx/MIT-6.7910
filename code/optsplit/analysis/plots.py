@@ -173,29 +173,41 @@ def swap_landing(rows, path, split=None):
         if t is not None:
             ax.axvline(t, color=f'C{c}', ls='--', lw=0.8)
         if floors:
-            axes[0, 1].plot(steps, [r['js_to_b_over_floor'] for r in rs], '-o', ms=3, color=f'C{c}', label=f'to {pair[1]}')
-            axes[0, 1].plot(steps, [r['js_to_a_over_floor'] for r in rs], '--', color=f'C{c}', label=f'to {pair[0]}')
+            axes[0, 1].plot(steps, [r['js_to_b_over_floor'] for r in rs], '-o', ms=3, color=f'C{c}', label='->'.join(pair))
+            axes[0, 1].plot(steps, [r['js_to_a_over_floor'] for r in rs], '--', color=f'C{c}')
     ax.axhline(0, color='k', lw=0.5)
     ax.axhline(1, color='k', lw=0.5)
-    ax.set(xlabel='fork step', ylabel='landing position (JS)', xscale='symlog', xlim=(0, None))
+    ax.set(xlabel='fork step', ylabel='landing position (JS)', xscale='log')
     ax.legend(fontsize=7)
     if floors:
         axes[0, 1].axhline(1, color='k', lw=0.5)
-        axes[0, 1].set(xlabel='fork step', ylabel='JS to pure run / its noise floor', xscale='symlog',
-                       yscale='log', xlim=(0, None))
+        axes[0, 1].set(xlabel='fork step', ylabel='JS to pure run / its noise floor', xscale='log', yscale='log',
+                       title='solid: to the new optimizer, dashed: to the old')
+        axes[0, 1].title.set_fontsize(8)
         axes[0, 1].legend(fontsize=6, ncol=2)
     _save(fig, path)
 
 
 def lmc(results, path):
-    """Loss barrier between the parent's and each fork's final weights against the fork step."""
-    fig, ax = plt.subplots(figsize=(5, 3.4))
-    for res in results:
-        for opt in sorted({f['optimizer'] for f in res['forks']}):
+    """Loss barrier between the parent's and each fork's final weights against the fork step, one panel per
+    parent; dotted lines: the barrier to the other pure runs (`others`), which share nothing but the init."""
+    fig, axes = plt.subplots(1, len(results), figsize=(4.5 * len(results), 3.4), squeeze=False, sharey=True)
+    opts = sorted({f['optimizer'] for res in results for f in res['forks']})
+    color = {o: f'C{i}' for i, o in enumerate(opts)}
+    for ax, res in zip(axes[0], results):
+        for opt in opts:
             fs = sorted((f for f in res['forks'] if f['optimizer'] == opt), key=lambda f: f['fork_step'])
-            ax.plot([f['fork_step'] for f in fs], [f['barrier'] for f in fs], '-o', label=f"{res['parent']} -> {opt}")
-    ax.set(xlabel='fork step', ylabel='loss barrier', xscale='symlog', xlim=(0, None))
-    ax.legend(fontsize=7)
+            if fs:
+                tag = ' (other data)' if opt == res.get('optimizer') else ''
+                ax.plot([f['fork_step'] for f in fs], [f['barrier'] for f in fs], '-o', ms=3, color=color[opt],
+                        label=f'-> {opt}{tag}')
+        for o in res.get('others', []):
+            if o['run'] != res['parent']:
+                ax.axhline(o['barrier'], color=color.get(o['optimizer'], 'k'), ls=':', lw=1)
+        ax.set(xlabel='fork step', xscale='log', title=f"parent {res['parent']}")
+        ax.title.set_fontsize(8)
+        ax.legend(fontsize=7)
+    axes[0, 0].set_ylabel('loss barrier')
     _save(fig, path)
 
 
