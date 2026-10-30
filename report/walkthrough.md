@@ -95,6 +95,9 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - AdamW ↔ Muon: within the floor of **both** pure runs at every switch step. Nothing to tell apart.
 - SGD → AdamW/Muon: lands on the new optimizer even after 4000 SGD steps. SGD leaves no trace.
 - AdamW/Muon → SGD: late switches stay near the old optimizer — SGD is too slow to undo it.
+- Shakespeare (`figures/shakespeare/swap.png`): Muon is the fast one. Anything → Muon lands on Muon;
+  Muon → AdamW/SGD keeps Muon's mark; SGD → AdamW keeps SGD's (AdamW at 3e-4 is slow there).
+- Rule: **the last optimizer decides the function only if it's faster than the first.**
 
 **[planned] Linear mode connectivity** (loss barrier, parent's final weights vs fork's final weights):
 
