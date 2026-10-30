@@ -1,6 +1,9 @@
 """Final function metrics per optimizer: mean and standard deviation over data orders at each run's last
 function-metrics step, including the largest spectral norm of the hidden (transformer block) matrices, the norm
-Muon is predicted to keep small, next to l2 (SGD) and l_inf (Adam).
+Muon is predicted to keep small, next to l2 (SGD) and l_inf (Adam). As the optimizers move the weights by very
+different amounts, also two scale-free versions: l_inf / l2 (small when the entries are even, as Adam's l_inf bias
+favours) and the mean stable rank ||W||_F^2 / ||W||_2^2 of the hidden matrices (large when the singular values are
+even, as Muon's spectral bias favours).
 python -m optsplit.analysis.fm_table 'ts10m_main/*' --out analysis/ts10m"""
 
 import argparse
@@ -12,9 +15,9 @@ import numpy as np
 
 from optsplit.analysis.io import flatten, load_runs
 
-KEYS = ['weights.l2', 'weights.linf', 'spectral_hidden_max', 'weights.dist_init_rel',
-        'weights.log_spectral_complexity', 'input.jac_fro.mean', 'input.hess_top.mean', 'robustness.sensitivity',
-        'robustness.acc']
+KEYS = ['weights.l2', 'weights.linf', 'spectral_hidden_max', 'linf_over_l2', 'stable_rank_hidden_mean',
+        'weights.dist_init_rel', 'weights.log_spectral_complexity', 'input.jac_fro.mean', 'input.hess_top.mean',
+        'robustness.sensitivity', 'robustness.acc']
 
 
 def final_metrics(run):
@@ -22,8 +25,10 @@ def final_metrics(run):
     if not fm:
         return None
     m = flatten(fm[max(fm)])
-    hidden = [v for k, v in m.items() if re.match(r'weights\.layers\.transformer\.h\..*\.spectral$', k)]
-    m['spectral_hidden_max'] = max(hidden) if hidden else float('nan')
+    hidden = lambda name: [v for k, v in m.items() if re.match(rf'weights\.layers\.transformer\.h\..*\.{name}$', k)]
+    m['spectral_hidden_max'] = max(hidden('spectral'), default=float('nan'))
+    m['stable_rank_hidden_mean'] = float(np.mean(hidden('stable_rank'))) if hidden('stable_rank') else float('nan')
+    m['linf_over_l2'] = m['weights.linf'] / m['weights.l2']
     return m
 
 
