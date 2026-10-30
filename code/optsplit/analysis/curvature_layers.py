@@ -95,7 +95,8 @@ def average(rows):
     return np.mean([p[0] for p in per], 0), np.mean([p[1] for p in per], 0), len(per), sum(map(len, rows.values()))
 
 
-TITLES = dict(sgd='SGD, $H$', adamw='AdamW, $P^{-1/2}HP^{-1/2}$', muon='Muon, $H$')
+TITLES = dict(sgd='SGD: top eigenvector of $H$', adamw='AdamW: of $P^{-1/2}HP^{-1/2}$',
+              muon='Muon: of $H$ (its threshold is not on $H$)')
 
 
 def plot(res, path):
@@ -128,14 +129,14 @@ def plot(res, path):
         ax.tick_params(length=0, pad=1.5)
         for sp in ax.spines.values():
             sp.set_linewidth(0.6)
-        ax.set_title(TITLES[o], fontsize=7, pad=3)
+        fig.text((x + (h + 0.06 + bar) / 2) / W, (bottom + h + 0.05) / H, TITLES[o], ha='center', va='bottom', fontsize=7)
         bx.barh(range(len(names)), mass, height=0.7, color='0.45')
         bx.set_ylim(len(names) - 0.5, -0.5)
         bx.set_xlim(0, 100)
         bx.set_xticks([0, 50], ['', '50%'], fontsize=5)
         bx.tick_params(length=1.5, pad=1)
         bx.set_yticks([])
-        bx.set_title(r'$\|v_\ell\|^2$', fontsize=6, pad=3)
+        bx.set_xlabel(r'$\|v_\ell\|^2$', fontsize=6, labelpad=1)
         for side in ('top', 'right'):
             bx.spines[side].set_visible(False)
     x = left + len(opts) * (h + 0.06 + bar + gap) - gap + 0.1
