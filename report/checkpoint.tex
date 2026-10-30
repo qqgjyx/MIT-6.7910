@@ -75,7 +75,8 @@ where the floor is near zero because the runs share their initialization. Muon i
 loss it lands on the same function as AdamW up to data-order noise: at the end of TinyStories-30M, replacing AdamW
 by Muon changes the predictions no more than changing the data order. After warmup (\cref{fig:div}, left), AdamW
 and Muon with the same data order are nearest neighbours in the embedding, with Muon at lower loss at each step,
-yet only 5--20\% closer in Jensen--Shannon divergence than two data orders of one optimizer, from their shared recent
+yet at most about a fifth closer in Jensen--Shannon divergence than two data orders of one optimizer
+(0--23\%, steps 250--3000), from their shared recent
 batches; at equal loss this vanishes. So the answer to the title is no: after warmup we find no
 split, early or late; the optimizers' functions are as close as the data order lets them be.
 
