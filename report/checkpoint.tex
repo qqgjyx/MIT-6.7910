@@ -50,7 +50,7 @@ optimizer states, measured linear mode connectivity, and replicated the CIFAR-10
 predictions. We compare runs at equal \emph{training loss}, so that one optimizer being faster is not counted
 as a difference, and divide by a noise floor: the distance between two runs of the same optimizer that differ
 only in data order. A split is a stretch of loss levels where this ratio exceeds 1.5; it is persistent
-if it lasts to the end of training, with a bootstrap over data orders for its location.
+if it lasts to the end of training, with a bootstrap over data orders for its location.\looseness=-1
 
 \begin{figure}[h]
 \centering
@@ -61,7 +61,7 @@ the Jensen--Shannon distance (the square root of the divergence) between the pre
 steps. Star: the shared initialization; markers: the first step at which each run reaches the given training
 loss. UMAP keeps neighbourhoods but not distances. Middle: distance between AdamW and Muon at equal steps (blue)
 and the data-order floor (grey). Right: the same pairs at equal training loss; shaded, the
-episode above the floor.}
+episode above the floor. Hyperparameters in \cref{app:hparams-fig1}.}
 \label{fig:div}
 \end{figure}
 
@@ -80,7 +80,8 @@ therefore the reverse of the hypothesis: the optimizers' functions differ early 
 \centering
 \includegraphics[width=0.82\linewidth,trim=0 198 0 0,clip]{figures/overview.png}
 \caption{Loss-matched distance between optimizers over the data-order floor (training progresses to the right);
-red dashed, the threshold 1.5. Red, left: AdamW--Muon trained into memorization (8000 steps).}
+red dashed, the threshold 1.5. Red, left: AdamW--Muon trained into memorization (8000 steps). Hyperparameters
+in \cref{app:hparams-fig2}.}
 \label{fig:overview}
 \end{figure}
 
@@ -103,7 +104,7 @@ not: after a change of optimizer, a fork needs a later fork step to stay linearl
 \includegraphics[width=0.74\linewidth]{figures/ts10m/swap.png}
 \caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right:
 its distance to pure $B$ (solid) and to pure $A$ (dashed) in units of their floors; below 1 means
-indistinguishable from that optimizer.}
+indistinguishable from that optimizer. Hyperparameters in \cref{app:hparams-fig3}.}
 \label{fig:swap}
 \end{figure}
 
@@ -126,7 +127,7 @@ best element, as in the linear control below. The break-even point depends on ho
 gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so the raw sharpness there
 scales as the gradient over $\eta$, as we find (log-log slope 1.15--1.6 on TinyStories); Muon's update is
 invariant to the gradient's scale and on a quadratic never diverges, so it has no break-even point on its
-matrices. Stability caps curvature but does not choose between functions of equal loss, hence Result 2.
+matrices. Stability caps curvature but does not choose between functions of equal loss, hence Result 2.\looseness=-1
 
 \paragraph{Pipeline check and controls.} On CIFAR-10 the break-even effects replicate: the sharpness levels off
 at or below $2/\eta$ and lower for larger rates, and the gradient covariance is better conditioned; but at equal
@@ -141,5 +142,9 @@ should not scale as $1/\eta$. (iii) Robustness of the split rule to the metric a
 
 \clearpage
 \printbibliography
+
+\clearpage
+\appendix
+\input{checkpoint_appendix}
 
 \end{document}
