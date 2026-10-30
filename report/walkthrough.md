@@ -285,7 +285,8 @@ quantity is exact.*
   unigram model. Muon moves all modes at the same speed, so it skips it. AdamW is in between. Distance to the
   unigram model: toy 0.036 / 0.064 / 0.18 bits, real Shakespeare 0.001 / 0.054 / 0.111. ✓
 - **Floor:** near the funnel, cross distance = mean of the floors + an optimizer term. Measured: that term is
-  only **5–6% of the floor** (TinyStories 10M and 30M, and the toy).
+  only **5–6% of the floor** (TinyStories 10M and 30M, and the toy); it starts at 8–10× and shrinks over
+  training, as predicted.
 - **Weights:** many weight settings give the same function. SGD stays balanced (smallest ℓ2), while Adam and Muon
   end elsewhere among them. So you get barriers between optimizers with *equal* functions (toy: 20–50× the
   data-order barriers).

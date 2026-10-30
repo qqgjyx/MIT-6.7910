@@ -1429,8 +1429,11 @@ the floor, and below one when two optimizers respond alike to the same batches. 
 (\cref{sec:res-route}) fit this: for AdamW--Muon on TinyStories-30M at step 20{,}000, $C_{\rm other}=0.0556$ bits
 exceeds the mean of the floors (0.0547, 0.0512) by 0.0027, 5\% of the floor, and $C_{\rm same}=0.0511$; at step
 10{,}000 the excess is 0.0039 (5\%), and on TinyStories-10M at step 10{,}000 it is 0.0037 (6\%) with
-$C_{\rm same}=0.0574$ against 0.0632. In the toy the excess is 6\% of the floor. Most of the distance between two
-optimizers is data-order noise, and part of it is shared when they see the same batches.
+$C_{\rm same}=0.0574$ against 0.0632. In the toy the excess is 6\% of the floor. Over training the excess shrinks
+as the funnel predicts: on TinyStories it is 8--10 times the mean floor at step 30, 0.3--0.4 times at step 120 and
+about 0.1 by step 1000, and 4--7\% from there on (at equal steps; on Shakespeare, where Muon memorizes faster, it
+stays near 50\%). Most of the distance between two optimizers is data-order noise, and part of it is shared
+when they see the same batches.
 
 \paragraph{Swaps.} A fork from $A$ to $B$ is a run of $B$ from another starting point. In the regime of
 Proposition~2 it differs from pure $B$ on the same data order through its mean part, which the loss bounds, so it
@@ -1491,8 +1494,7 @@ while two learning rates stay within 1.75 floors at equal loss (\cref{sec:res-br
 training into interpolation; AdamW and Muon memorize Shakespeare without splitting, so either their implicit
 biases agree on held-out text or the runs are not yet in that regime. AdamW's raw sharpness at its threshold
 should scale with the gradient's root mean square over $\eta$, while Muon's should not scale as $1/\eta$ across
-learning rates. The optimizer's own term in \eqref{eq:decomp} should shrink with the excess loss over the current
-stage.
+learning rates.
 
 %% =================================================================
 \section{Discussion and limitations}
