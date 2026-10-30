@@ -68,10 +68,10 @@ orders, band from min to max. Hyperparameters in \cref{app:hparams-fig1}.}
 
 \paragraph{Result 1: AdamW and Muon (\cref{fig:div}).} From the end of warmup, AdamW and Muon trained on the
 same data order stay close: in the embedding (left) each pair are nearest neighbours, and their divergence
-(middle) stays below the data-order floor. Even so, Muon is at a much lower loss at the same step (2.50 vs 2.76
+(middle) stays below that between two runs of the same optimizer with different data orders. Even so, Muon is at a much lower loss at the same step (2.50 vs 2.76
 at step 250, 1.77 vs 1.95 at step 1000) and stays below AdamW to the end (right); AdamW needs 1.35 times as many
 steps to reach its final validation loss. In the embedding the pairs drift apart after about step 1000, but not
-in divergence: relative to the floor they keep getting closer.
+in divergence: relative to that distance they keep getting closer.
 
 \paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} Compared at equal training loss, every pair of
 optimizers, SGD included, stays at about the data-order floor after warmup in all three settings. The exception
