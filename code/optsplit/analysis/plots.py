@@ -12,7 +12,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
-from optsplit.analysis import eos
+from optsplit.analysis import eos, trajectories
 from optsplit.analysis.distance import step_curve
 from optsplit.analysis.io import flatten, load_runs
 from optsplit.analysis.split import by_seed, locate_split
@@ -34,15 +34,21 @@ def _t_star_step(split, run):
     return s if s is not None else split.get('steps', {}).get(run.id)
 
 
-def divergence(runs_a, runs_b, split, path):
+def divergence(runs_a, runs_b, split, path, traj=None):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band, the episodes above the floor (shaded), the first
     exceedance t* (dotted) and the persistent split (dashed, with its CI). Third: cross distance over the
-    floor, with the split threshold 1 + margin_mult."""
+    floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and losses to mark, from
+    `trajectories.parse`), the UMAP of the prediction trajectories comes first instead of the third panel."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
-    fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(13, 3.4))
+    fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
+    if traj:
+        trajectories.draw(axes[0], *traj)
+        a1, a2, a3 = *axes[1:], None
+    else:
+        a1, a2, a3 = axes
     for i, s in enumerate(sorted(A.keys() & B.keys())):
         c = step_curve(A[s], B[s])
         a1.plot(c['step_a'], c[metric], color='C0', label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
@@ -71,12 +77,13 @@ def divergence(runs_a, runs_b, split, path):
     a2.set(xlabel='training loss', ylabel=metric)
     a2.invert_xaxis()
     a2.legend(fontsize=7)
-    with np.errstate(all='ignore'):
-        a3.plot(grid, np.array(split['cross']) / np.array(split['floor']), color='C0')
-    a3.axhline(1 + split['margin_mult'], color='r', lw=0.8, ls='--')
-    a3.axhline(1, color='k', lw=0.5)
-    a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log')
-    a3.invert_xaxis()
+    if a3 is not None:
+        with np.errstate(all='ignore'):
+            a3.plot(grid, np.array(split['cross']) / np.array(split['floor']), color='C0')
+        a3.axhline(1 + split['margin_mult'], color='r', lw=0.8, ls='--')
+        a3.axhline(1, color='k', lw=0.5)
+        a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log')
+        a3.invert_xaxis()
     _save(fig, path)
 
 
@@ -299,10 +306,10 @@ def _json(path):
     return json.loads(Path(path).read_text()) if path else None
 
 
-def fig_divergence(runs_a, runs_b, split=None, metric='js', out=None, name='divergence'):
+def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
-               _path(out, name))
+               _path(out, name), traj and trajectories.parse(traj))
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -359,6 +366,8 @@ def main():
     s.add_argument('--runs-b', nargs='+', required=True)
     s.add_argument('--split', help='JSON from optsplit.analysis.split (computed if omitted)')
     s.add_argument('--metric', default='js', choices=['js', 'disagree'])
+    s.add_argument('--traj', metavar='JSON[@L1,L2,...]',
+                   help='trajectories.json from optsplit.analysis.trajectories: its UMAP replaces the ratio panel')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')

@@ -39,27 +39,38 @@ def js_matrix(P, batch=32):
     return (D + D.T).clamp_min(0)
 
 
+def parse(spec, losses=()):
+    """'JSON[@L1,L2,...]' -> (trajectories, losses to mark)."""
+    f, _, ls = spec.partition('@')
+    return json.loads(Path(f).read_text()), [float(x) for x in ls.split(',')] if ls else list(losses)
+
+
+def draw(ax, d, losses, title=None):
+    """One panel; each run's end is labelled with its data order."""
+    opts = sorted({r['optimizer'] for r in d.values()})
+    for name, r in d.items():
+        c = f'C{opts.index(r["optimizer"])}'
+        xy = np.array(r['xy'])
+        ax.plot(*xy.T, '-', lw=0.6, alpha=0.6, color=c)
+        ax.annotate(name.rsplit('_', 1)[-1], xy[-1], fontsize=5, color=c, ha='center', va='bottom')
+        for m, L in zip(MARKERS, losses):
+            i = next((i for i, l in enumerate(r['loss']) if l <= L), None)
+            if i is not None:
+                ax.plot(*xy[i], m, ms=4, mfc=c, mec='k', mew=0.4)
+    ax.plot(*np.array(next(iter(d.values()))['xy'][0]), 'k*', ms=9)
+    for o in opts:
+        ax.plot([], [], '-', color=f'C{opts.index(o)}', label=o)
+    for m, L in zip(MARKERS, losses):
+        ax.plot([], [], m, color='w', mec='k', label=f'loss {L:g}')
+    ax.set(xticks=[], yticks=[], title=title)
+    ax.legend(fontsize=6)
+
+
 def plot(panels, path):
-    """panels: {title: (trajectories, losses to mark)}. Each run's end is labelled with its data order."""
+    """panels: {title: (trajectories, losses to mark)}."""
     fig, axes = plt.subplots(1, len(panels), figsize=(3.4 * len(panels), 3.4), squeeze=False)
     for ax, (title, (d, losses)) in zip(axes[0], panels.items()):
-        opts = sorted({r['optimizer'] for r in d.values()})
-        for name, r in d.items():
-            c = f'C{opts.index(r["optimizer"])}'
-            xy = np.array(r['xy'])
-            ax.plot(*xy.T, '-', lw=0.6, alpha=0.6, color=c)
-            ax.annotate(name.rsplit('_', 1)[-1], xy[-1], fontsize=5, color=c, ha='center', va='bottom')
-            for m, L in zip(MARKERS, losses):
-                i = next((i for i, l in enumerate(r['loss']) if l <= L), None)
-                if i is not None:
-                    ax.plot(*xy[i], m, ms=4, mfc=c, mec='k', mew=0.4)
-        ax.plot(*np.array(next(iter(d.values()))['xy'][0]), 'k*', ms=9)
-        for o in opts:
-            ax.plot([], [], '-', color=f'C{opts.index(o)}', label=o)
-        for m, L in zip(MARKERS, losses):
-            ax.plot([], [], m, color='w', mec='k', label=f'loss {L:g}')
-        ax.set(xticks=[], yticks=[], title=title)
-        ax.legend(fontsize=6)
+        draw(ax, d, losses, title)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
@@ -78,11 +89,7 @@ def main():
     p.add_argument('--out', required=True, help='output directory')
     args = p.parse_args()
     if args.plot:
-        panels = {}
-        for a in args.plot:
-            t, f = a.split('=', 1)
-            f, _, ls = f.partition('@')
-            panels[t] = (json.loads(Path(f).read_text()), [float(x) for x in ls.split(',')] if ls else args.losses)
+        panels = {t: parse(f, args.losses) for t, f in (a.split('=', 1) for a in args.plot)}
         return plot(panels, Path(args.out) / 'trajectories.png')
 
     import umap

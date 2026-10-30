@@ -54,15 +54,14 @@ if it lasts to the end of training, with a bootstrap over data orders for its lo
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=1.95in,trim=0 0 310 0,clip]{figures/ts10m/divergence_adamw_muon.png}
-\includegraphics[height=1.95in]{figures/ts10m/trajectories.png}
-\caption{AdamW against Muon on TinyStories-10M, five data orders. Left: distance at equal steps (blue) and the
-data-order floor (grey). Middle: at equal training loss, with the floor's range; shaded, the episode above
-the floor. Right: the training trajectories of all 15 runs (three optimizers, data orders d0--d4 labelled at
-the end of each run) in prediction space, as in Fig.~1 of \citet{jastrzebski2020breakeven}: UMAP of the
-Jensen--Shannon distance (the square root of the divergence) between the predictions of every pair of logged
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_umap.png}
+\caption{TinyStories-10M. Left: the training trajectories of all 15 runs (three optimizers, data orders d0--d4
+labelled at the end of each run) in prediction space, as in Fig.~1 of \citet{jastrzebski2020breakeven}: UMAP of
+the Jensen--Shannon distance (the square root of the divergence) between the predictions of every pair of logged
 steps. Star: the shared initialization; markers: the first step at which each run reaches the given training
-loss. UMAP keeps neighbourhoods but not distances.}
+loss. UMAP keeps neighbourhoods but not distances. Middle: distance between AdamW and Muon at equal steps (blue)
+and the data-order floor (grey). Right: the same at equal training loss, with the floor's range; shaded, the
+episode above the floor.}
 \label{fig:div}
 \end{figure}
 
@@ -71,7 +70,7 @@ differ from the first steps, mostly because they progress at different speeds. A
 settings and for every pair, the distance is 30--200 times the floor at high loss and falls back to about the
 floor around the stage at which the models have learned the bigram statistics of the data. On TinyStories it
 stays there: at the end of TinyStories-30M, replacing AdamW by Muon changes the predictions no more than
-changing the data order. The trajectories (\cref{fig:div}, right) show the same: the paths of the three
+changing the data order. The trajectories (\cref{fig:div}, left) show the same: the paths of the three
 optimizers separate early, run together from about loss 5, and at the end fan out by data order, with AdamW and
 Muon of the same data order ending side by side. Of the nine pairs only Muon--SGD on Shakespeare, where SGD barely trains, has a
 persistent split, and it is lost with another metric or a stricter threshold. The answer to the title is
