@@ -55,8 +55,8 @@ if it lasts to the end of training, with a bootstrap over data orders for its lo
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap.pdf}
-\caption{TinyStories-10M. Left: the trajectories of the AdamW and Muon runs (data orders d0--d4 labelled at the
-end of each run) from step 250 on, in prediction space: densMAP of the Jensen--Shannon distance (the square root
+\caption{TinyStories-10M. Left: the trajectories of the AdamW and Muon runs (data orders d0--d4 at the end of
+each run) from step 250 on: densMAP of the Jensen--Shannon distance (the square root
 of the divergence) between the predictions of every pair of logged steps. Dots: step 250; markers: fixed steps,
 with each run's training loss written at steps 1000 and 2000. densMAP keeps neighbourhoods but not distances. Middle: distance between AdamW and Muon at equal steps (blue)
 and the data-order floor (grey). Right: the same pairs at equal training loss, from loss 4.
@@ -64,16 +64,17 @@ Hyperparameters in \cref{app:hparams-fig1}.}
 \label{fig:div}
 \end{figure}
 
-\paragraph{Result 1: apart first, together later (\cref{fig:div,fig:overview}).} At equal steps the optimizers
-differ from the first steps, mostly because they progress at different speeds. At equal loss, in all three
-settings and for every pair, the distance is 30--200 times the floor at high loss and falls back to about the
-floor around the stage at which the models have learned the bigram statistics of the data. On TinyStories it
-stays there: at the end of TinyStories-30M, replacing AdamW by Muon changes the predictions no more than
-changing the data order. In the trajectories after warmup (\cref{fig:div}, left), AdamW and Muon with the same
-data order stay side by side until about step 1000, with Muon at lower loss at each step, and the data orders fan
-out from about step 500--1000. Of the nine pairs only Muon--SGD on Shakespeare, where SGD barely trains, has a
-persistent split, and it is lost with another metric or a stricter threshold. The answer to the title is
-therefore the reverse of the hypothesis: the optimizers' functions differ early and meet later.
+\paragraph{Result 1: at equal loss, no split after warmup (\cref{fig:div,fig:overview}).} After warmup, the
+distance between optimizers at equal loss stays at about the data-order floor to the end of training, in all
+three settings and for every pair except Muon--SGD on Shakespeare, where SGD barely trains; that split is lost
+with another metric or a stricter threshold. The only stretches above the floor are brief and within warmup,
+where the floor is near zero because the runs share their initialization. Muon is faster (AdamW needs 1.35 and
+1.22 times as many steps as Muon to reach its final validation loss on TinyStories-10M and -30M), yet at equal
+loss it lands on the same function as AdamW up to data-order noise: at the end of TinyStories-30M, replacing AdamW
+by Muon changes the predictions no more than changing the data order. After warmup (\cref{fig:div}, left), AdamW
+and Muon with the same data order stay side by side until about step 1000, with Muon at lower loss at each step,
+and the data orders fan out from about step 500--1000. So the answer to the title is no: after warmup we find no
+split, early or late; the optimizers' functions are as close as the data order lets them be.
 
 \begin{figure}[h]
 \centering
@@ -86,9 +87,9 @@ in \cref{app:hparams-fig2}.}
 
 \paragraph{Result 2: no edge-of-stability event at the split.} On TinyStories AdamW's preconditioned
 sharpness sits at its threshold $(2+2\beta_1)/((1-\beta_1)\eta)$ for much of training, whether or not the
-optimizers differ, and SGD reaches $(2+2\mu)/\eta$ only early in training. The early episodes end within warmup
-(steps 9--85), the same way for AdamW--Muon, where SGD is not involved. A stage of learning describes the
-re-convergence better than a stability event.
+optimizers differ, and SGD reaches $(2+2\mu)/\eta$ only early in training. The brief above-floor stretches end within
+warmup (steps 9--85), the same way for AdamW--Muon, where SGD is not involved. A stage of learning describes their
+end better than a stability event.
 
 \paragraph{Result 3: the last optimizer decides the function (\cref{fig:swap}).} When we switch optimizer at
 step $t$, the fork ends within the floor of the new optimizer whenever that optimizer is fast enough to get
@@ -102,8 +103,8 @@ not: after a change of optimizer, a fork needs a later fork step to stay linearl
 \centering
 \includegraphics[width=0.74\linewidth]{figures/ts10m/swap.pdf}
 \caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right:
-its distance to pure $B$ (solid) and to pure $A$ (dashed) in units of their floors; below 1 means
-indistinguishable from that optimizer. Hyperparameters in \cref{app:hparams-fig3}.}
+its distance to pure $B$ (solid) and to pure $A$ (dashed) over their floors; below 1 means
+indistinguishable from it. Hyperparameters in \cref{app:hparams-fig3}.}
 \label{fig:swap}
 \end{figure}
 
@@ -113,16 +114,16 @@ threshold lies at the input end: the embeddings and first three blocks carry 75-
 SGD's lies mostly in the first block; AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings on TinyStories (about
 60\%), where rare tokens make $P^{-1}$ largest; Muon's, without a threshold, in its first three blocks (on
 Shakespeare in the embeddings, left to its auxiliary AdamW). Except in the embeddings, 66--83\% of the
-eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after the optimizers
-have re-met, so it does not mark a split.
+eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after warmup,
+when the optimizers are already at the floor, so it does not mark a split.
 
 \paragraph{Result 5: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
 the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metric, JS (bits) $\le$ total
 variation, and by Pinsker, two predictors in $\mathcal F_s$ with excess losses $\Delta L_A,\Delta L_B$ over $q_s$
 have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta L_A}+\sqrt{\Delta L_B})$, whatever the optimizer. So at
-equal loss the optimizers must meet near the bigram optimum; they can differ before it, where their update
-geometries take different routes (SGD passes through the unigram model, Muon skips it), or in a class without a
-best element, as in the linear control below. The break-even point depends on how the update scales with the
+equal loss the bound forces the optimizers together near the bigram optimum and below, but not at higher loss,
+where their update geometries take different routes (SGD passes through the unigram model, Muon
+skips it), nor in a class without a best element, as in the linear control below. The break-even point depends on how the update scales with the
 gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so the raw sharpness there
 scales as the gradient over $\eta$, as we find (log-log slope 1.15--1.6 on TinyStories); Muon's update is
 invariant to the gradient's scale and on a quadratic never diverges, so it has no break-even point on its
