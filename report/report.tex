@@ -73,7 +73,7 @@ floor. Switching optimizer at nine times during training, the run ends at the fu
 whenever that optimizer is the faster one, so the endpoint is not decided early; in weight space, however, a
 change of optimizer separates the solutions more than a change of data order. A second initialization reproduces
 the results, and on a linear model with known, different limits the same test does find a split, near
-interpolation.
+interpolation; AdamW and Muon trained into memorization on Shakespeare still do not split.
 \end{abstract}
 
 %% =================================================================
@@ -1213,7 +1213,9 @@ function of the optimizer it switches to whenever that one is faster, even late 
 leave a mark in weight space: runs whose functions are as close as two data orders are further apart in linear
 connectivity when they differ in optimizer.
 A linear model on separable data, where the limits of training are known to differ, shows that our test can
-detect a split, and places it near interpolation, a regime the language models here do not reach.
+detect a split, and places it near interpolation; but AdamW and Muon trained on Shakespeare until they memorize
+the training set do not split either, so for these models the absence of a split is not only a matter of
+training too briefly.
 
 \printbibliography
 
