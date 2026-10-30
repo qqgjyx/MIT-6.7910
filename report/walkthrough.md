@@ -5,6 +5,11 @@ Status: TinyStories-30M swaps/LMC, function metrics and the long Shakespeare run
 
 ## TL;DR
 
+![](figures/overview.png)
+
+*Distance between optimizers at equal training loss ÷ distance between two data orders (red: split
+threshold). Training goes left → right.*
+
 - **No "same path, then split".** At equal training loss the optimizers differ most at the very start
   (10–200× the data-order noise), then meet again around the bigram stage and stay within ~1× of the noise.
 - **Swapping AdamW for Muon changes the final function no more than reshuffling the data** (TinyStories).

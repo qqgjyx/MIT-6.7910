@@ -104,6 +104,20 @@ and their thresholds differ by optimizer. Second, it matters in practice. Switch
 training \citep{keskar2017swats} assumes the second optimizer can still change the solution; a split point
 bounds when that is possible.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/overview.png}
+%% python scripts/overview_figure.py --panel Shakespeare split_adamw_muon.json ... --out overview.png
+\caption{Overview. Function distance between two optimizers (or two SGD learning rates or batch sizes) at
+equal training loss, over the distance between two runs of one of them with different data orders (training
+progresses to the right). The red line is the threshold $1+m_\times=1.5$ of the split rule. In all language-model
+settings the ratio is largest at the start and falls to about 1 by the bigram stage; the one persistent split,
+Muon--SGD on Shakespeare, is where SGD stalls. The same holds for SGD learning rates and batch sizes on CIFAR-10
+and TinyStories-10M. Right: a linear model on separable data, where gradient descent and Adam have different
+limits\extra; there the rule finds a persistent split, near interpolation.}
+\label{fig:overview}
+\end{figure}
+
 \paragraph{Approach.} We train nanoGPT models \citep{karpathy2022nanogpt} on character-level Shakespeare
 (10.8M parameters) and on TinyStories (14M and 30M parameters), with SGD with momentum, AdamW, and Muon
 \citep{jordan2024muon}, each at a learning rate chosen by a sweep, from a shared initialization, with five
