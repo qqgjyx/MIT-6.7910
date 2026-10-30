@@ -117,8 +117,9 @@ equal training loss, over the distance between two runs of one of them with diff
 progresses to the right). The red line is the threshold $1+m_\times=1.5$ of the split rule. In all language-model
 settings the ratio is largest at the start and falls to about 1 by the bigram stage; the one persistent split,
 Muon--SGD on Shakespeare, is where SGD stalls. The same holds for SGD learning rates and batch sizes on CIFAR-10
-and TinyStories-10M. Right: a linear model on separable data, where gradient descent and Adam have different
-limits\extra; there the rule finds a persistent split, near interpolation.}
+and TinyStories-10M. Red, left: AdamW--Muon trained to memorization (8000 steps\extra). Right: a linear model on
+separable data, where gradient descent and Adam have different limits\extra; there the rule finds a persistent
+split, near interpolation.}
 \label{fig:overview}
 \end{figure}
 
@@ -164,7 +165,8 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   two learning rates differ by only 1.0--1.75 times the floor.
 \item \textbf{Controls}\extra\ (\cref{sec:res-controls}): a second initialization moves the function as much as a
   new data order and reproduces the episodes; SGD's loss gap on rare tokens is a matter of speed; and on a linear
-  model, where theory predicts different limits, the same detector finds a persistent split near interpolation.
+  model, where theory predicts different limits, the same detector finds a persistent split near interpolation,
+  while AdamW and Muon trained into memorization on Shakespeare still do not split.
 \end{enumerate}
 \paragraph{Planned and added analyses.} The project plan comprised the learning-rate sweeps, the divergence
 curves at equal steps and at equal loss against the data-order floor, the first exceedance $t^\ast$ with a
@@ -176,7 +178,7 @@ the persistent split (as $t^\ast$ turned out to be degenerate), the decompositio
 and the n-gram references, the edge of stability of Muon's auxiliary AdamW and the matched control, the
 robustness checks, the floor-normalized swap scores and the barriers to pure runs, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
-initialization, token frequency, and a linear positive control).
+initialization, token frequency, a linear positive control, and Shakespeare runs trained into memorization).
 
 Code: \url{https://github.com/qqgjyx/MIT-6.7910} (\texttt{code/}).
 
@@ -1112,6 +1114,16 @@ the linear case the split appears near interpolation, far below the losses our l
 optimizer is at its limit after $10^5$ steps: Adam's normalized margins exceed SGD's in both norms (0.221 against
 0.202 in $\ell_2$, 0.377 against 0.341 in $\ell_\infty$).
 
+\paragraph{Training into memorization.} If the language models split only near interpolation, as the linear model
+does, our runs may simply stop too early. On Shakespeare we therefore trained AdamW and Muon for 8000 steps instead
+of 1500 (same learning rates, cosine schedule over the longer run, five data orders each), so that both memorize:
+AdamW's training loss falls to 0.09 and its validation loss rises to 4.6. The loss-matched ratio
+(\cref{fig:app-long}; \cref{fig:overview}, left, red) has a single early episode (loss 4.23--2.64) and then falls
+steadily to 1.0 at the lowest common loss, 0.09; with top-1 disagreement the picture is the same (episode
+4.23--2.85, no persistent split). At the final step the two optimizers on the same data order are as far apart as
+two data orders of either (0.359 bits against floors of 0.355 and 0.324). Memorizing the training set, AdamW and
+Muon reach functions that differ on held-out text by a lot, but by no more than two data orders do.
+
 %% =================================================================
 \section{Discussion and limitations}
 \label{sec:discussion}
@@ -1544,6 +1556,14 @@ Shakespeare, at the fork checkpoints of AdamW, Muon, and Muon with its auxiliary
 \includegraphics[width=\linewidth]{figures/ts10m/initseed_js.png}
 \caption{Second initialization on TinyStories-10M, as in \cref{fig:controls} (top).}
 \label{fig:app-initseed}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/shakespeare_long/divergence_adamw_muon.png}
+\caption{AdamW against Muon on Shakespeare trained for 8000 steps into memorization, as in
+\cref{fig:divergence}.}
+\label{fig:app-long}
 \end{figure}
 
 \begin{figure}[ht]

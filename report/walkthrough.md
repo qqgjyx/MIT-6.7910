@@ -20,6 +20,7 @@ threshold). Training goes left → right.*
   optimizer leaves a mark: AdamW and Muon end as close in function as two data orders, but further apart in
   linear connectivity.
 - The detector does find a split where theory says there is one (linear model), but only near interpolation.
+  Training AdamW and Muon into memorization still gives no split.
 
 ## 1. [planned] Learning-rate sweeps
 
@@ -181,3 +182,15 @@ Logistic regression on separable data: GD → ℓ2 max-margin, Adam → ℓ∞ m
 
 - Same detector: within the floor for most of training, then a **persistent split** below loss ~1e-3. The
   method can find a split — but it comes near interpolation, which the language models never reach.
+
+## 10. [extra] Train until memorization (Shakespeare, 8000 steps)
+
+Does the split just come later, near interpolation, like in the linear model? AdamW and Muon trained 8000
+steps (AdamW train loss 0.09, val 4.6 — fully memorizing):
+
+![](figures/shakespeare_long/divergence_adamw_muon.png)
+
+- Ratio → **1.0** all the way down to loss 0.09. No split, with JS or with disagreement.
+- At the end: AdamW vs Muon 0.36 bits = two data orders (0.36 / 0.32). They memorize *differently*, but no
+  more differently than reshuffling the data.
+

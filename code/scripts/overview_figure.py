@@ -1,5 +1,5 @@
 """Overview: the loss-matched distance over the data-order floor against training loss, for every pair, one panel
-per group of split JSONs (from optsplit.analysis.split or scripts/linear_control.py).
+per group of split JSONs (from optsplit.analysis.split or scripts/linear_control.py); JSON=LABEL overrides the label.
 python scripts/overview_figure.py --panel Shakespeare a/split_adamw_muon.json ... --panel Linear l.json --out o.png"""
 
 import argparse
@@ -29,10 +29,11 @@ def main():
     for ax, (title, *files) in zip(axes[0], args.panel):
         lo, hi = np.inf, 0
         for f in files:
+            f, _, lab = f.partition('=')
             res = json.loads(open(f).read())
             grid, ratio = np.array(res['grid']), np.array(res['cross']) / np.array(res['floor'])
             ok = np.isfinite(ratio)
-            ax.plot(grid[ok], ratio[ok], lw=1.2, label=label(res))
+            ax.plot(grid[ok], ratio[ok], lw=1.2, label=lab or label(res))
             lo, hi = min(lo, grid[ok].min()), max(hi, grid[ok].max())
         ax.axhline(1, color='k', lw=0.5)
         ax.axhline(1.5, color='r', ls='--', lw=0.6)
