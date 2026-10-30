@@ -2,6 +2,7 @@
 
 **[planned]** = in the project plan. **[extra]** = added after seeing the results.
 Status: all runs and analyses done (103 GPU-hours on L40S, 392 runs).
+Checkpoint (2 pages, for the class): `checkpoint.pdf`. Full write-up: `report.pdf`.
 
 ## TL;DR
 
