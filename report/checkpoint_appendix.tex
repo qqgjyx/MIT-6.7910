@@ -90,43 +90,39 @@ Aux.\ weight decay & -- & -- & none \tabularnewline
 $L$ layers, width $d$, vocabulary $V$; batch is sequences $\times$ tokens; ``aux.'': Muon's auxiliary AdamW.}
 \label{tab:app-settings}
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{0.16\linewidth}p{0.19\linewidth}p{0.19\linewidth}p{0.19\linewidth}p{0.19\linewidth}@{}}
+\begin{tabular}{@{}p{0.17\linewidth}p{0.25\linewidth}p{0.25\linewidth}p{0.25\linewidth}@{}}
 \hline
- & Shakespeare-char & \raggedright TinyStories-10M (as \cref{app:hparams-fig1}) & TinyStories-30M & \raggedright Shakespeare,
-  8000 steps (memorization control) \tabularnewline
+ & Shakespeare-char & \raggedright TinyStories-10M (as \cref{app:hparams-fig1}) & TinyStories-30M \tabularnewline
 \hline
 Runs & 3 optimizers $\times$ d0--d4 (15) & 3 optimizers $\times$ d0--d4 (15) & 3 optimizers $\times$ d0--d4
-  (15) & \raggedright AdamW, Muon $\times$ d0--d4 (10) \tabularnewline
-Data & \raggedright Shakespeare, nanoGPT's 90/10 split & TinyStories & TinyStories & as Shakespeare-char
+  (15) \tabularnewline
+Data & \raggedright Shakespeare, nanoGPT's 90/10 split & TinyStories & TinyStories \tabularnewline
+$V$ & 65 (characters) & 4096 (BPE) & 4096 (BPE) \tabularnewline
+$L$, heads, $d$ & 6, 6, 384 & 6, 6, 384 & 8, 8, 512 \tabularnewline
+\raggedright Parameters (without embeddings, head) & 10.8M (10.6M) & 13.9M (10.6M) & 29.5M (25.2M)
   \tabularnewline
-$V$ & 65 (characters) & 4096 (BPE) & 4096 (BPE) & 65 (characters) \tabularnewline
-$L$, heads, $d$ & 6, 6, 384 & 6, 6, 384 & 8, 8, 512 & 6, 6, 384 \tabularnewline
-\raggedright Parameters (without embeddings, head) & 10.8M (10.6M) & 13.9M (10.6M) & 29.5M (25.2M) &
-  10.8M (10.6M) \tabularnewline
-Batch & $64\times256$ & $128\times256$ & $128\times256$ & $64\times256$ \tabularnewline
-Steps & 1{,}500 & 10{,}000 & 20{,}000 & 8{,}000 \tabularnewline
+Batch & $64\times256$ & $128\times256$ & $128\times256$ \tabularnewline
+Steps & 1{,}500 & 10{,}000 & 20{,}000 \tabularnewline
 Tokens & \raggedright 24.6M (about 24 passes over the 1M training characters) & 328M (about 0.6 epochs) &
-  655M (about 1.2 epochs) & 131M \tabularnewline
-Warmup steps $w$ & 100 & 200 & 400 & 100 \tabularnewline
-Cosine decay to step & 1{,}500 & 10{,}000 & 20{,}000 & 8{,}000 (stretched) \tabularnewline
+  655M (about 1.2 epochs) \tabularnewline
+Warmup steps $w$ & 100 & 200 & 400 \tabularnewline
+Cosine decay to step & 1{,}500 & 10{,}000 & 20{,}000 \tabularnewline
 \hline
-$\eta_{\rm SGD}$ & 0.05 & 0.03 & 0.1 & -- \tabularnewline
-$\eta_{\rm AdamW}$ & $3\cdot10^{-4}$ & $2\cdot10^{-3}$ & $2\cdot10^{-3}$ & $3\cdot10^{-4}$ \tabularnewline
-$\eta_{\rm Muon}$ (aux.) & 0.04 ($10^{-3}$) & 0.01 ($2\cdot10^{-3}$) & 0.01 ($1.5\cdot10^{-3}$) & 0.04
-  ($10^{-3}$) \tabularnewline
+$\eta_{\rm SGD}$ & 0.05 & 0.03 & 0.1 \tabularnewline
+$\eta_{\rm AdamW}$ & $3\cdot10^{-4}$ & $2\cdot10^{-3}$ & $2\cdot10^{-3}$ \tabularnewline
+$\eta_{\rm Muon}$ (aux.) & 0.04 ($10^{-3}$) & 0.01 ($2\cdot10^{-3}$) & 0.01 ($1.5\cdot10^{-3}$) \tabularnewline
 $\eta$ chosen by & \raggedright minimum validation loss over training (runs overfit) & best final validation loss &
-  best final validation loss & as Shakespeare-char \tabularnewline
-\raggedright SGD's best $\eta$, diverged$^*$ & 0.2 & 0.1 (d1--d3) & 0.3 & -- \tabularnewline
-AdamW $\beta$ & $(0.9,0.99)$, as nanoGPT & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.99)$ \tabularnewline
-Aux.\ $\beta$ & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.95)$ \tabularnewline
+  best final validation loss \tabularnewline
+\raggedright SGD's best $\eta$, diverged$^*$ & 0.2 & 0.1 (d1--d3) & 0.3 \tabularnewline
+AdamW $\beta$ & $(0.9,0.99)$, as nanoGPT & $(0.9,0.95)$ & $(0.9,0.95)$ \tabularnewline
+Aux.\ $\beta$ & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.95)$ \tabularnewline
 \hline
 Predictions & \raggedright all 256 positions of 64 validation sequences (16{,}384) & \raggedright 16 positions
-  of 128 sequences (2{,}048) & \raggedright 16 positions of 128 sequences (2{,}048) & as Shakespeare-char
-  \tabularnewline
+  of 128 sequences (2{,}048) & \raggedright 16 positions of 128 sequences (2{,}048) \tabularnewline
 Predictions at & \raggedright every 50th $+$ 40 log-spaced & \raggedright every 250th $+$ 30 log-spaced &
-  \raggedright every 500th $+$ 30 log-spaced & \raggedright every 100th $+$ 40 log-spaced \tabularnewline
+  \raggedright every 500th $+$ 30 log-spaced \tabularnewline
 Hessian at & \raggedright every 50th $+$ 30 log-spaced & \raggedright every 500th $+$ 30 log-spaced &
-  \raggedright every 1000th $+$ 30 log-spaced & none \tabularnewline
+  \raggedright every 1000th $+$ 30 log-spaced \tabularnewline
 \hline
 \end{tabular}\\[2pt]
 \centering $^*$On other data orders; SGD then uses a lower rate.
