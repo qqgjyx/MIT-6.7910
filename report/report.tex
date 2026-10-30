@@ -176,7 +176,8 @@ the anatomy of the top eigenvector, and the CIFAR-10 break-even check. Everythin
 first results, mostly to test explanations of them, and is marked with \dag\ in the headings: the episodes and
 the persistent split (as $t^\ast$ turned out to be degenerate), the decomposition into optimizer and data order
 and the n-gram references, the edge of stability of Muon's auxiliary AdamW and the matched control, the
-robustness checks, the floor-normalized swap scores and the barriers to pure runs, the break-even runs on the
+robustness checks, the floor-normalized swap scores and the barriers to pure runs, the scale-free weight metrics
+($\|\theta\|_\infty/\|\theta\|_2$ and the stable rank) and their shifts under swaps, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
 initialization, token frequency, a linear positive control, and Shakespeare runs trained into memorization).
 
@@ -1067,9 +1068,40 @@ eigenvalue 15--110 times those of AdamW and Muon. The inputs are the token embed
 (Frobenius norm of the embedding matrix 27 for SGD against 97 for AdamW and 175 for Muon on TinyStories-10M), and
 the pre-LayerNorm transformer normalizes the residual stream, so derivatives with respect to the embeddings shrink
 as the embeddings grow; much of the difference is therefore one of scale. One-token substitution sensitivity,
-which does not depend on that scale, is 0.06--0.08 for all three. Over training (\cref{fig:metrics}) the input
-Jacobian of AdamW and Muon peaks at about step 200, the end of warmup, and then falls, while
-SGD's keeps rising. \todo{Shifts of the metrics under swaps, once the forks' metrics are computed.}
+which does not depend on that scale, is 0.06--0.08 for all three; and the input Jacobian times the embedding
+norm is about the same for AdamW and Muon ($2.1$ and $2.2\times10^3$) and 1.7 times higher for SGD. Over training
+(\cref{fig:metrics}) the input Jacobian of AdamW and Muon peaks at about step 200, the end of warmup, and then
+falls, while SGD's keeps rising.
+
+On Shakespeare (\cref{tab:app-metrics-shk}) AdamW's learning rate of $3\times10^{-4}$ moves the weights by only
+0.25 initial norms, as little as SGD (0.36), and the two have the same $\|\theta\|_\infty/\|\theta\|_2$
+($12.4$ and $12.3\times10^{-3}$): the $\ell_\infty$ geometry only shows once the weights leave the
+initialization. Muon again has the largest stable rank (99 against 48 and 63), and, as it memorizes, twice to
+four times the substitution sensitivity of the others (0.19 against 0.10 and 0.05).
+
+\paragraph{Metrics under swaps\extra.} \Cref{fig:swap-metrics} places each fork's final metrics between those of
+pure A (0) and pure B (1). The weight metrics follow whichever optimizer moved the weights more, not the one that
+decides the function. Forks into SGD keep the old optimizer's $\|\theta\|_\infty/\|\theta\|_2$ and input
+Jacobian after switching at step 400 or later (shift $\le0.37$), although at steps 400--1000 their function is
+within 1.0--1.4 floors of pure SGD (\cref{fig:swap}); Muon to SGD keeps Muon's stable rank at every fork step.
+Forks from SGD take the new optimizer's metrics, as they take its function. Between AdamW and Muon, whose
+functions cannot be told apart, the late forks are mixtures: switching at step 4000 goes only 0.28 (AdamW to
+Muon) and 0.45 (Muon to AdamW) of the way to the new optimizer's stable rank, and 0.4--0.6 of the way in
+$\|\theta\|_\infty/\|\theta\|_2$. The
+geometry of the endpoint records the order of the optimizers; the function only the faster one. On Shakespeare
+the same holds where the pure gap exceeds the noise, with Muon, which moves the weights furthest, setting the
+geometry (\cref{fig:app-swap-metrics}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/ts10m/swap_metrics.png}
+%% python -m optsplit.analysis.swap --forks 'ts10m_forks/*' --pure 'ts10m_main/*' --out analysis/ts10m/swap
+%% python -m optsplit.analysis.plots swap --swap-json analysis/ts10m/swap.json --out analysis/ts10m/figures
+\caption{Final metrics of the forks on TinyStories-10M as a fraction of the gap between pure A (0) and pure B
+(1), against the fork step. Pairs whose pure gap is under three data-order standard deviations are left out
+(AdamW--SGD in stable rank).}
+\label{fig:swap-metrics}
+\end{figure}
 
 \subsection{Further controls\extra}
 \label{sec:res-controls}
@@ -1601,6 +1633,34 @@ Shakespeare, at the fork checkpoints of AdamW, Muon, and Muon with its auxiliary
 \caption{Swaps (top) and mode connectivity (bottom) on Shakespeare, as in \cref{fig:swap}.}
 \label{fig:app-swap}
 \end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\linewidth]{figures/shakespeare/swap_metrics.png}
+\caption{Final metrics of the Shakespeare forks between pure A (0) and pure B (1), as in
+\cref{fig:swap-metrics}. SGD's metrics vary widely over data orders on Shakespeare, so most pairs with SGD drop
+out or are noisy.}
+\label{fig:app-swap-metrics}
+\end{figure}
+
+\begin{table}[ht]
+\centering\small
+\caption{Final function metrics on Shakespeare, mean over the five data orders, as in \cref{tab:metrics}.}
+\label{tab:app-metrics-shk}
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+ & SGD & AdamW & Muon \\
+\midrule
+$\|\theta\|_2$ & 97 & 92 & 654 \\
+$\|\theta\|_\infty/\|\theta\|_2$ ($\times10^{3}$) & 12.3 & 12.4 & 2.4 \\
+stable rank (hidden, mean) & 63 & 48 & 99 \\
+$\|\theta-\theta_0\|/\|\theta_0\|$ & 0.36 & 0.25 & 7.39 \\
+input Jacobian (Frobenius) & 46.8 & 120.1 & 162.9 \\
+substitution sensitivity & 0.048 & 0.097 & 0.191 \\
+top-1 accuracy & 0.323 & 0.554 & 0.533 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{figure}[ht]
 \centering

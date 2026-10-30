@@ -140,6 +140,18 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 
 ![](figures/ts10m/function_metrics.png)
 
+- Shakespeare: AdamW (lr 3e-4) barely leaves the init (0.25×) and has SGD's ℓ∞/ℓ2 — the bias only shows once
+  the weights move. Muon again has the most even singular values.
+
+**[extra] Metrics under swaps** (0 = like the old optimizer, 1 = like the new):
+
+![](figures/ts10m/swap_metrics.png)
+
+- The weights follow **whoever moved them more**, not whoever decides the function.
+- X → SGD (switch ≥ 400): function ≈ SGD's, but weights keep the old optimizer's ℓ∞/ℓ2 and Jacobian.
+- AdamW ↔ Muon late switches: functions identical, weights a mixture (stable rank only 0.3–0.45 of the way).
+  **The weights remember the training history; the function doesn't.**
+
 ## 5. [planned] Break-even replication (CIFAR-10, plain SGD)
 
 ![](figures/breakeven/cifar/curves.png)
