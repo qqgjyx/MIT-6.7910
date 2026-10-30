@@ -80,7 +80,11 @@ each optimizer moved them. On TinyStories the hidden representations of AdamW an
 block and little after the others, and their functions differ no more than with another data order even off the
 data distribution. A second initialization reproduces the results, the other learning rates of the sweeps give
 the same comparison on TinyStories, and on a linear model with known, different limits the same test does find a
-split, near interpolation; AdamW and Muon trained into memorization on Shakespeare still do not split.
+split, near interpolation; AdamW and Muon trained into memorization on Shakespeare still do not split. We
+explain these results with a simple model: predictors of equal loss within an n-gram class lie within a distance
+of the class optimum set by their excess loss, whatever the optimizer; symmetries of the weights let each
+optimizer reach the same function at its own weights; and Muon, unlike SGD and AdamW, has no break-even point. A
+toy bigram model reproduces the main effects.
 \end{abstract}
 
 %% =================================================================
@@ -1601,7 +1605,10 @@ exception at 1.35.
 A linear model on separable data, where the limits of training are known to differ, shows that our test can
 detect a split, and places it near interpolation; but AdamW and Muon trained on Shakespeare until they memorize
 the training set do not split either, so for these models the absence of a split is not only a matter of
-training too briefly.
+training too briefly. A simple model accounts for this pattern (\cref{sec:theory}): at equal loss, functions of
+one n-gram class are pinned by their excess loss whatever the optimizer, while the optimizer chooses the route,
+the speed, the weights among those computing a function, and, for SGD and AdamW but not Muon, a cap on the
+curvature.
 
 \printbibliography
 
