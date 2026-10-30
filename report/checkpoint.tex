@@ -55,11 +55,10 @@ if it lasts to the end of training, with a bootstrap over data orders for its lo
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap.pdf}
-\caption{TinyStories-10M. Left: the training trajectories of all 15 runs (three optimizers, data orders d0--d4
-labelled at the end of each run) in prediction space, as in Fig.~1 of \citet{jastrzebski2020breakeven}: UMAP of
-the Jensen--Shannon distance (the square root of the divergence) between the predictions of every pair of logged
-steps. Star: the shared initialization; markers: the first step at which each run reaches the given training
-loss. UMAP keeps neighbourhoods but not distances. Middle: distance between AdamW and Muon at equal steps (blue)
+\caption{TinyStories-10M. Left: the trajectories of the AdamW and Muon runs (data orders d0--d4 labelled at the
+end of each run) from step 250 on, in prediction space: densMAP of the Jensen--Shannon distance (the square root
+of the divergence) between the predictions of every pair of logged steps. Dots: step 250; markers: fixed steps,
+with each run's training loss written at steps 1000 and 2000. densMAP keeps neighbourhoods but not distances. Middle: distance between AdamW and Muon at equal steps (blue)
 and the data-order floor (grey). Right: the same pairs at equal training loss, from loss 4.
 Hyperparameters in \cref{app:hparams-fig1}.}
 \label{fig:div}
@@ -70,9 +69,9 @@ differ from the first steps, mostly because they progress at different speeds. A
 settings and for every pair, the distance is 30--200 times the floor at high loss and falls back to about the
 floor around the stage at which the models have learned the bigram statistics of the data. On TinyStories it
 stays there: at the end of TinyStories-30M, replacing AdamW by Muon changes the predictions no more than
-changing the data order. The trajectories (\cref{fig:div}, left) show the same: the paths of the three
-optimizers separate early, run together from about loss 5, and at the end fan out by data order, with AdamW and
-Muon of the same data order ending side by side. Of the nine pairs only Muon--SGD on Shakespeare, where SGD barely trains, has a
+changing the data order. In the trajectories after warmup (\cref{fig:div}, left), AdamW and Muon with the same
+data order stay side by side until about step 1000, with Muon at lower loss at each step, and the data orders fan
+out from about step 500--1000. Of the nine pairs only Muon--SGD on Shakespeare, where SGD barely trains, has a
 persistent split, and it is lost with another metric or a stricter threshold. The answer to the title is
 therefore the reverse of the hypothesis: the optimizers' functions differ early and meet later.
 
