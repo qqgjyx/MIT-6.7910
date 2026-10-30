@@ -173,7 +173,10 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
 \item \textbf{The anatomy of the sharp direction}: which parameter blocks carry the top Hessian eigenvector
   and its curvature, by optimizer and over training (\cref{sec:res-anatomy}). It differs by optimizer
   (embeddings for Muon on Shakespeare, value--output matrices for Muon on TinyStories, head or gains for
-  AdamW on TinyStories), and most of the eigenvalue usually comes from curvature between blocks.
+  AdamW on TinyStories), and most of the eigenvalue usually comes from curvature between blocks. At the edge
+  of stability, over five data orders, the sharp direction lies at the input end of the network: in the first
+  block for SGD, in the embeddings for the operator that sets AdamW's threshold on TinyStories, and in the
+  first three blocks for Muon, which has no threshold.
 \item \textbf{A replication of the break-even point} on CIFAR-10 and its transfer to the language models
   (\cref{sec:res-breakeven}). The sharpness and gradient-noise effects replicate, but at equal training loss,
   away from the initial loss, two learning rates differ by at most about twice the floor.
@@ -1038,6 +1041,35 @@ steps and a few isolated measurements) in which it lies almost entirely in the e
 makes up the eigenvalue. Outside those periods 80--95\% of the preconditioned eigenvalue comes from curvature
 between blocks, even more than for $H$.
 
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.68\linewidth]{figures/anatomy_layers.png}
+%% python -m optsplit.analysis.anatomy_layers 'ts10m_main/*' --out analysis/ts10m (per setting), then
+%% python -m optsplit.analysis.anatomy_layers --plot Shakespeare=... TinyStories-10M=... TinyStories-30M=... --out report/figures
+\caption{Share of the top eigenvector by layer at the edge of stability (sharpness at least 0.9 of the threshold),
+mean and standard deviation over the five data orders; in brackets, the number of measured steps. For AdamW,
+of $P^{-1/2}HP^{-1/2}$ (which sets its threshold) and of $H$ at the same steps; for Muon, which has no
+threshold, all steps. L$i$: transformer block $i$; norms: the gains of all LayerNorms.}
+\label{fig:anatomy-layers}
+\end{figure}
+
+\paragraph{By layer, at the edge of stability.} Restricted to the steps at which each optimizer is at its
+threshold and averaged over the five data orders (\cref{fig:anatomy-layers}), the direction of the operator
+that sets the threshold lies at the input end of the network: in all three settings the embeddings and the
+first three blocks carry 75--90\% of it, and the later blocks little. Which part of that end differs by
+optimizer. SGD, at its threshold only early in training, has its direction mostly in the first block
+(35--47\%), with the embeddings and the second block; later, below the threshold, part of it moves to the head
+(21--30\% on Shakespeare and TinyStories-30M). The direction that sets AdamW's threshold lies on TinyStories in
+the embeddings (59--66\%, against 29--32\% at the steps below the threshold), whose own curvature makes up most
+of the preconditioned eigenvalue (51--59\%). The preconditioner $P^{-1}$ is largest where gradients are
+rarest, as in the embedding rows of rare tokens, so this is where the preconditioned operator is sharpest; on
+Shakespeare, with 65 characters, it lies instead in the first three blocks. At the same steps the direction of
+AdamW's raw $H$ is in the head (29--32\%) and the first block. Muon's direction lies in the first three blocks on
+TinyStories (73--82\%), in the matrices it trains, with 80--83\% of the eigenvalue between blocks; on
+Shakespeare it lies in the embeddings (63\%), which its auxiliary AdamW trains. The first block, where most of
+the sharp direction of SGD and Muon lies, is also where the single-layer barriers between data orders sit
+(\cref{sec:res-metrics}).
+
 \subsection{Break-even replication}
 \label{sec:res-breakeven}
 
@@ -1474,7 +1506,12 @@ break-even is about $38\,p/\eta$, with $p$ the preconditioner along the sharp di
 gradient's root mean square. On TinyStories-30M $\lmax\approx5$ at $\eta=1.5\times10^{-3}$ gives $p\approx2\times10^{-4}$,
 and AdamW sits at the lowest raw sharpness of the three (5--10, against 12--20 for Muon and 20--30 for SGD;
 \cref{fig:app-sharpness}). A growing oscillation also raises $v$ and with it $P$, so AdamW stabilizes itself
-through its preconditioner as well as through the curvature.
+through its preconditioner as well as through the curvature. The test is whether, at the steps at which AdamW
+is at its threshold after warmup, $\lmax\eta$ grows with the gradient: over the five data orders a log-log fit
+on the gradient norm has slope 1.15 on TinyStories-30M (77 steps, $r=0.82$) and 1.61 on TinyStories-10M (69
+steps, $r=0.89$), and on Shakespeare the relation is weak (31 steps, $r=0.52$). The dependence on the gradient
+holds, with a slope above the predicted 1: the global gradient norm is only a proxy for $p$, which is set where
+the direction lies, on TinyStories mostly in the embeddings (\cref{fig:anatomy-layers}).
 (iii) Muon's update $\mathrm{msign}(M)$ does not change when the gradient is scaled, so it has no linear regime.
 On a quadratic $\frac\lambda2\|X\|_F^2$ in a matrix $X$, without momentum, $X\leftarrow X-\eta\,\mathrm{msign}(X)$
 maps each singular value $s$ to $|s-\eta|$: the iterates enter $\{\|X\|_2\le\eta\}$ and stay there for every
@@ -1496,9 +1533,9 @@ while two learning rates stay within 1.75 floors at equal loss (\cref{sec:res-br
 
 \paragraph{Predictions not yet tested.} A persistent split needs a class without a best element, as when
 training into interpolation; AdamW and Muon memorize Shakespeare without splitting, so either their implicit
-biases agree on held-out text or the runs are not yet in that regime. AdamW's raw sharpness at its threshold
-should scale with the gradient's root mean square over $\eta$, while Muon's should not scale as $1/\eta$ across
-learning rates.
+biases agree on held-out text or the runs are not yet in that regime. Muon's sharpness should not scale as
+$1/\eta$ across learning rates, while SGD's and AdamW's should; the learning-rate sweeps with sharpness
+measurements that test this are running.
 
 %% =================================================================
 \section{Discussion and limitations}

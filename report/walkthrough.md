@@ -82,6 +82,17 @@ optimizer, other data):
 - 70–85% of the top eigenvalue comes from **curvature between blocks**, not inside one.
 - Changes of the dominant block happen long after the optimizers have re-met. No link to the split.
 
+**[planned, moonshot] By layer, only at the edge of stability, mean of 5 data orders:**
+
+![](figures/anatomy_layers.png)
+
+- The sharp direction sits at the **input end**: embeddings + first 3 blocks carry 75–90% of it.
+- SGD (at its threshold only early): first block (35–47%). Later, below threshold, part moves to the head.
+- AdamW, the operator that sets its threshold (P⁻¹ᐟ²HP⁻¹ᐟ²): **embeddings** on TinyStories (59–66%, vs ~30%
+  below threshold). P⁻¹ is largest where gradients are rare (rare-token rows). Shakespeare (65 chars): first
+  3 blocks.
+- Muon (no threshold): first 3 blocks on TinyStories; embeddings (its aux Adam) on Shakespeare.
+
 **[extra] Muon's embeddings at the edge of stability (Shakespeare):** Muon leaves embeddings/head/norms to
 an Adam. Sharpness of that block over its threshold:
 
@@ -292,7 +303,9 @@ quantity is exact.*
   data-order barriers).
 - **Break-even points:**
   - SGD: (2+2μ)/η.
-  - AdamW: about 38·(gradient scale)/η, which is why it has the lowest raw sharpness.
+  - AdamW: about 38·(gradient scale)/η, which is why it has the lowest raw sharpness. Tested: at its
+    threshold, λ·η grows with the gradient norm (log-log slope 1.15 / 1.61 on TinyStories 30M / 10M, r 0.82 /
+    0.89; weak on Shakespeare). ✓ (slope a bit above 1)
   - **Muon: none.** Its step size doesn't depend on the gradient's size, so no curvature makes it diverge.
   - Stability caps curvature, not *which* function you have at a given loss, which is why EoS never lines up
     with the split.

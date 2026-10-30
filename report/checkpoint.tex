@@ -78,7 +78,7 @@ therefore the reverse of the hypothesis: the optimizers' functions differ early 
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.85\linewidth,trim=0 198 0 0,clip]{figures/overview.png}
+\includegraphics[width=0.82\linewidth,trim=0 198 0 0,clip]{figures/overview.png}
 \caption{Loss-matched distance between optimizers over the data-order floor (training progresses to the right);
 red dashed, the threshold 1.5. Red, left: AdamW--Muon trained into memorization (8000 steps).}
 \label{fig:overview}
@@ -100,19 +100,33 @@ not: after a change of optimizer, a fork needs a later fork step to stay linearl
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\linewidth]{figures/ts10m/swap.png}
+\includegraphics[width=0.74\linewidth]{figures/ts10m/swap.png}
 \caption{Swaps on TinyStories-10M. Left: where the fork ends between pure $A$ (0) and pure $B$ (1). Right:
 its distance to pure $B$ (solid) and to pure $A$ (dashed) in units of their floors; below 1 means
 indistinguishable from that optimizer.}
 \label{fig:swap}
 \end{figure}
 
-\paragraph{Result 4 (moonshot, first look).} The top Hessian eigenvector lies in different blocks for each
-optimizer: Muon's in the value--output matrices on TinyStories and in the embeddings on Shakespeare, AdamW's in
-the head and later the LayerNorm gains, SGD's spread over MLP, value--output and head. In all three, 70--85\% of
-the eigenvalue comes from curvature \emph{between} blocks rather than within one. Of the part of the direction in the
-transformer blocks, most lies in the first two (one run per optimizer, TinyStories-30M). Its changes of block come long after the optimizers have
-re-met, so they do not mark a split.
+\paragraph{Result 4 (moonshot): the sharp direction at the edge of stability.} Restricted to the steps at each
+optimizer's threshold and averaged over the five data orders, the top eigenvector of the operator that sets the
+threshold lies at the input end: the embeddings and first three blocks carry 75--90\% of it in all settings.
+SGD's lies mostly in the first block; AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings on TinyStories (about
+60\%), where rare tokens make $P^{-1}$ largest; Muon's, without a threshold, in its first three blocks (on
+Shakespeare in the embeddings, left to its auxiliary AdamW). Except in the embeddings, 66--83\% of the
+eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after the optimizers
+have re-met, so it does not mark a split.
+
+\paragraph{Result 5: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
+the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metric, JS (bits) $\le$ total
+variation, and by Pinsker, two predictors in $\mathcal F_s$ with excess losses $\Delta L_A,\Delta L_B$ over $q_s$
+have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta L_A}+\sqrt{\Delta L_B})$, whatever the optimizer. So at
+equal loss the optimizers must meet near the bigram optimum; they can differ before it, where their update
+geometries take different routes (SGD passes through the unigram model, Muon skips it), or in a class without a
+best element, as in the linear control below. The break-even point depends on how the update scales with the
+gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so the raw sharpness there
+scales as the gradient over $\eta$, as we find (log-log slope 1.15--1.6 on TinyStories); Muon's update is
+invariant to the gradient's scale and on a quadratic never diverges, so it has no break-even point on its
+matrices. Stability caps curvature but does not choose between functions of equal loss, hence Result 2.
 
 \paragraph{Pipeline check and controls.} On CIFAR-10 the break-even effects replicate: the sharpness levels off
 at or below $2/\eta$ and lower for larger rates, and the gradient covariance is better conditioned; but at equal
@@ -120,11 +134,10 @@ loss two learning rates differ by at most about twice the floor. Controls: a sec
 reproduces the results, and on a linear model on separable data, where gradient descent and Adam have different
 max-margin limits \citep{soudry2018separable,zhang2024adam}, the same test does find a persistent split.
 
-\paragraph{Next (Nov--Dec).} (i) Moonshot: which layers carry the sharp direction \emph{at} the edge of
-stability, restricted to the steps at the threshold and averaged over the five data orders; whether it moves to
-the new optimizer's layers after a swap; and a causal test lowering the learning rate of only those layers.
-(ii) Robustness of the split rule to the metric and the threshold. (iii) Presentation (Dec 1--4), paper, code
-and Colab notebook (Dec 5--11). Code: \url{https://github.com/qqgjyx/MIT-6.7910}.
+\paragraph{Next (Nov--Dec).} (i) Moonshot: whether the sharp direction moves to the new optimizer's layers
+after a swap, and lowering the learning rate of only those layers. (ii) Sweeps with sharpness (running): Muon's
+should not scale as $1/\eta$. (iii) Robustness of the split rule to the metric and threshold. (iv) Presentation
+(Dec 1--4), paper, code and Colab notebook (Dec 5--11). Code: \url{https://github.com/qqgjyx/MIT-6.7910}.
 
 \clearpage
 \printbibliography
