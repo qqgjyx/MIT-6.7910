@@ -1,7 +1,8 @@
 """Where swaps land: for each fork A->B, the distance of its final predictions to pure A (the parent,
 which is also the A-continued control) and pure B (same init and data seed), and the shift of the
-function metrics as a fraction of the pure A to pure B gap. Each distance also comes divided by its
-noise floor: the median final distance between the pure run and the same optimizer's other data orders."""
+function metrics as a fraction of the pure A to pure B gap, with that gap in units of the metric's spread over
+data orders. Each distance also comes divided by its noise floor: the median final distance between the pure run
+and the same optimizer's other data orders."""
 
 import argparse
 import csv
@@ -16,7 +17,7 @@ from optsplit.analysis.io import load_runs
 from optsplit.config import root_dir
 
 
-def landing(fork, pure_a, pure_b):
+def landing(fork, pure_a, pure_b, noise=None):
     sf, sa, sb = fork.final_pred_step, pure_a.final_pred_step, pure_b.final_pred_step
     js_a, ag_a = distance(fork, sf, pure_a, sa)
     js_b, ag_b = distance(fork, sf, pure_b, sb)
@@ -30,6 +31,8 @@ def landing(fork, pure_a, pure_b):
     for k in fm_f.keys() & fm_a.keys() & fm_b.keys():
         gap = fm_b[k] - fm_a[k]
         row[f'fm.{k}'] = (fm_f[k] - fm_a[k]) / gap if gap != 0 else float('nan')
+        if noise is not None:
+            row[f'fm_snr.{k}'] = float(np.divide(abs(gap), noise.get(k, np.nan)))
     return row
 
 
@@ -38,6 +41,12 @@ def pure_b_of(fork, pures):
              and r.init_seed == fork.parent.init_seed and not r.cfg.fork.parent]
     assert len(match) == 1, f'{fork}: expected one pure {fork.optimizer} run, found {match}'
     return match[0]
+
+
+def spread(runs):
+    """Standard deviation of each final function metric over `runs` (the data orders of one optimizer)."""
+    ms = [m for m in map(final_metrics, runs) if m]
+    return {k: float(np.std([m.get(k, np.nan) for m in ms])) for k in ms[0]} if ms else {}
 
 
 def final_floor(run, pures):
@@ -56,7 +65,12 @@ def main():
 
     pures = load_runs(args.pure)
     forks = [f for f in load_runs(args.forks) if f.cfg.fork.parent and f.optimizer != f.parent.optimizer and f.done]
-    rows = [landing(f, f.parent, pure_b_of(f, pures)) for f in sorted(forks, key=lambda f: (f.id, f.fork_step))]
+    sd = {o: spread([r for r in pures if r.optimizer == o and not r.cfg.fork.parent])
+          for o in {r.optimizer for r in pures}}
+    noise = lambda a, b: {k: float(np.fmax(sd[a].get(k, np.nan), sd[b].get(k, np.nan)))
+                          for k in sd[a].keys() | sd[b].keys()}
+    rows = [landing(f, f.parent, pure_b_of(f, pures), noise(f.parent.optimizer, f.optimizer))
+            for f in sorted(forks, key=lambda f: (f.id, f.fork_step))]
     floors = {}
     for r in rows:
         for end in ('a', 'b'):

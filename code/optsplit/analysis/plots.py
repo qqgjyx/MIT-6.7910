@@ -192,16 +192,18 @@ SWAP_METRICS = {'weights.dist_init_rel': 'distance moved from init', 'linf_over_
                 'stable_rank_hidden_mean': 'stable rank, hidden matrices', 'input.jac_fro.mean': 'input Jacobian'}
 
 
-def swap_metrics(rows, path, keys=SWAP_METRICS):
+def swap_metrics(rows, path, keys=SWAP_METRICS, min_snr=3):
     """Final function metrics of each fork as a fraction of the pure A to pure B gap (0 = like pure A, 1 = like
-    pure B) against the fork step, one panel per metric, one line per pair; clipped to [-0.5, 1.5]."""
+    pure B) against the fork step, one panel per metric, one line per pair; clipped to [-0.5, 1.5]. Pairs whose pure
+    A to pure B gap is under `min_snr` data-order standard deviations are left out."""
     fig, axes = plt.subplots(1, len(keys), figsize=(3.4 * len(keys), 3.2), squeeze=False, sharey=True)
     pairs = sorted({(r['opt_a'], r['opt_b']) for r in rows})
     for ax, (k, title) in zip(axes[0], keys.items()):
         for c, pair in enumerate(pairs):
             rs = sorted((r for r in rows if (r['opt_a'], r['opt_b']) == pair), key=lambda r: r['fork_step'])
-            ax.plot([r['fork_step'] for r in rs], [r.get(f'fm.{k}', np.nan) for r in rs], '-o', ms=3,
-                    color=f'C{c}', label='->'.join(pair))
+            y = [r.get(f'fm.{k}', np.nan) if r.get(f'fm_snr.{k}', np.inf) >= min_snr else np.nan
+                 for r in rs]
+            ax.plot([r['fork_step'] for r in rs], y, '-o', ms=3, color=f'C{c}', label='->'.join(pair))
         ax.axhline(0, color='k', lw=0.5)
         ax.axhline(1, color='k', lw=0.5)
         ax.set(xlabel='fork step', title=title, xscale='log', ylim=(-0.5, 1.5))
