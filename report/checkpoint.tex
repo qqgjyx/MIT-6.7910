@@ -38,7 +38,7 @@ what coincides with it (an edge-of-stability event \citep{cohen2021eos,cohen2022
 loss level), and is the final function already decided there?
 
 \paragraph{What we have done.} We trained nanoGPT \citep{karpathy2022nanogpt} on character-level
-Shakespeare (10.8M parameters) and TinyStories-10M and -30M (14M and 30M) with SGD, AdamW and Muon
+Shakespeare (10.8M parameters) and TinyStories-10M and -30M (14M and 30M; \cref{app:hparams-fig1,app:hparams-other}) with SGD, AdamW and Muon
 \citep{jordan2024muon}, at learning rates from a sweep, from a shared initialization and with five data orders
 per optimizer. Along training we logged the next-token probability distributions on fixed held-out contexts
 and, for the training loss on fixed training sequences, the top eigenvalue of the Hessian and, for AdamW, of the
