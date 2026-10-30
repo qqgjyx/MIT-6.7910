@@ -223,3 +223,12 @@ steps (AdamW train loss 0.09, val 4.6 — fully memorizing):
 - At the end: AdamW vs Muon 0.36 bits = two data orders (0.36 / 0.32). They memorize *differently*, but no
   more differently than reshuffling the data.
 
+## 11. [extra] Other learning rates
+
+Every lr-sweep run vs the tuned run of each optimizer (same data), at equal loss, ÷ floor (below the bigram loss):
+
+![](figures/ts30m/lr_robust.png)
+
+- TinyStories: **every stable lr** (27× range for AdamW, 8× Muon, 3–10× SGD) is within ~1× of all three tuned
+  optimizers. Only lrs about to diverge stand out.
+- So "no split" isn't an artifact of the chosen lrs.

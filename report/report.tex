@@ -178,9 +178,10 @@ the persistent split (as $t^\ast$ turned out to be degenerate), the decompositio
 and the n-gram references, the edge of stability of Muon's auxiliary AdamW and the matched control, the
 robustness checks, the floor-normalized swap scores and the barriers to pure runs, the scale-free weight metrics
 ($\|\theta\|_\infty/\|\theta\|_2$ and the stable rank) and their shifts under swaps, the representation
-similarity, the break-even runs on the
+similarity, the comparison at other learning rates, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
-initialization, token frequency, a linear positive control, and Shakespeare runs trained into memorization).
+initialization, token frequency, a linear positive control, Shakespeare runs trained into memorization, and
+other learning rates).
 
 Code: \url{https://github.com/qqgjyx/MIT-6.7910} (\texttt{code/}).
 
@@ -1198,6 +1199,31 @@ steadily to 1.0 at the lowest common loss, 0.09; with top-1 disagreement the pic
 two data orders of either (0.359 bits against floors of 0.355 and 0.324). Memorizing the training set, AdamW and
 Muon reach functions that differ on held-out text by a lot, but by no more than two data orders do.
 
+\paragraph{Other learning rates.} The comparisons above use one tuned learning rate per optimizer. The sweep
+runs (data order 0, same initialization) give the comparison at every other rate for free: each against the
+tuned run of every optimizer on the same data, at equal training loss, over the data-order floor of the tuned
+runs, summarized by the median below the bigram loss (\cref{fig:lr-robust}). On TinyStories every rate that
+trains stably, a 27-fold range for AdamW, 8-fold for Muon and 3- to 10-fold for SGD, is within 0.80--1.11 floors
+of all three tuned optimizers, with one exception: SGD at 0.1 is 1.35 floors from tuned SGD at 0.03 on
+TinyStories-10M, further than from tuned AdamW or Muon. Only rates at the edge of stability (Muon at 0.08, SGD
+at 0.3 on TinyStories-10M) are 1.5--2.3 floors away, and higher ones diverge. On Shakespeare, where SGD does not get below the bigram loss
+at most rates, AdamW at 3--13 times its tuned rate is 1.5--1.6 floors from tuned AdamW but 1.03--1.06 from tuned
+Muon, whose larger floor (it memorizes) enters the cross comparison. The floor of the tuned runs may not be the
+floor at other rates, so this is a check, not a second analysis; but it shows that the absence of a split on
+TinyStories is not a property of the chosen rates.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.32\linewidth]{figures/shakespeare/lr_robust.png}\hfill
+\includegraphics[width=0.32\linewidth]{figures/ts10m/lr_robust.png}\hfill
+\includegraphics[width=0.32\linewidth]{figures/ts30m/lr_robust.png}
+%% python -m optsplit.analysis.lr_robust --sweep 'S_lrsweep/*' --main 'S_main/*' --below 3.8 --out analysis/S
+\caption{Each learning-rate sweep run (rows) against the tuned run of each optimizer (columns) on the same data
+order: median loss-matched JS over the data-order floor of the tuned runs, below the bigram loss (2.47 on
+Shakespeare, 3.8 on TinyStories). Blue below 1, red above; ``--'': diverged or never below that loss.}
+\label{fig:lr-robust}
+\end{figure}
+
 %% =================================================================
 \section{Discussion and limitations}
 \label{sec:discussion}
@@ -1256,7 +1282,8 @@ curvature between blocks, but its changes do not line up with changes in functio
 \item The noise floor varies only the data order; a second initialization (\cref{sec:res-controls}) gives the same
   distance as a new data order, but only two of each were run, on Shakespeare and TinyStories-10M.
 \item Learning rates come from five-point sweeps on one data order, and the Shakespeare AdamW rate is the
-  smallest of its grid. SGD trains poorly at the stable rates on Shakespeare, so comparisons with SGD there stop
+  smallest of its grid. The other rates of the sweeps agree with the tuned ones on TinyStories
+  (\cref{fig:lr-robust}), but only against the tuned runs' floor. SGD trains poorly at the stable rates on Shakespeare, so comparisons with SGD there stop
   at loss 2.61, and its large data-order noise on TinyStories makes ``no split'' against SGD a weak statement.
 \item The first exceedance is degenerate (\cref{sec:method-split}); episodes and the persistent split depend on
   the margin $m_\times$, the run length $k$ and the matching tolerance $\tau$; the conclusions hold over the

@@ -40,9 +40,11 @@ def heatmap(rows, path, title):
     for r in rows:
         m[[x[2] for x in runs].index(r['run']), refs.index(r['ref_optimizer'])] = r['median_late']
     fig, ax = plt.subplots(figsize=(3.2, 0.28 * len(runs) + 1.2))
-    ax.imshow(np.log2(m), cmap='RdBu_r', vmin=-2, vmax=2, aspect='auto')
+    with np.errstate(divide='ignore'):
+        ax.imshow(np.log2(np.where(m > 0, m, np.nan)), cmap='RdBu_r', vmin=-2, vmax=2, aspect='auto')
     for (i, j), v in np.ndenumerate(m):
-        ax.text(j, i, f'{v:.2f}', ha='center', va='center', fontsize=7)
+        ax.text(j, i, 'same run' if v == 0 else '--' if np.isnan(v) else f'{v:.2f}', ha='center', va='center',
+                fontsize=7)
     ax.set_xticks(range(len(refs)), [f'tuned {o}' for o in refs], fontsize=7)
     ax.set_yticks(range(len(runs)), [f'{o} {lr:g}' for o, lr, _ in runs], fontsize=7)
     ax.set_title(title, fontsize=9)
