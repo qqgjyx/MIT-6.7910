@@ -149,8 +149,9 @@ def test_figures(root, tmp_path, monkeypatch):
     pures = load_runs('syn/*_d*')
     rows = [swap.landing(f, f.parent, swap.pure_b_of(f, pures)) for f in load_runs('syn/swap_*')]
     plots.swap_landing(rows, tmp_path / 'swap.png', res)
-    plots.lmc([{'parent': 'syn/adamw_d0', 'forks': [{'fork_step': s, 'optimizer': 'muon', 'barrier': s / T}
-                                                     for s in (300, 1500)]}], tmp_path / 'lmc.png')
+    plots.lmc([{'parent': 'syn/adamw_d0', 'optimizer': 'adamw',
+                'forks': [{'fork': f'syn/adamw_to_muon_at{s}', 'fork_step': s, 'optimizer': 'muon', 'barrier': s / T}
+                          for s in (300, 1500)]}], tmp_path / 'lmc.png')
     plots.function_metrics(runs_a + runs_b, ['input.jac_fro', 'weights.l2'], tmp_path / 'fm.png')
     plots.sweep(load_runs('syn/*_d*'), tmp_path / 'sweep.png', select='min')
     plots.eos_ratio(runs_a[:1] + load_runs('syn/fast_d0'), res, tmp_path / 'eos.png')

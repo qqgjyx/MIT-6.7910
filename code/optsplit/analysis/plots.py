@@ -190,17 +190,19 @@ def swap_landing(rows, path, split=None):
 
 def lmc(results, path):
     """Loss barrier between the parent's and each fork's final weights against the fork step, one panel per
-    parent; dotted lines: the barrier to the other pure runs (`others`), which share nothing but the init."""
+    parent, one line per (fork's source optimizer, fork's optimizer); dotted lines: the barrier to the other pure
+    runs (`others`), which share nothing but the init."""
     fig, axes = plt.subplots(1, len(results), figsize=(4.5 * len(results), 3.4), squeeze=False, sharey=True)
-    opts = sorted({f['optimizer'] for res in results for f in res['forks']})
+    src = lambda f: f['fork'].split('/')[-1].split('_to_')[0]
+    opts = sorted({o for res in results for f in res['forks'] for o in (src(f), f['optimizer'])})
     color = {o: f'C{i}' for i, o in enumerate(opts)}
     for ax, res in zip(axes[0], results):
-        for opt in opts:
-            fs = sorted((f for f in res['forks'] if f['optimizer'] == opt), key=lambda f: f['fork_step'])
-            if fs:
-                tag = ' (other data)' if opt == res.get('optimizer') else ''
-                ax.plot([f['fork_step'] for f in fs], [f['barrier'] for f in fs], '-o', ms=3, color=color[opt],
-                        label=f'-> {opt}{tag}')
+        for key in sorted({(src(f), f['optimizer']) for f in res['forks']}):
+            fs = sorted((f for f in res['forks'] if (src(f), f['optimizer']) == key), key=lambda f: f['fork_step'])
+            other = key[1] if key[0] == res['optimizer'] else key[0]
+            tag = ' (other data)' if key[0] == key[1] else ''
+            ax.plot([f['fork_step'] for f in fs], [f['barrier'] for f in fs], '-o', ms=3, color=color[other],
+                    label=f'{key[0]} -> {key[1]}{tag}')
         for o in res.get('others', []):
             if o['run'] != res['parent']:
                 ax.axhline(o['barrier'], color=color.get(o['optimizer'], 'k'), ls=':', lw=1)
