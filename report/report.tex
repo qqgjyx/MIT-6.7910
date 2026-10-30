@@ -939,8 +939,13 @@ direction is in the block that Muon leaves to its auxiliary AdamW, including the
 is over its threshold (\cref{sec:res-coincide}). AdamW's direction on Shakespeare is spread over the MLP,
 value--output and embedding blocks, with about 70\% of the eigenvalue from $\chi$. The changes of dominant
 block (AdamW on TinyStories-30M, head to gains around step 4000--5000) happen long after the loss-matched
-distance between optimizers has returned to the floor. \todo{describe the decomposition of the AdamW
-preconditioned operator (\texttt{anatomy\_precond.png}).}
+distance between optimizers has returned to the floor. For AdamW the top eigenvector of the preconditioned
+operator $P^{-1/2}HP^{-1/2}$, the one that sets its stability threshold, lies elsewhere than that of $H$
+(\cref{fig:app-anatomy-precond}): mostly in the MLP matrices (40--60\%), the attention matrices and the
+embeddings on both TinyStories sizes, rather than in the head or the gains, with short periods (the first 1000
+steps and a few isolated measurements) in which it lies almost entirely in the embeddings and their own curvature
+makes up the eigenvalue. Outside those periods 80--95\% of the preconditioned eigenvalue comes from curvature
+between blocks, even more than for $H$.
 
 \subsection{Break-even replication}
 \label{sec:res-breakeven}
@@ -1517,6 +1522,15 @@ exceedance $t^\ast_X$ of the AdamW--Muon pair red dashed.}
 \caption{Anatomy of the top Hessian eigenvector as in \cref{fig:anatomy}, on Shakespeare (top two rows) and
 TinyStories-10M (bottom two rows).}
 \label{fig:app-anatomy}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.32\linewidth]{figures/ts10m/anatomy_precond.png}\qquad
+\includegraphics[width=0.32\linewidth]{figures/ts30m/anatomy_precond.png}
+\caption{Anatomy of the top eigenvector of AdamW's preconditioned operator $P^{-1/2}HP^{-1/2}$ on
+TinyStories-10M (left) and TinyStories-30M (right), as in \cref{fig:anatomy}.}
+\label{fig:app-anatomy-precond}
 \end{figure}
 
 \begin{figure}[ht]
