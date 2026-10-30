@@ -57,7 +57,7 @@ if it lasts to the end of training, with a bootstrap over data orders for its lo
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap.pdf}
 \caption{TinyStories-10M. Left: the trajectories of the AdamW and Muon runs on three data orders (d0--d2, at the
-end of each run) from step 250 on: densMAP of the Jensen--Shannon distance (the square root
+step-500 markers) from step 250 on: densMAP of the Jensen--Shannon distance (the square root
 of the divergence) between the predictions of every pair of logged steps. Black circles: step 250; markers:
 fixed steps, with each run's training loss written at steps 250, 1000 and 2000. densMAP keeps neighbourhoods but
 not distances. Middle: divergence between AdamW and Muon at equal steps (blue) and the data-order floor (grey);
@@ -111,7 +111,7 @@ indistinguishable from it. Hyperparameters in \cref{app:hparams-fig3}.}
 optimizer's threshold and averaged over the five data orders, the top eigenvector of the operator that sets the
 threshold lies at the input end: the embeddings and first three blocks carry 75--90\% of it in all settings.
 SGD's lies mostly in the first block; AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings on TinyStories (about
-60\%), where rare tokens make $P^{-1}$ largest; Muon's, without a threshold, in its first three blocks (on
+60\%), where rare tokens make $P^{-1}$ largest; Muon's, whose threshold is not on $H$, in its first three blocks (on
 Shakespeare in the embeddings, left to its auxiliary AdamW). Except in the embeddings, 66--83\% of the
 eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after warmup,
 when the optimizers are already at the floor, so it does not mark a split.

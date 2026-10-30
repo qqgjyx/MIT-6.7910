@@ -60,8 +60,9 @@ def parse(spec, losses=()):
     return json.loads(Path(f).read_text()), [float(x) for x in ls.split(',')] if ls else list(losses)
 
 
-def draw(ax, d, losses, title=None, steps=(), label_steps=()):
-    """One panel; each run's end is labelled with its data order. Markers where each run first reaches `losses`
+def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
+    """One panel; each run's end, or its marker at `name_step` (one of `steps`), is labelled with its data order.
+    Markers where each run first reaches `losses`
     and at its logged step nearest each of `steps`, with the run's training loss written next to those (and its
     first point) at `label_steps`. A star marks the shared initialization or, if the runs start later, a dot each
     run's first point. Each label sits 5 points from its point, in its preferred direction or the nearest turn of it
@@ -74,7 +75,9 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=()):
         c = f'C{opts.index(r["optimizer"])}'
         xy = np.array(r['xy'])
         ax.plot(*xy.T, '-', lw=0.6, alpha=0.6, color=c)
-        todo.append((name.rsplit('_', 1)[-1], xy[-1], xy[-1] - xy[(len(xy) - 1) // 2], c))  # beyond the run's end
+        order = name.rsplit('_', 1)[-1]
+        if name_step not in steps:
+            todo.append((order, xy[-1], xy[-1] - xy[(len(xy) - 1) // 2], c))  # beyond the run's end
         if r['steps'][0]:
             ax.plot(*xy[0], 'o', ms=2.4, mfc='k', mec=c, mew=0.8)
         for m, L in zip(MARKERS, losses):
@@ -85,13 +88,15 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=()):
         for k, i in enumerate(idx):
             if k:
                 ax.plot(*xy[i], STEP_MARKERS[k - 1], ms=4, mfc=c, mec='k', mew=0.4)
-            if r['steps'][i] in label_steps:
+            texts = [order] * (k > 0 and steps[k - 1] == name_step)
+            texts += [f'{r["loss"][i]:#.3g}'] * (r['steps'][i] in label_steps)
+            if texts:
                 # beside the path from the marker before to the one after, on the side away from the nearest marker
                 # of another run at the same step
                 v = xy[idx[min(k + 1, len(idx) - 1)]] - xy[idx[max(k - 1, 0)]]
                 v = np.array([-v[1], v[0]])
                 near = min((at[o][k] for o in d if o != name), key=lambda p: np.hypot(*(p - xy[i])), default=xy[i])
-                todo.append((f'{r["loss"][i]:#.3g}', xy[i], v if v @ (xy[i] - near) > 0 else -v, c))
+                todo += [(s, xy[i], v if v @ (xy[i] - near) > 0 else -v, c) for s in texts]
     first = next(iter(d.values()))
     if not first['steps'][0]:
         ax.plot(*np.array(first['xy'][0]), 'k*', ms=9)

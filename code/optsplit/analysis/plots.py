@@ -35,13 +35,13 @@ def _t_star_step(split, run):
 
 
 def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps=False, max_loss=None, traj_steps=(),
-               traj_label_steps=(), val_runs=None, mark_step=None):
+               traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
     above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
     Third: cross distance over the floor, with the split threshold 1 + margin_mult. With `traj` (trajectories and
     losses to mark, from `trajectories.parse`; `traj_steps`: steps to mark, with the training loss at those of
-    `traj_label_steps`), the UMAP of the prediction trajectories comes first instead of the third panel.
+    `traj_label_steps` and the data order at `traj_name_step`), the UMAP of the prediction trajectories comes first instead of the third panel.
     `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there. With
     `val_runs`, their validation loss by optimizer (mean over data orders, band from min to max, up to `max_loss`)
     replaces the loss-matched panel; `mark_step` draws a dotted line at that step instead of t*."""
@@ -61,7 +61,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
 
     fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
     if traj:
-        trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps)
+        trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step)
         axes[0].get_legend().set_loc('lower right')
         a1, a2, a3 = *axes[1:], None
     else:
@@ -334,11 +334,12 @@ def _json(path):
 
 
 def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, linear_steps=False, max_loss=None,
-                   traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, out=None, name='divergence'):
+                   traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None, out=None,
+                   name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
                _path(out, name), traj and trajectories.parse(traj), pairs, linear_steps, max_loss, traj_steps,
-               traj_label_steps, val_runs and load_runs(val_runs), mark_step)
+               traj_label_steps, val_runs and load_runs(val_runs), mark_step, traj_name_step)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -404,6 +405,7 @@ def main():
     s.add_argument('--traj-label-steps', type=int, nargs='+', help='of those, steps to write the training loss at')
     s.add_argument('--val-runs', nargs='+', help='runs whose validation loss replaces the loss-matched panel')
     s.add_argument('--mark-step', type=int, help='dotted line at this step on the step axis instead of t*')
+    s.add_argument('--traj-name-step', type=int, help='of the --traj-steps, the one to write the data order at')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')
