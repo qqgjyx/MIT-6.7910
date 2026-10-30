@@ -1,7 +1,7 @@
 # Walkthrough: when do SGD, AdamW and Muon split?
 
 **[planned]** = in the project plan. **[extra]** = added after seeing the results.
-Status: everything done except the TinyStories-30M metric shifts under swaps (running).
+Status: all runs and analyses done (103 GPU-hours on L40S, 392 runs).
 
 ## TL;DR
 
@@ -182,6 +182,7 @@ run A to run B; mean ± sd over 5 optimizer pairs or 10 data-order pairs):
 - X → SGD (switch ≥ 400): function ≈ SGD's, but weights keep the old optimizer's ℓ∞/ℓ2 and Jacobian.
 - AdamW ↔ Muon late switches: functions identical, weights a mixture (stable rank only 0.3–0.45 of the way).
   **The weights remember the training history; the function doesn't.**
+- 30M (`figures/ts30m/swap_metrics.png`): same; X → SGD keeps the old ℓ∞/ℓ2 from switch step 800.
 
 **[extra] Off the data distribution** (final functions on validation text, the same text with shuffled
 tokens, and random tokens; distance between optimizers ÷ distance between data orders):
