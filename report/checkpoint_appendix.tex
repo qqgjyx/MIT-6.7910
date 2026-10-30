@@ -3,51 +3,79 @@
 \section{Hyperparameters}
 \label{app:hparams}
 
-The values below are those of the configuration files and training code in the repository.
-
 \subsection{Runs of Figure 1}
 \label{app:hparams-fig1}
 
-The 15 main TinyStories-10M runs (three optimizers, data orders d0--d4) share the following.
-\begin{itemize}
-\item \textbf{Model.} nanoGPT with pre-LayerNorm blocks: 6 layers, 6 heads, width 384, GELU MLPs of width
-  1536, no biases, no dropout, untied output head, separate query, key and value projections; context 256
-  tokens; 13.9M parameters (10.6M without the token and position embeddings and the head).
-\item \textbf{Data.} TinyStories (GPT-4 version) with a 4096-token byte-level BPE trained on the training
-  split. A batch is 128 windows of 256 tokens at offsets drawn from the training split by a generator seeded
-  with (data order, step), the same for every optimizer.
-\item \textbf{Length and schedule.} 10{,}000 steps, i.e.\ 328M tokens (about 0.6 epochs). Learning rate
-  $\eta\,\varphi(t)$ at step $t$ for every parameter group: linear warmup $\varphi(t)=(t+1)/200$ for $t<200$,
-  then cosine decay to $\varphi=0.1$ at step 10{,}000. No gradient clipping.
-\item \textbf{Seeds and precision.} Initialization seed 0 for all runs; data orders 0--4. Training steps
-  use bfloat16 autocast; predictions and Hessian measurements run without autocast, in float32 (TF32 matrix
-  products allowed).
-\item \textbf{Logged predictions.} Next-token distributions on 128 fixed validation sequences $\times$ 16
-  evenly spaced positions (2{,}048 distributions, stored as float16 log-probabilities), and the loss on 64
-  fixed training sequences (all positions), used to match runs by loss; at every 250th step and at 30
-  log-spaced steps between 1 and 10{,}000.
-\item \textbf{Hessian.} At every 500th step and 30 log-spaced steps: top eigenvalue by 20 Lanczos iterations
-  on 32 fixed training sequences, for AdamW also that of $P^{-1/2}HP^{-1/2}$.
-\end{itemize}
+\begin{center}\small
+\captionsetup{type=table}
+\caption{Shared by the 15 TinyStories-10M runs. Values from the repository's configuration files and code.}
+\label{tab:app-shared}
+\begin{tabular}{@{}lp{0.74\linewidth}@{}}
+\hline
+Runs & 3 optimizers $\times$ data orders d0--d4 (15) \\
+\hline
+Model & nanoGPT, pre-LayerNorm blocks \\
+Layers, heads, width & 6, 6, 384 \\
+MLP & GELU, width 1536 \\
+Biases, dropout & none, none \\
+Output head & untied \\
+Attention projections & separate query, key, value \\
+Context & 256 tokens \\
+Parameters & 13.9M (10.6M without token and position embeddings and head) \\
+\hline
+Data & TinyStories (GPT-4 version) \\
+Tokenizer & byte-level BPE, 4096 tokens, trained on the training split \\
+Batch & 128 windows $\times$ 256 tokens \\
+Window offsets & from the training split; generator seeded with (data order, step), same for every optimizer \\
+\hline
+Steps & 10{,}000 \\
+Tokens & 328M (about 0.6 epochs) \\
+Learning rate & $\eta\,\varphi(t)$ at step $t$, every parameter group \\
+Warmup & linear, $\varphi(t)=(t+1)/200$ for $t<200$ \\
+Decay & cosine to $\varphi=0.1$ at step 10{,}000 \\
+Gradient clipping & none \\
+\hline
+Initialization seed & 0, all runs \\
+Data orders & 0--4 \\
+Training precision & bfloat16 autocast \\
+Prediction, Hessian precision & float32, no autocast (TF32 matrix products allowed) \\
+\hline
+Logged predictions & next-token distributions: 128 fixed validation sequences $\times$ 16 evenly spaced positions
+  (2{,}048), as float16 log-probabilities \\
+Loss for matching runs & 64 fixed training sequences, all positions \\
+Both logged at & every 250th step $+$ 30 log-spaced steps in $[1, 10{,}000]$ \\
+\hline
+Hessian & top eigenvalue, 20 Lanczos iterations, 32 fixed training sequences; AdamW also of
+  $P^{-1/2}HP^{-1/2}$ \\
+Measured at & every 500th step $+$ 30 log-spaced steps \\
+\hline
+\end{tabular}
+\end{center}
 
 \begin{center}\small
 \captionsetup{type=table}
-\caption{Optimizers of the TinyStories-10M runs. Learning rates: best final validation loss of a five-rate
-sweep on data order 0, except SGD, whose best rate (0.1) blew up on data orders 1--3, so it uses the next
-lower one.}
+\caption{Per optimizer, TinyStories-10M runs.}
 \label{tab:app-optim}
-\begin{tabular}{@{}llp{0.31\linewidth}p{0.15\linewidth}p{0.22\linewidth}@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.16\linewidth}p{0.26\linewidth}p{0.26\linewidth}p{0.26\linewidth}@{}}
 \hline
-Optimizer & $\eta$ & Update & Weight decay & Parameters \tabularnewline
+ & SGD & AdamW & Muon \tabularnewline
 \hline
-SGD & 0.03 & heavy ball, $\mu=0.9$, not Nesterov & none & all \tabularnewline
-AdamW & $2\cdot10^{-3}$ & \raggedright $\beta=(0.9,0.95)$, $\epsilon=10^{-8}$, bias-corrected moments &
-  \raggedright 0.1, decoupled; none on LayerNorm gains & all \tabularnewline
-Muon & 0.01 & \raggedright Nesterov momentum $\beta=0.95$; 5 quintic Newton--Schulz steps in bfloat16; scale
-  $\sqrt{\max(1,n_{\rm out}/n_{\rm in})}$ & none & \raggedright query, key, value, attention-output and both
-  MLP matrices of every block \tabularnewline
-Muon's aux.\ AdamW & $2\cdot10^{-3}$ & $\beta=(0.9,0.95)$, $\epsilon=10^{-8}$ & none & \raggedright
-  embeddings, head, LayerNorm gains \tabularnewline
+$\eta$ & 0.03 & $2\cdot10^{-3}$ & 0.01 \tabularnewline
+$\eta$ choice & \raggedright next lower of a 5-rate sweep on d0; the best (0.1) blew up on d1--d3 &
+  \raggedright best final validation loss of a 5-rate sweep on d0 & as AdamW \tabularnewline
+Update & heavy ball, not Nesterov & bias-corrected moments & \raggedright Nesterov momentum; 5 quintic
+  Newton--Schulz steps in bfloat16 \tabularnewline
+Momentum & $\mu=0.9$ & $\beta=(0.9,0.95)$ & $\beta=0.95$ \tabularnewline
+$\epsilon$ & -- & $10^{-8}$ & -- \tabularnewline
+Update scale & -- & -- & $\sqrt{\max(1,n_{\rm out}/n_{\rm in})}$ \tabularnewline
+Weight decay & none & \raggedright 0.1, decoupled; none on LayerNorm gains & none \tabularnewline
+Parameters & all & all & \raggedright query, key, value, attention-output and both MLP matrices of every
+  block \tabularnewline
+\hline
+Aux.\ AdamW & -- & -- & embeddings, head, LayerNorm gains \tabularnewline
+Aux.\ $\eta$, $\beta$, $\epsilon$ & -- & -- & $2\cdot10^{-3}$, $(0.9,0.95)$, $10^{-8}$ \tabularnewline
+Aux.\ weight decay & -- & -- & none \tabularnewline
 \hline
 \end{tabular}
 \end{center}
@@ -55,58 +83,82 @@ Muon's aux.\ AdamW & $2\cdot10^{-3}$ & $\beta=(0.9,0.95)$, $\epsilon=10^{-8}$ & 
 \subsection{Runs of Figure 2}
 \label{app:hparams-fig2}
 
-The main runs of each setting (three optimizers, data orders d0--d4) are built as in
-\cref{app:hparams-fig1}, except for the entries of \cref{tab:app-settings} and the following.
-\begin{itemize}
-\item \textbf{Shakespeare-char.} Character-level, nanoGPT's 90/10 split; 24.6M tokens (about 24 passes over
-  the 1M training characters). AdamW uses $\beta=(0.9,0.99)$, as in nanoGPT; Muon's auxiliary AdamW keeps
-  $(0.9,0.95)$. Predictions on all 256 positions of 64 validation sequences (16{,}384 distributions) at every
-  50th step and 40 log-spaced steps; Hessian at every 50th step and 30 log-spaced steps.
-\item \textbf{TinyStories-30M.} 655M tokens (about 1.2 epochs). Predictions at every 500th and Hessian at
-  every 1000th step, each with 30 log-spaced steps.
-\item \textbf{Shakespeare, long (memorization control).} AdamW and Muon only, data orders 0--4 (10 runs), as
-  Shakespeare-char but 8{,}000 steps (131M tokens) with the cosine decay stretched to step 8{,}000;
-  predictions at every 100th step and 40 log-spaced steps; no Hessian measurements.
-\end{itemize}
-
-\begin{center}\small
+\begin{center}\footnotesize
+\begin{minipage}{\linewidth}
 \captionsetup{type=table}
-\caption{Settings of Figure 2. $L$ layers, width $d$, vocabulary $V$; parameters in parentheses
-exclude the embeddings and the head; batches are sequences $\times$ tokens; $w$ warmup steps; ``aux.'':
-learning rate of Muon's auxiliary AdamW. Learning rates are selected as in \cref{tab:app-optim}, for
-Shakespeare by the minimum validation loss over training (the runs overfit); SGD's best rate diverged on other
-data orders (0.2 on Shakespeare, 0.3 on TinyStories-30M), so it uses a lower one.}
+\caption{Settings of Figure 2: rows that differ between settings; all else as in \cref{app:hparams-fig1}.
+$L$ layers, width $d$, vocabulary $V$; batch is sequences $\times$ tokens; ``aux.'': Muon's auxiliary AdamW.}
 \label{tab:app-settings}
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}lllrlrlll@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{0.16\linewidth}p{0.19\linewidth}p{0.19\linewidth}p{0.19\linewidth}p{0.19\linewidth}@{}}
 \hline
-Setting & $L$, heads, $d$, $V$ & Params & Steps & Batch & $w$ & $\eta_{\rm SGD}$ & $\eta_{\rm AdamW}$ &
-  $\eta_{\rm Muon}$ (aux.) \\
+ & Shakespeare-char & \raggedright TinyStories-10M (as \cref{app:hparams-fig1}) & TinyStories-30M & \raggedright Shakespeare,
+  8000 steps (memorization control) \tabularnewline
 \hline
-Shakespeare-char & 6, 6, 384, 65 & 10.8M (10.6M) & 1{,}500 & $64\times256$ & 100 & 0.05 & $3\cdot10^{-4}$ &
-  0.04 ($10^{-3}$) \\
-TinyStories-10M & \multicolumn{8}{l}{as in \cref{app:hparams-fig1}} \\
-TinyStories-30M & 8, 8, 512, 4096 & 29.5M (25.2M) & 20{,}000 & $128\times256$ & 400 & 0.1 &
-  $2\cdot10^{-3}$ & 0.01 ($1.5\cdot10^{-3}$) \\
-Shakespeare, long & 6, 6, 384, 65 & 10.8M (10.6M) & 8{,}000 & $64\times256$ & 100 & -- & $3\cdot10^{-4}$ &
-  0.04 ($10^{-3}$) \\
+Runs & 3 optimizers $\times$ d0--d4 (15) & 3 optimizers $\times$ d0--d4 (15) & 3 optimizers $\times$ d0--d4
+  (15) & \raggedright AdamW, Muon $\times$ d0--d4 (10) \tabularnewline
+Data & \raggedright Shakespeare, nanoGPT's 90/10 split & TinyStories & TinyStories & as Shakespeare-char
+  \tabularnewline
+$V$ & 65 (characters) & 4096 (BPE) & 4096 (BPE) & 65 (characters) \tabularnewline
+$L$, heads, $d$ & 6, 6, 384 & 6, 6, 384 & 8, 8, 512 & 6, 6, 384 \tabularnewline
+\raggedright Parameters (without embeddings, head) & 10.8M (10.6M) & 13.9M (10.6M) & 29.5M (25.2M) &
+  10.8M (10.6M) \tabularnewline
+Batch & $64\times256$ & $128\times256$ & $128\times256$ & $64\times256$ \tabularnewline
+Steps & 1{,}500 & 10{,}000 & 20{,}000 & 8{,}000 \tabularnewline
+Tokens & \raggedright 24.6M (about 24 passes over the 1M training characters) & 328M (about 0.6 epochs) &
+  655M (about 1.2 epochs) & 131M \tabularnewline
+Warmup steps $w$ & 100 & 200 & 400 & 100 \tabularnewline
+Cosine decay to step & 1{,}500 & 10{,}000 & 20{,}000 & 8{,}000 (stretched) \tabularnewline
 \hline
-\end{tabular}
+$\eta_{\rm SGD}$ & 0.05 & 0.03 & 0.1 & -- \tabularnewline
+$\eta_{\rm AdamW}$ & $3\cdot10^{-4}$ & $2\cdot10^{-3}$ & $2\cdot10^{-3}$ & $3\cdot10^{-4}$ \tabularnewline
+$\eta_{\rm Muon}$ (aux.) & 0.04 ($10^{-3}$) & 0.01 ($2\cdot10^{-3}$) & 0.01 ($1.5\cdot10^{-3}$) & 0.04
+  ($10^{-3}$) \tabularnewline
+$\eta$ chosen by & \raggedright minimum validation loss over training (runs overfit) & best final validation loss &
+  best final validation loss & as Shakespeare-char \tabularnewline
+\raggedright SGD's best $\eta$, diverged$^*$ & 0.2 & 0.1 (d1--d3) & 0.3 & -- \tabularnewline
+AdamW $\beta$ & $(0.9,0.99)$, as nanoGPT & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.99)$ \tabularnewline
+Aux.\ $\beta$ & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.95)$ & $(0.9,0.95)$ \tabularnewline
+\hline
+Predictions & \raggedright all 256 positions of 64 validation sequences (16{,}384) & \raggedright 16 positions
+  of 128 sequences (2{,}048) & \raggedright 16 positions of 128 sequences (2{,}048) & as Shakespeare-char
+  \tabularnewline
+Predictions at & \raggedright every 50th $+$ 40 log-spaced & \raggedright every 250th $+$ 30 log-spaced &
+  \raggedright every 500th $+$ 30 log-spaced & \raggedright every 100th $+$ 40 log-spaced \tabularnewline
+Hessian at & \raggedright every 50th $+$ 30 log-spaced & \raggedright every 500th $+$ 30 log-spaced &
+  \raggedright every 1000th $+$ 30 log-spaced & none \tabularnewline
+\hline
+\end{tabular}\\[2pt]
+\centering $^*$On other data orders; SGD then uses a lower rate.
+\end{minipage}
 \end{center}
 
 \subsection{Runs of Figure 3}
 \label{app:hparams-fig3}
 
-\begin{itemize}
-\item \textbf{Parents.} The three d0 runs of \cref{app:hparams-fig1}. During the run of optimizer $A$, the
-  other two optimizers are stepped on the same mini-batch gradients with learning rate 0 (shadow states):
-  their momenta, second moments and step counts evolve as if they were training, while the parameters follow
-  $A$ alone. At the fork steps 50, 100, 200, 400, 700, 1000, 1500, 2500 and 4000 the parent saves its
-  parameters and the states of all three optimizers.
-\item \textbf{Swaps.} The fork $A\to B$ at step $s$ loads the parameters at $s$ and $B$'s shadow state, uses
-  $B$'s hyperparameters (\cref{tab:app-optim}), and continues from $s$ to step 10{,}000 on the same schedule
-  (learning rate $\eta_B\,\varphi(s)$ at $s$) and the same batches (data order 0). Model, probes and logging
-  grids are the parent's. All six ordered pairs at all nine steps: 54 forks.
-\item \textbf{Controls.} $A$ continued with the same batches is the parent itself. $A$ continued from step
-  $s$ with its own state but data order 1 is the data-order control: 27 forks, 81 in total.
-\end{itemize}
+\begin{center}\small
+\captionsetup{type=table}
+\caption{Swap forks. $A$: parent's optimizer; $B$: optimizer after the swap; $s$: fork step.}
+\label{tab:app-forks}
+\begin{tabular}{@{}lp{0.74\linewidth}@{}}
+\hline
+Parents & the three d0 runs of \cref{app:hparams-fig1} \\
+Shadow states & the other two optimizers, stepped on the same mini-batch gradients with learning rate 0:
+  momenta, second moments and step counts evolve as if training; parameters follow $A$ alone \\
+Fork steps $s$ & 50, 100, 200, 400, 700, 1000, 1500, 2500, 4000 \\
+Saved at $s$ & parameters; states of all three optimizers \\
+\hline
+Swap $A\to B$ loads & parameters at $s$; $B$'s shadow state \\
+Hyperparameters & $B$'s (\cref{tab:app-optim}) \\
+Steps & $s$ to 10{,}000 \\
+Schedule & the parent's; learning rate $\eta_B\,\varphi(s)$ at $s$ \\
+Batches & the parent's (data order 0) \\
+Model, probes, logging grids & the parent's \\
+Swap forks & 6 ordered pairs $\times$ 9 steps $=$ 54 \\
+\hline
+Same-batch control & the parent itself ($A$ continued with the same batches) \\
+Data-order control & $A$ continued from $s$ with its own state, data order 1: 27 forks \\
+Total forks & 81 \\
+\hline
+\end{tabular}
+\end{center}
