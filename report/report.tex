@@ -179,7 +179,7 @@ the persistent split (as $t^\ast$ turned out to be degenerate), the decompositio
 and the n-gram references, the edge of stability of Muon's auxiliary AdamW and the matched control, the
 robustness checks, the floor-normalized swap scores and the barriers to pure runs, the scale-free weight metrics
 ($\|\theta\|_\infty/\|\theta\|_2$ and the stable rank) and their shifts under swaps, the representation
-similarity, the comparison at other learning rates, the break-even runs on the
+similarity, the layer-wise barriers, the comparison at other learning rates, the break-even runs on the
 language models and with two batch sizes, and the controls of \cref{sec:res-controls} (a second
 initialization, token frequency, a linear positive control, Shakespeare runs trained into memorization, and
 other learning rates).
@@ -930,6 +930,16 @@ Shakespeare the forks into AdamW (0.8--2.4) are far above AdamW's data-order bar
 (2.3--6.6) and SGD (0.9--2.3) are comparable to Muon's (4.0) and SGD's (0.95). As few as 50 steps of another
 optimizer at the start can move the endpoint further in weight space than a different order of all the data,
 while in function space they leave no trace. \todo{TinyStories-30M swaps and LMC.}
+
+\paragraph{Which layers carry the barrier?\extra} Moving one group of parameters from one pure run to the other
+while the rest stay put \citep{adilova2024layerwise} locates the barriers (\cref{fig:app-lmc-layers}). Between
+two data orders of one optimizer the single-layer barriers sit in the first block (1.2--2.7 nats), sometimes
+extending into the second (up to 1.4), or nowhere at all (AdamW on Shakespeare, Muon on TinyStories). Between
+AdamW and Muon on the same data they extend over the first half of the network: blocks 0--2 on TinyStories-10M
+(up to 0.8 nats), 0--4 on TinyStories-30M (up to 1.9) and all six blocks on Shakespeare (up to 2.0). The
+embeddings carry almost no barrier except between SGD runs on Shakespeare, and the head none (the loss is convex
+in the head). So two data orders end in solutions that differ in how the first block
+reads the embeddings, while two optimizers also differ in how the middle blocks process them.
 
 \subsection{Anatomy of the sharp direction}
 \label{sec:res-anatomy}
@@ -1727,6 +1737,17 @@ top-1 accuracy & 0.323 & 0.554 & 0.533 \\
 \caption{Barrier between the final weights of each pure $d=0$ run and of every fork into its optimizer, against
 the fork step, on TinyStories-10M (top) and Shakespeare (bottom).}
 \label{fig:app-lmc-into}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/lmc_layers.png}
+%% python -m optsplit.analysis.lmc_layers S_main/adamw_d0:S_main/muon_d0 ... --out analysis/S
+\caption{Layer-wise loss barriers between the final weights of pure runs: only the named group of parameters
+moves along the straight line from the first run to the second, the rest stay at the first run's; ``all'' is
+the ordinary barrier. Blue: AdamW against Muon on the same data; red, purple, brown: two data orders of one
+optimizer.}
+\label{fig:app-lmc-layers}
 \end{figure}
 
 \end{document}

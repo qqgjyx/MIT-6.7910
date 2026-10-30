@@ -1,0 +1,92 @@
+[
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/muon_d0",
+  "barriers": {
+   "all": 2.327416191250086,
+   "embeddings": 0.09781879186630249,
+   "block 0": 1.5637609481811523,
+   "block 1": 1.765184998512268,
+   "block 2": 2.0192691564559935,
+   "block 3": 1.8754504680633546,
+   "block 4": 1.6361435055732727,
+   "block 5": 1.108108019828796,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/sgd_d0",
+  "barriers": {
+   "all": 1.8138794898986816,
+   "embeddings": 0.6028612375259399,
+   "block 0": 2.0986688494682313,
+   "block 1": 0.8314454555511475,
+   "block 2": 0.2353948950767517,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/sgd_d0",
+  "barriers": {
+   "all": 1.7482078962028025,
+   "embeddings": 0.02575812712311709,
+   "block 0": 4.611578479409217,
+   "block 1": 0.5208098798990246,
+   "block 2": 0.35380278527736664,
+   "block 3": 0.19459439814090718,
+   "block 4": 0.1829102605581283,
+   "block 5": 0.19418446645140652,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/adamw_d1",
+  "barriers": {
+   "all": 0.11955630779266357,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/muon_d1",
+  "barriers": {
+   "all": 4.02082584425807,
+   "embeddings": 0.0,
+   "block 0": 2.734708228707313,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d0",
+  "b": "shakespeare_main/sgd_d1",
+  "barriers": {
+   "all": 0.9503177762031556,
+   "embeddings": 1.038706052303314,
+   "block 0": 1.24350968003273,
+   "block 1": 0.36140531301498413,
+   "block 2": 0.009602952003478826,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ }
+]

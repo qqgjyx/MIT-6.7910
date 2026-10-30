@@ -123,6 +123,13 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - So 50 steps of another optimizer moves the endpoint further in weight space than reshuffling all the data,
   while leaving no trace in the function.
 
+**[extra] Which layers carry the barrier?** Move one block at a time from run A to run B:
+
+![](figures/lmc_layers.png)
+
+- Two data orders: barrier only in the **first block** (or nowhere).
+- AdamW vs Muon: spread over the **first half** of the network (blocks 0–4 on 30M, all on Shakespeare).
+
 ## 4b. [planned] Function metrics (TinyStories, final, mean of 5 data orders)
 
 | 10M | SGD | AdamW | Muon |

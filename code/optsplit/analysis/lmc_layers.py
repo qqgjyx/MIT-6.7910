@@ -32,16 +32,18 @@ def layerwise(model, sd_a, sd_b, batches, n_alphas):
     return out
 
 
-def plot(rows, path):
-    groups = list(rows[0]['barriers'])
-    fig, ax = plt.subplots(figsize=(1.0 + 0.6 * len(groups), 3.2))
-    width = 0.8 / len(rows)
-    for i, r in enumerate(rows):
-        label = ' vs '.join(x.split('/')[-1] for x in (r['a'], r['b']))
-        ax.bar(np.arange(len(groups)) + i * width, [r['barriers'][g] for g in groups], width, label=label)
-    ax.set_xticks(np.arange(len(groups)) + 0.4 - width / 2, groups, rotation=30, fontsize=7)
-    ax.set(ylabel='loss barrier (nats)')
-    ax.legend(fontsize=6)
+def plot(panels, path):
+    """One row of bars per {title: rows}, one bar per pair of runs in each parameter group."""
+    fig, axes = plt.subplots(len(panels), 1, figsize=(8, 2.6 * len(panels)), squeeze=False)
+    for ax, (title, rows) in zip(axes[:, 0], panels.items()):
+        groups = list(rows[0]['barriers'])
+        width = 0.8 / len(rows)
+        for i, r in enumerate(rows):
+            label = ' vs '.join(x.split('/')[-1] for x in (r['a'], r['b']))
+            ax.bar(np.arange(len(groups)) + i * width, [r['barriers'][g] for g in groups], width, label=label)
+        ax.set_xticks(np.arange(len(groups)) + 0.4 - width / 2, groups, fontsize=7)
+        ax.set(ylabel='loss barrier (nats)', title=title)
+    axes[0, 0].legend(fontsize=6, ncol=2)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
@@ -50,13 +52,17 @@ def plot(rows, path):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('pairs', nargs='+', help="'<run a>:<run b>' run ids")
+    p.add_argument('pairs', nargs='*', help="'<run a>:<run b>' run ids")
+    p.add_argument('--plot', nargs='+', metavar='TITLE=JSON', help='only plot earlier lmc_layers.json files')
     p.add_argument('--n', type=int, default=64, help='training examples for the loss')
     p.add_argument('--chunk', type=int, default=16)
     p.add_argument('--alphas', type=int, default=11)
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--out', required=True, help='output directory')
     args = p.parse_args()
+    if args.plot:
+        panels = {t: json.loads(Path(f).read_text()) for t, f in (a.split('=', 1) for a in args.plot)}
+        return plot(panels, Path(args.out) / 'lmc_layers.png')
 
     pairs = [tuple(map(Run, s.split(':'))) for s in args.pairs]
     model, batches = setup(pairs[0][0].cfg, args.n, args.chunk, 0, args.device)
@@ -69,7 +75,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / 'lmc_layers.json').write_text(json.dumps(rows, indent=1))
-    plot(rows, out / 'figures' / 'lmc_layers.png')
+    plot({out.name: rows}, out / 'figures' / 'lmc_layers.png')
 
 
 if __name__ == '__main__':
