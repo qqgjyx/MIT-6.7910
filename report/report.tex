@@ -72,8 +72,9 @@ on sharpness and gradient noise, but at equal loss, past the first steps, two le
 the floor. Switching optimizer at nine times during training, the run ends at the function of the new optimizer
 whenever that optimizer is fast enough to get there in the remaining steps, which on TinyStories is always the
 case when it is the faster of the two, so the endpoint is not decided early; in weight space, however, a
-change of optimizer separates the solutions more than a change of data order, and the weights carry the geometry
-of whichever optimizer moved them most, while on TinyStories the hidden representations differ only slightly
+fork that changes the optimizer needs a later fork step than one that changes the data order to stay linearly
+connected to its parent, the loss barrier between AdamW and Muon lies in the middle blocks where that between two
+data orders lies in the first, and the weights carry the geometry of whichever optimizer moved them most, while on TinyStories the hidden representations differ only slightly
 and the functions do not differ more than with another data order even off the data distribution. A second
 initialization and the other learning rates of the sweeps reproduce the results, and on a linear model with known, different limits the same test does find a split, near
 interpolation; AdamW and Muon trained into memorization on Shakespeare still do not split.
@@ -159,7 +160,8 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   into SGD end closer to their parent than to pure SGD from step 1500 on (step 5000 on TinyStories-30M, where
   SGD's rate is higher). In weight space the optimizer leaves a mark that function space
   does not show: forks that change the optimizer stay linearly connected to their parent only from a later fork
-  step than forks that change the data order, and AdamW and Muon end further apart than two data orders.
+  step than forks that change the data order, and the barrier between AdamW and Muon lies in the middle blocks,
+  that between two data orders in the first.
 \item \textbf{The anatomy of the sharp direction}: which parameter blocks carry the top Hessian eigenvector
   and its curvature, by optimizer and over training (\cref{sec:res-anatomy}). It differs by optimizer
   (embeddings for Muon on Shakespeare, value--output matrices for Muon on TinyStories, head or gains for
@@ -911,12 +913,10 @@ and 7.9 up to step 1500, like its data-order noise (\cref{sec:res-split}), and i
 fork to stay in the parent's basin: from the AdamW parent the Muon and SGD forks reach 0.03 and 0.01 nats only at
 step 2500, from the Muon parent the AdamW fork is still at 0.055 at step 4000, and from the SGD parent the AdamW
 fork is never connected (barrier 3.4--6.1 at every fork step) and the Muon fork only approaches it (0.53 at step
-4000). The pure runs, which share only the initialization, have barriers of 1.6--3.9. Weight space thus keeps a
-mark of the optimizer that function space does not. At the end of training the pure AdamW and Muon runs on the
-same data order are as close in function as two data orders of one optimizer (\cref{sec:res-route}), yet the
-barrier between them is 3.9 nats, against 1.6 and 1.7 between the two data orders of AdamW and of Muon; and the
-fork from AdamW to Muon at step 1000, which ends within the floor of both pure runs, has a barrier of 0.17 to its
-parent, against 0.035 for the fork that keeps AdamW and changes the data order.
+4000). Weight space thus keeps a mark of the optimizer that function space does not: the fork from AdamW to Muon
+at step 1000, which ends within the floor of both pure runs, has a barrier of 0.17 to its parent, against 0.035
+for the fork that keeps AdamW and changes the data order. The pure runs, which share only the initialization, are
+not linearly connected for any pair (dotted lines); we compare them below.
 
 On Shakespeare (\cref{fig:app-swap}, bottom) the forks that keep AdamW and change the data order are connected
 to their parent from step 300 on (0.015, then 0), and even the pure AdamW runs with two data orders have a
@@ -926,18 +926,18 @@ into Muon stay at 1.3--1.7 up to step 800. The exception is the Muon parent: its
 are connected only from step 800 (barrier 3.5 at step 25, 0.06 at 800), later than its forks into AdamW and SGD
 (0.9 and 0.7 at step 100, 0.01 at 800). Muon on Shakespeare is unstable to the data order for half of training,
 while it memorizes, and its forks into slower optimizers move the weights less after the fork. Apart from this
-case, a change of optimizer separates the solutions in weight space more than a change of data order does,
-although it does not in function space.
+case, a fork that changes the optimizer stays further from its parent in weight space than one that changes
+the data order, although it does not in function space.
 
 \paragraph{Do swaps end in the new optimizer's basin?\extra} A fork into $B$ that ends at $B$'s function need not end
 in the region of weight space of the pure $B$ run. We computed the barrier between the final weights of each pure
 $d=0$ run and of every fork into its optimizer (\cref{fig:app-lmc-into}). On TinyStories-10M the forks into AdamW
 (2.9--8.0 nats) and into Muon (3.5--6.5) are further from the pure run than the same optimizer with another data
-order from the initialization (1.6 and 1.7), at every fork step from 50 on, while the forks into SGD (2.4--3.4)
-are within SGD's own data-order barrier (3.4). The forks from AdamW into Muon, for instance, end within Muon's
+order from the initialization (1.2--1.9 and 1.6--1.8 over ten pairs), at every fork step from 50 on, while the
+forks into SGD (2.4--3.4) are within SGD's own data-order barriers (0.1--4.1). The forks from AdamW into Muon, for instance, end within Muon's
 data-order floor in function space at every fork step, but 3.7--4.3 nats of barrier away from pure Muon. On
-Shakespeare the forks into AdamW (0.8--2.4) are far above AdamW's data-order barrier (0.12), while those into Muon
-(2.3--6.6) and SGD (0.9--2.3) are comparable to Muon's (4.0) and SGD's (0.95). As few as 50 steps of another
+Shakespeare the forks into AdamW (0.8--2.4) are far above AdamW's data-order barriers (0.11--0.17), while those
+into Muon (2.3--6.6) and SGD (0.9--2.3) are comparable to Muon's (3.6--6.6) and SGD's (1.0--3.2). As few as 50 steps of another
 optimizer at the start can move the endpoint further in weight space than a different order of all the data,
 while in function space they leave no trace.
 
@@ -950,23 +950,42 @@ floors), and only those at steps 5000 and 8000 end closer to the parent (0.57--1
 against step 1500 on TinyStories-10M: SGD's tuned rate is higher here (0.1 against 0.03), so it erases more. Forks that keep
 AdamW or Muon and change the data order are connected to their parent from step 2000 (0.022 and 0.040 nats, 0 from
 step 5000). Those that keep SGD have a barrier of only 0.14 at step 100 and below 0.06 from step 400, although the
-two pure SGD runs have the largest barrier of all (8.8): SGD's sensitivity to the data order is confined to the
+pure SGD runs with data orders 0 and 1 have a barrier of 8.8: SGD's sensitivity to the data order is confined to the
 first 100 steps. A change of optimizer again needs a later fork. From AdamW the SGD fork reaches 0.048 nats at
 step 3000, and the Muon fork 0.077 only at step 8000. From Muon the SGD fork is connected from step 3000 (0.068),
 but the AdamW fork is still at 0.19 at step 8000. From SGD the AdamW and Muon forks are never connected (0.69 and
-0.29 at step 8000). The forks into AdamW (3.5--18.8 nats) and into Muon (4.4--5.7) again end further from the pure
-run than another data order does (3.3 and 1.8), at every fork step, while the forks into SGD (1.6--2.9, apart from
-10.2 for Muon at step 100) stay within SGD's own (8.8).
+0.29 at step 8000). The forks into Muon (4.4--5.7 nats) again end further from the pure run than another data order
+does (1.6--2.1), at every fork step. The forks into AdamW (3.5--18.8) do so only when forked at steps 200--400 from
+Muon and 200--5000 from SGD, since AdamW's own data orders are 3.3--6.8 nats apart here, and the forks into SGD
+(1.6--2.9, apart from 10.2 for Muon at step 100) stay within SGD's own (0.6--9.2).
 
-\paragraph{Which layers carry the barrier?\extra} Moving one group of parameters from one pure run to the other
-while the rest stay put \citep{adilova2024layerwise} locates the barriers (\cref{fig:app-lmc-layers}). Between
-two data orders of one optimizer the single-layer barriers sit in the first block (1.2--2.7 nats), sometimes
-extending into the second (up to 1.4), or nowhere at all (AdamW on Shakespeare, Muon on TinyStories). Between
-AdamW and Muon on the same data they extend over the first half of the network: blocks 0--2 on TinyStories-10M
-(up to 0.8 nats), 0--4 on TinyStories-30M (up to 1.9) and all six blocks on Shakespeare (up to 2.0). The
-embeddings carry almost no barrier except between SGD runs on Shakespeare, and the head none (the loss is convex
-in the head). So two data orders end in solutions that differ in how the first block
-reads the embeddings, while two optimizers also differ in how the middle blocks process them.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/lmc_layers.png}
+%% bash lmc_pairs.sh S {cross,adamw,muon,sgd}; python -m optsplit.analysis.lmc_layers --plot T=S/pairs_cross/lmc_layers.json,... --out .
+\caption{Loss barriers between the final weights of pure runs, for every pair that differs only in the optimizer
+(5 per pair of optimizers) or only in the data order (10 per optimizer); mean and standard deviation over pairs.
+``All'' is the ordinary barrier; for the other groups only that group of parameters moves along the straight line
+from the first run to the second, the rest stay at the first run's \citep{adilova2024layerwise}.}
+\label{fig:lmc-layers}
+\end{figure}
+
+\paragraph{Barriers between pure runs\extra.} We computed the barrier between the final weights of every pair of
+pure runs that differ only in the optimizer or only in the data order, in full and with one group of parameters
+moved at a time (\cref{fig:lmc-layers}). In size, a change of optimizer is not consistently further than a change
+of data order. AdamW and Muon are further apart than two data orders of either on TinyStories-10M (3.5--4.1 nats
+against 1.2--1.9 and 1.6--1.8), but not on TinyStories-30M, where AdamW's data orders are 3.3--6.8 nats apart
+(AdamW--Muon 4.3--4.8), nor on Shakespeare, where Muon's are 3.6--6.6 apart (AdamW--Muon 2.1--2.7); SGD's
+data-order barriers vary so much (0.1--4.1 and 0.6--9.2 on TinyStories) that the pairs with SGD fall within them.
+Where the barrier sits does tell them apart. Between two data orders the single-layer barriers sit in the first
+block, up to 4.0 nats on average, and are at most 0.6 in any later block, or there are none at all (AdamW on
+Shakespeare, Muon on TinyStories-30M) although the full barrier is not small. Between AdamW and Muon on the same
+data they extend into the middle of the network: 0.8 and 0.4 nats in blocks 1--2 on TinyStories-10M, 2.3--0.5 in
+blocks 1--4 on TinyStories-30M and 1.1--1.9 in blocks 1--5 on Shakespeare. The pairs with SGD look like data
+orders, with the barrier mostly in the first block (and the embeddings on Shakespeare), and the head carries none
+(the loss is convex in the head). Two data orders, or SGD and an adaptive optimizer, thus end in solutions that
+differ in how the first block reads the embeddings, while AdamW and Muon also differ in how the middle blocks
+process them.
 
 \subsection{Anatomy of the sharp direction}
 \label{sec:res-anatomy}
@@ -1129,7 +1148,7 @@ against 0.87--1.0, and 0.78--0.97 against 0.85--0.98 after the others, 0.82--0.8
 final LayerNorm. SGD's representations are not even reproducible across its own data orders (0.57--0.83), and
 pairs with SGD are lower still. On Shakespeare, where Muon memorizes, AdamW and Muon differ clearly (0.40--0.87).
 Another initialization moves the representations as much as another data order. So the optimizer's mark fades
-from the weights (larger barriers, spread over more layers) through the representations (a small CKA gap) to the
+from the weights (their geometry, and barriers in the middle blocks) through the representations (a small CKA gap) to the
 outputs (none).
 
 \begin{figure}[t]
@@ -1313,11 +1332,11 @@ to move away from it.
 
 \paragraph{Function space and weight space.} The mode-connectivity barriers tell a different story from the
 function distances. After a change of optimizer a fork needs a later fork step to stay linearly connected to its
-parent than after a change of data order, and AdamW and Muon trained from the same initialization on the same
-data have a larger barrier than two data orders (3.9 against 1.6--1.7 nats on TinyStories-10M, 4.3 against
-1.8--3.3 on TinyStories-30M), spread over more layers, although their functions are as close.
-Different optimizers thus reach functions that are equivalent up to data-order noise in regions of weight space
-that are further apart, in the sense of linear connectivity, than those reached with different data. The weights
+parent than after a change of data order. Between pure runs the size of the barrier does not single out the
+optimizer (AdamW and Muon are further apart than two data orders only on TinyStories-10M), but its location does:
+AdamW and Muon differ in the middle blocks, two data orders only in the first, although their functions are as
+close. Different optimizers thus reach functions that are equivalent up to data-order noise through weights that
+differ in other layers than those reached with different data. The weights
 also carry the geometry each optimizer is biased towards: more even entries for AdamW than for SGD, and more even
 singular values for Muon (\cref{sec:res-metrics}), and after a swap that geometry is a mixture weighted by
 how far each optimizer moved the weights, even when the function is entirely the second optimizer's. The hidden
@@ -1375,8 +1394,9 @@ reshuffling the data. Neither the edge of stability nor the end of warmup explai
 transitions. Switching optimizers during training does not reveal an early decision either: the run ends at the
 function of the optimizer it switches to whenever that one is fast enough to get there, on TinyStories whenever
 it is the faster one, even late in training. The optimizer does
-leave a mark in weight space: runs whose functions are as close as two data orders are further apart in linear
-connectivity when they differ in optimizer, and they carry the geometry of whichever optimizer moved them most;
+leave a mark in weight space: after a change of optimizer a fork needs a later fork step to stay linearly
+connected to its parent, AdamW and Muon differ in the middle blocks where two data orders differ only in the
+first, and the weights carry the geometry of whichever optimizer moved them most;
 on TinyStories the hidden representations differ only slightly, and the functions no more than with another
 data order even off the data distribution. The function-space results do not hinge on the tuned learning rates:
 on TinyStories every stable rate of the sweeps is within 0.8--1.1 floors of the tuned runs, with one exception
@@ -1807,15 +1827,5 @@ the fork step, on TinyStories-10M (top), TinyStories-30M (middle) and Shakespear
 \label{fig:app-lmc-into}
 \end{figure}
 
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.85\linewidth]{figures/lmc_layers.png}
-%% python -m optsplit.analysis.lmc_layers S_main/adamw_d0:S_main/muon_d0 ... --out analysis/S
-\caption{Layer-wise loss barriers between the final weights of pure runs: only the named group of parameters
-moves along the straight line from the first run to the second, the rest stay at the first run's; ``all'' is
-the ordinary barrier. Blue: AdamW against Muon on the same data; red, purple, brown: two data orders of one
-optimizer.}
-\label{fig:app-lmc-layers}
-\end{figure}
 
 \end{document}

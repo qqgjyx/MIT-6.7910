@@ -17,8 +17,9 @@ threshold). Training goes left → right.*
 - **Edge of stability doesn't explain any of it.** AdamW sits at its threshold whether or not the
   optimizers differ; SGD only around the end of warmup.
 - **Swaps:** whoever trains last decides the function (if it's fast enough). But in **weight space** the
-  optimizer leaves a mark: AdamW and Muon end as close in function as two data orders, but further apart in
-  linear connectivity, and with each optimizer's geometry in the weights. [extra] Ladder: weights (clear
+  optimizer leaves a mark: forks that switch optimizer need longer to stay in their parent's basin, the loss
+  barrier between AdamW and Muon sits in the middle layers (data orders: first layer only), and each
+  optimizer's geometry shows in the weights. [extra] Ladder: weights (clear
   mark) → hidden representations (small) → outputs (none, even
   off the data distribution).
 - [extra] Holds at every stable learning rate of the sweeps, not just the tuned ones.
@@ -113,12 +114,12 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 
 - Same optimizer, other data: one basin if forked after step ~1000 (10% of training).
 - Other optimizer: needs a later fork (~2500–4000). SGD → AdamW: never.
-- Pure AdamW vs pure Muon (same data): barrier 3.9, vs 1.6 between two AdamW data orders — yet their
-  functions are equally close. **The optimizer leaves a mark in weight space, not in function space.**
+- AdamW → Muon fork at step 1000: function within noise of both, but barrier 0.17 to its parent vs 0.035
+  for a data-order fork. **The optimizer leaves a mark in weight space, not in function space.**
 - Shakespeare (`figures/shakespeare/lmc.png`): same, except Muon itself is unstable to the data order until
   step ~800 (it's memorizing).
-- 30M (`figures/ts30m/lmc.png`): same. AdamW vs Muon 4.3, vs 1.8–3.3 for data orders. SGD with other data
-  is connected already at step 100: its data-order chaos is all in the first 100 steps.
+- 30M (`figures/ts30m/lmc.png`): same. SGD with other data is connected already at step 100: its data-order
+  chaos is all in the first 100 steps.
 
 **[extra] Do swaps end in the new optimizer's basin?** Barrier between pure B and every fork into B:
 
@@ -128,14 +129,19 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
   AdamW/Muon, more than two data orders from init (1.6). Yet in function space they land right on B.
 - So 50 steps of another optimizer moves the endpoint further in weight space than reshuffling all the data,
   while leaving no trace in the function.
-- Same on 30M (3.5–19 nats). Forks into SGD stay within SGD's own (large) data-order barrier.
+- 30M: same for forks into Muon; into AdamW only partly (AdamW's own data orders are 3.3–6.8 apart there).
+  Forks into SGD stay within SGD's own (large) data-order barriers.
 
-**[extra] Which layers carry the barrier?** Move one block at a time from run A to run B:
+**[extra] Barriers between pure runs, all pairs** (all = full barrier; then one block at a time moved from
+run A to run B; mean ± sd over 5 optimizer pairs or 10 data-order pairs):
 
 ![](figures/lmc_layers.png)
 
-- Two data orders: barrier only in the **first block** (or nowhere).
-- AdamW vs Muon: spread over the **first half** of the network (blocks 0–4 on 30M, all on Shakespeare).
+- **Size doesn't single out the optimizer.** AdamW vs Muon > data orders only on 10M (3.8 vs 1.5–1.7). On 30M
+  AdamW's own data orders are as far (3.3–6.8), on Shakespeare Muon's (3.6–6.6). (I first had one pair per
+  kind and over-claimed this; the all-pairs run corrected it.)
+- **Location does.** Data orders: barrier only in the **first block** (or nowhere). AdamW vs Muon: also in the
+  **middle blocks** (1–2 on 10M, 1–4 on 30M, 1–5 on Shakespeare). Pairs with SGD look like data orders.
 
 ## 4b. [planned] Function metrics (TinyStories, final, mean of 5 data orders)
 
