@@ -73,13 +73,10 @@ at step 250, 1.77 vs 1.95 at step 1000) and stays below AdamW to the end (right)
 steps to reach its final validation loss. In the embedding the pairs drift apart after about step 1000, but not
 in divergence: relative to that distance they keep getting closer.
 
-\paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} Compared at equal training loss, every pair of
-optimizers, SGD included, stays at about the data-order floor after warmup in all three settings. The exception
-is Muon--SGD on Shakespeare, where SGD barely trains, and that split is lost with another metric or a stricter
-threshold. The brief stretches above the floor all lie within warmup, where the floor is near zero because the
-runs share their initialization. The same holds across learning rates: at $\tfrac14$ to 4 times each
-optimizer's rate, runs stay within 0.8--1.1 times the floor of the main-rate run at equal loss. So after warmup
-we find no split, early or late.
+\paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} After warmup, at equal training loss, any two
+optimizers, SGD included, predict about as differently on both TinyStories models as one optimizer trained on two
+data orders. On TinyStories-10M, changing the learning rate from $\tfrac14$ to 4 times its value gives the same
+picture. So we find no split.
 
 \begin{figure}[h]
 \centering
@@ -121,8 +118,7 @@ the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metri
 variation, and by Pinsker, two predictors in $\mathcal F_s$ with excess losses $\Delta L_A,\Delta L_B$ over $q_s$
 have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta L_A}+\sqrt{\Delta L_B})$, whatever the optimizer. So at
 equal loss the bound forces the optimizers together near the bigram optimum and below, but not at higher loss,
-where their routes can differ, as in the warmup stretches (SGD passes through the unigram model, Muon skips
-it), nor in a class without a best element, as in the linear control below. The break-even point depends on how
+where their routes can differ, nor in a class without a best element, as in the linear control below. The break-even point depends on how
 the update scales with the gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so
 the raw sharpness should scale as the gradient over $\eta$: at one rate, $\lambda\eta$ grows with the gradient
 norm across data orders (log-log slope 1.15--1.61 on TinyStories), and across rates $\lambda$ falls about as
