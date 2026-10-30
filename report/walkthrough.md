@@ -1,7 +1,7 @@
 # Walkthrough: when do SGD, AdamW and Muon split?
 
 **[planned]** = in the project plan. **[extra]** = added after seeing the results.
-Status: TinyStories-30M swaps/LMC, function metrics and the long Shakespeare runs still running.
+Status: everything done except the TinyStories-30M metric shifts under swaps (running).
 
 ## TL;DR
 
@@ -101,6 +101,8 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - AdamW/Muon → SGD: late switches stay near the old optimizer — SGD is too slow to undo it.
 - Shakespeare (`figures/shakespeare/swap.png`): Muon is the fast one. Anything → Muon lands on Muon;
   Muon → AdamW/SGD keeps Muon's mark; SGD → AdamW keeps SGD's (AdamW at 3e-4 is slow there).
+- 30M (`figures/ts30m/swap.png`): same, except switches into SGD land on SGD up to step 3000 (SGD's lr is
+  3× higher there).
 - Rule: **the last optimizer decides the function only if it's faster than the first.**
 
 **[planned] Linear mode connectivity** (loss barrier, parent's final weights vs fork's final weights):
@@ -113,6 +115,8 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
   functions are equally close. **The optimizer leaves a mark in weight space, not in function space.**
 - Shakespeare (`figures/shakespeare/lmc.png`): same, except Muon itself is unstable to the data order until
   step ~800 (it's memorizing).
+- 30M (`figures/ts30m/lmc.png`): same. AdamW vs Muon 4.3, vs 1.8–3.3 for data orders. SGD with other data
+  is connected already at step 100: its data-order chaos is all in the first 100 steps.
 
 **[extra] Do swaps end in the new optimizer's basin?** Barrier between pure B and every fork into B:
 
@@ -122,6 +126,7 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
   AdamW/Muon, more than two data orders from init (1.6). Yet in function space they land right on B.
 - So 50 steps of another optimizer moves the endpoint further in weight space than reshuffling all the data,
   while leaving no trace in the function.
+- Same on 30M (3.5–19 nats). Forks into SGD stay within SGD's own (large) data-order barrier.
 
 **[extra] Which layers carry the barrier?** Move one block at a time from run A to run B:
 
