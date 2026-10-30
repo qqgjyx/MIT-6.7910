@@ -66,19 +66,20 @@ orders, band from min to max. Hyperparameters in \cref{app:hparams-fig1}.}
 \label{fig:div}
 \end{figure}
 
-\paragraph{Result 1: at equal loss, no split after warmup (\cref{fig:overview}).} After warmup, the
-distance between optimizers at equal loss stays at about the data-order floor to the end of training, in all
-three settings and for every pair except Muon--SGD on Shakespeare, where SGD barely trains; that split is lost
-with another metric or a stricter threshold. The only stretches above the floor are brief and within warmup,
-where the floor is near zero because the runs share their initialization. Muon is faster (\cref{fig:div}, right; AdamW needs 1.35 and
-1.22 times as many steps as Muon to reach its final validation loss on TinyStories-10M and -30M), yet at equal
-loss it lands on the same function as AdamW up to data-order noise: at the end of TinyStories-30M, replacing AdamW
-by Muon changes the predictions no more than changing the data order. After warmup (\cref{fig:div}, left), AdamW
-and Muon with the same data order are nearest neighbours in the embedding, with Muon at lower loss at each step,
-yet at most about a fifth closer in Jensen--Shannon divergence than two data orders of one optimizer
-(0--23\%, steps 250--3000), from their shared recent
-batches; at equal loss this vanishes. So the answer to the title is no: after warmup we find no
-split, early or late; the optimizers' functions are as close as the data order lets them be.
+\paragraph{Result 1: AdamW and Muon (\cref{fig:div}).} From the end of warmup, AdamW and Muon trained on the
+same data order stay close: in the embedding (left) each pair are nearest neighbours, and their divergence
+(middle) stays below the data-order floor. Even so, Muon is at a much lower loss at the same step (2.50 vs 2.76
+at step 250, 1.77 vs 1.95 at step 1000) and stays below AdamW to the end (right); AdamW needs 1.35 times as many
+steps to reach its final validation loss. In the embedding the pairs drift apart after about step 1000, but not
+in divergence: relative to the floor they keep getting closer.
+
+\paragraph{Result 2: equal loss, and SGD (\cref{fig:overview}).} Compared at equal training loss, every pair of
+optimizers, SGD included, stays at about the data-order floor after warmup in all three settings. The exception
+is Muon--SGD on Shakespeare, where SGD barely trains, and that split is lost with another metric or a stricter
+threshold. The brief stretches above the floor all lie within warmup, where the floor is near zero because the
+runs share their initialization. The same holds across learning rates: at $\tfrac14$ to 4 times each
+optimizer's rate, runs stay within 0.8--1.1 times the floor of the main-rate run at equal loss. So after warmup
+we find no split, early or late.
 
 \begin{figure}[h]
 \centering
@@ -89,7 +90,7 @@ in \cref{app:hparams-fig2}.}
 \label{fig:overview}
 \end{figure}
 
-\paragraph{Result 2: the last optimizer decides the function (\cref{fig:swap}).} When we switch optimizer at
+\paragraph{Result 3: the last optimizer decides the function (\cref{fig:swap}).} When we switch optimizer at
 step $t$, the fork ends within the floor of the new optimizer whenever that optimizer is fast enough to get
 there in the remaining steps: forks from SGD to AdamW or Muon land on the new optimizer even after 4000 of
 10{,}000 steps, while forks into the slower SGD end closer to their parent from step 1500 on (step 5000 on
@@ -106,7 +107,7 @@ indistinguishable from it. Hyperparameters in \cref{app:hparams-fig3}.}
 \label{fig:swap}
 \end{figure}
 
-\paragraph{Result 3 (moonshot): the sharp direction at the edge of stability.} Restricted to the steps at each
+\paragraph{Result 4 (moonshot): the sharp direction at the edge of stability.} Restricted to the steps at each
 optimizer's threshold and averaged over the five data orders, the top eigenvector of the operator that sets the
 threshold lies at the input end: the embeddings and first three blocks carry 75--90\% of it in all settings.
 SGD's lies mostly in the first block; AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings on TinyStories (about
@@ -115,17 +116,19 @@ Shakespeare in the embeddings, left to its auxiliary AdamW). Except in the embed
 eigenvalue comes from curvature \emph{between} blocks. The direction changes block long after warmup,
 when the optimizers are already at the floor, so it does not mark a split.
 
-\paragraph{Result 4: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
+\paragraph{Result 5: a model of the results (proof sketch).} Let $\mathcal F_s$ be the predictors that see only
 the last $s$ tokens, with best element $q_s$. As $\sqrt{\mathrm{JS}}$ is a metric, JS (bits) $\le$ total
 variation, and by Pinsker, two predictors in $\mathcal F_s$ with excess losses $\Delta L_A,\Delta L_B$ over $q_s$
 have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta L_A}+\sqrt{\Delta L_B})$, whatever the optimizer. So at
 equal loss the bound forces the optimizers together near the bigram optimum and below, but not at higher loss,
 where their routes can differ, as in the warmup stretches (SGD passes through the unigram model, Muon skips
 it), nor in a class without a best element, as in the linear control below. The break-even point depends on how
-the update scales with the gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so the raw sharpness there
-scales as the gradient over $\eta$, as we find (log-log slope 1.15--1.6 on TinyStories); Muon's update is
-invariant to the gradient's scale and on a quadratic never diverges, so it has no break-even point on its
-matrices. Stability caps curvature but does not choose between functions of equal loss.\looseness=-1
+the update scales with the gradient: $(2+2\mu)/\eta$ for SGD; for AdamW the threshold applies to $P^{-1}H$, so
+the raw sharpness should scale as the gradient over $\eta$: at one rate, $\lambda\eta$ grows with the gradient
+norm across data orders (log-log slope 1.15--1.61 on TinyStories), and across rates $\lambda$ falls about as
+$1/\eta$ (slope $-0.86$). Muon's update is invariant to the gradient's scale, so its threshold bounds a
+spectral-norm sharpness by $2\|\nabla L\|_*/\eta$ \citep{islamov2026noneuclidean}; its top Hessian eigenvalue
+also falls about as $1/\eta$ (slope $-0.84$). Stability caps curvature but does not choose between functions of equal loss.\looseness=-1
 
 \paragraph{Pipeline check and controls.} On CIFAR-10 the break-even effects replicate: the sharpness levels off
 at or below $2/\eta$ and lower for larger rates, and the gradient covariance is better conditioned; but at equal
@@ -134,8 +137,8 @@ reproduces the results, and on a linear model on separable data, where gradient 
 max-margin limits \citep{soudry2018separable,zhang2024adam}, the same test does find a persistent split.
 
 \paragraph{Next (Nov--Dec).} (i) Moonshot: whether the sharp direction moves to the new optimizer's layers
-after a swap, and lowering the learning rate of only those layers. (ii) Sweeps with sharpness (running): Muon's
-should not scale as $1/\eta$. (iii) Presentation
+after a swap, and lowering the learning rate of only those layers. (ii) Muon's spectral-norm sharpness
+\citep{islamov2026noneuclidean}. (iii) Presentation
 (Dec 1--4), paper, code and Colab notebook (Dec 5--11). Code: \url{https://github.com/qqgjyx/MIT-6.7910}.
 
 \clearpage
