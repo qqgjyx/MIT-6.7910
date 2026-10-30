@@ -111,6 +111,25 @@ Fork's distance to each pure run, in units of the noise floor (solid: to the new
 - Shakespeare (`figures/shakespeare/lmc.png`): same, except Muon itself is unstable to the data order until
   step ~800 (it's memorizing).
 
+## 4b. [planned] Function metrics (TinyStories, final, mean of 5 data orders)
+
+| 10M | SGD | AdamW | Muon |
+|:--|--:|--:|--:|
+| moved from init (× init norm) | 0.4 | 2.7 | 5.0 |
+| ℓ∞ / ℓ2 (×1000; small = even entries, Adam's bias) | 42 | **7.9** | 3.8 |
+| stable rank of hidden matrices (big = even singular values, Muon's bias) | 56 | 41 | **75** |
+| input Jacobian | 132 | 22 | 12 |
+| token-substitution sensitivity | 0.07 | 0.08 | 0.07 |
+| accuracy | 0.58 | 0.65 | 0.66 |
+
+- Raw norms just track how far each optimizer moves the weights (Muon ≫ AdamW ≫ SGD).
+- Scale-free: AdamW's entries are more even than SGD's, Muon's singular values are the most even — **each
+  optimizer's geometry shows up in the weights**, even though AdamW's and Muon's functions are within noise.
+- SGD's huge input derivatives are mostly scale (its embeddings stay small); substitution sensitivity is
+  the same for all three.
+
+![](figures/ts10m/function_metrics.png)
+
 ## 5. [planned] Break-even replication (CIFAR-10, plain SGD)
 
 ![](figures/breakeven/cifar/curves.png)

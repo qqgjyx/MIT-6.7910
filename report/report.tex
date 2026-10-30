@@ -996,17 +996,61 @@ episode and no persistent split (\cref{fig:app-breakeven2}).
 
 \begin{figure}[t]
 \centering
-\figbox[0.8in]{Function metrics against step for the $d=0$ runs (e.g.\ top input-Hessian eigenvalue, distance from
-initialization, sensitivity), with $t^\ast$ marked.}
-%% python -m optsplit.metrics.run 'ts10m_main/*_d0' 'ts10m_forks/*' --steps all
-%% python -m optsplit.analysis.plots function --runs 'ts10m_main/*_d0' --keys input.hess_top.mean weights.dist_init robustness.sensitivity
-\caption{Function metrics over training. \todo{caption details.}}
+\includegraphics[width=\linewidth]{figures/ts10m/function_metrics.png}
+%% python -m optsplit.metrics.run 'ts10m_main/*_d0' --steps all
+%% python -m optsplit.analysis.plots function --runs 'ts10m_main/*_d0' --keys weights.dist_init_rel input.jac_fro.mean input.hess_top.mean robustness.sensitivity
+\caption{Function metrics over training for the $d=0$ runs on TinyStories-10M: distance of the weights from the
+initialization relative to the initial norm, Frobenius norm of the input Jacobian of the softmax output, top
+eigenvalue of the input Hessian of the loss (inputs are the token embeddings), and one-token substitution
+sensitivity (\cref{app:metrics}).}
 \label{fig:metrics}
 \end{figure}
 
-\todo{Describe \cref{fig:metrics} and a table of final values per optimizer (mean over data orders): which
-metrics separate the optimizers, whether the norms each optimizer is predicted to keep small ($\ell_2$, $\ell_\infty$,
-spectral) are in fact smallest for it, and the shifts of these metrics under swaps.}
+\begin{table}[t]
+\centering\small
+\caption{Final function metrics on TinyStories, mean over the five data orders (standard deviations are small
+except for SGD's spectral norms and stable rank). ``Hidden'' are the matrices in the transformer blocks, the ones
+Muon updates; the stable rank is $\|W\|_F^2/\|W\|_2^2$.}
+\label{tab:metrics}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & \multicolumn{3}{c}{TinyStories-10M} & \multicolumn{3}{c}{TinyStories-30M} \\
+\cmidrule(lr){2-4}\cmidrule(l){5-7}
+ & SGD & AdamW & Muon & SGD & AdamW & Muon \\
+\midrule
+$\|\theta\|_2$ & 105 & 265 & 485 & 156 & 369 & 857 \\
+$\|\theta\|_\infty$ & 4.37 & 2.09 & 1.85 & 3.33 & 2.58 & 2.28 \\
+$\max\|W\|_2$ (hidden) & 3.5 & 12.4 & 14.1 & 7.6 & 15.0 & 22.9 \\
+$\|\theta\|_\infty/\|\theta\|_2$ ($\times10^{3}$) & 41.6 & 7.9 & 3.8 & 21.3 & 7.0 & 2.7 \\
+stable rank (hidden, mean) & 56 & 41 & 75 & 56 & 47 & 90 \\
+$\|\theta-\theta_0\|/\|\theta_0\|$ & 0.40 & 2.72 & 5.04 & 0.61 & 2.83 & 6.56 \\
+input Jacobian (Frobenius) & 131.7 & 21.6 & 12.5 & 72.7 & 15.2 & 7.8 \\
+input Hessian $\lambda_{\max}$ & 123.6 & 3.5 & 1.1 & 37.2 & 2.4 & 0.5 \\
+substitution sensitivity & 0.070 & 0.082 & 0.067 & 0.076 & 0.060 & 0.075 \\
+top-1 accuracy & 0.576 & 0.651 & 0.657 & 0.637 & 0.677 & 0.680 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The raw norms mostly measure how far each optimizer moves the weights (\cref{tab:metrics}): Muon ends 5.0--6.6
+initial norms away from the initialization, AdamW 2.7--2.8 and SGD 0.4--0.6, and $\|\theta\|_2$ and the largest
+spectral norm of the hidden matrices follow the same order. So SGD having the smallest $\ell_2$ norm, and Muon the
+largest spectral norm, says little about implicit bias. The scale-free versions match the predicted geometries
+in part. The ratio $\|\theta\|_\infty/\|\theta\|_2$, small when the entries are even, is 3--5 times smaller for
+AdamW than for SGD, as Adam's $\ell_\infty$ bias predicts \citep{zhang2024adam}; and the mean stable rank of the
+hidden matrices, large when their singular values are even, is highest for Muon (75 and 90 against 41--56), as
+its spectral bias predicts \citep{fan2025spectral}. Muon also has the smallest $\|\theta\|_\infty/\|\theta\|_2$.
+The weights therefore carry the geometry of their optimizer while the functions of AdamW and Muon are within the
+data-order floor of each other (\cref{sec:res-route}), in line with the barriers of \cref{sec:res-swap}.
+
+In input space SGD's function looks much sharper: its input Jacobian is 5--11 times and its top input-Hessian
+eigenvalue 15--110 times those of AdamW and Muon. The inputs are the token embeddings, which SGD moves least
+(Frobenius norm of the embedding matrix 27 for SGD against 97 for AdamW and 175 for Muon on TinyStories-10M), and
+the pre-LayerNorm transformer normalizes the residual stream, so derivatives with respect to the embeddings shrink
+as the embeddings grow; much of the difference is therefore one of scale. One-token substitution sensitivity,
+which does not depend on that scale, is 0.06--0.08 for all three. Over training (\cref{fig:metrics}) the input
+Jacobian of AdamW and Muon peaks at about step 200, the end of warmup, and then falls, while
+SGD's keeps rising. \todo{Shifts of the metrics under swaps, once the forks' metrics are computed.}
 
 \subsection{Further controls\extra}
 \label{sec:res-controls}
@@ -1100,10 +1144,12 @@ function distances. After a change of optimizer a fork needs a later fork step t
 parent than after a change of data order, and AdamW and Muon trained from the same initialization on the same
 data have a barrier more than twice that between two data orders, although their functions are as close.
 Different optimizers thus reach functions that are equivalent up to data-order noise in regions of weight space
-that are further apart, in the sense of linear connectivity, than those reached with different data. Part of this
-may be scale: the optimizers move the weights by different amounts (on Shakespeare Muon's weights end 7 times
-their initial norm away from the initialization, AdamW's and SGD's a quarter; \cref{sec:res-metrics}), and
-interpolating between weights of different scales can raise the loss without any change in function.
+that are further apart, in the sense of linear connectivity, than those reached with different data. The weights
+also carry the geometry each optimizer is biased towards: more even entries for AdamW than for SGD, and more even
+singular values for Muon (\cref{sec:res-metrics}). Part of the barriers may be scale: the optimizers move the
+weights by very different amounts (on TinyStories Muon's end 5--6.6 initial norms from the initialization, AdamW's
+2.7--2.8 and SGD's 0.4--0.6), and interpolating between weights of different scales can raise the loss without any
+change in function.
 
 \paragraph{Break-even point.} On CIFAR-10 we reproduce the sharpness and gradient-noise effects of
 \citet{jastrzebski2020breakeven}, but the separation of trajectories between learning rates is mostly a
