@@ -57,6 +57,8 @@ def main():
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--alphas', type=int, default=11)
     p.add_argument('--pairs', action='store_true', help='also barriers between pairs of forks')
+    p.add_argument('--others', nargs='*', default=[], help='glob patterns of other runs (e.g. other optimizers '
+                   'from the same init) whose final weights are also interpolated with the parent\'s')
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--out')
     args = p.parse_args()
@@ -65,12 +67,17 @@ def main():
     forks = [f for f in load_runs(args.forks) if f.cfg.fork.parent == parent.id]
     model, batches = setup(parent.cfg, args.n, args.chunk, args.seed, args.device)
     sd_parent = load_state(parent, device=args.device)
-    res = dict(parent=parent.id, optimizer=parent.optimizer, forks=[], pairs=[])
+    res = dict(parent=parent.id, optimizer=parent.optimizer, forks=[], pairs=[], others=[])
     for f in sorted(forks, key=lambda f: f.fork_step):
         alphas, losses = interpolation(model, sd_parent, load_state(f, device=args.device), batches, args.alphas)
         res['forks'].append(dict(fork=f.id, fork_step=f.fork_step, optimizer=f.optimizer,
                                  barrier=barrier(alphas, losses), losses=losses.tolist()))
         print(f"{f.id} (step {f.fork_step}, {f.optimizer}): barrier {res['forks'][-1]['barrier']:.4f}")
+    for o in load_runs(args.others):
+        alphas, losses = interpolation(model, sd_parent, load_state(o, device=args.device), batches, args.alphas)
+        res['others'].append(dict(run=o.id, optimizer=o.optimizer, barrier=barrier(alphas, losses),
+                                  losses=losses.tolist()))
+        print(f"{o.id}: barrier {res['others'][-1]['barrier']:.4f}")
     if args.pairs:
         for f, g in combinations(forks, 2):
             alphas, losses = interpolation(model, load_state(f, device=args.device),
