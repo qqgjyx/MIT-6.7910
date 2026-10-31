@@ -17,8 +17,8 @@ have been launched), so forks inherit the parent's model, schedule and measureme
 
 Usage:
     python scripts/launch.py configs/suites/x.yaml [--partition normal|preemptable] [--gpu-type h200]
-        [--per-gpu K] [--time HH:MM:SS] [--max-concurrent N] [--only REGEX] [--after JOBID] [--dry-run]
-        [--local] [--force]
+        [--per-gpu K] [--time HH:MM:SS] [--max-concurrent N] [--only REGEX] [--after JOBID] [--exclude NODES]
+        [--dry-run] [--local] [--force]
 
 --after JOBID starts the array once job JOBID (e.g. the parents' array) has ended, so forks can be
 submitted together with their parents.
@@ -101,6 +101,7 @@ def main(argv=None):
     ap.add_argument('--only', help='regex on run names')
     ap.add_argument('--after', help='job id to wait for (the parents of forks); their fork checkpoints '
                     'are not checked then')
+    ap.add_argument('--exclude', help='nodes to avoid, as for sbatch --exclude')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--local', action='store_true', help='run sequentially here instead of submitting')
     ap.add_argument('--force', action='store_true', help='overwrite configs that changed')
@@ -153,6 +154,7 @@ def main(argv=None):
            f'--gres={gres}', f'--cpus-per-task={args.cpus}', f'--mem={args.mem}',
            f'--job-name={suite}', f'--output={jobs}/logs/%A_%a.out', '--requeue',
            *([f'--dependency=afterany:{args.after}'] if args.after else []),
+           *([f'--exclude={args.exclude}'] if args.exclude else []),
            str(CODE_DIR / 'slurm' / 'run_array.sbatch'), str(list_file), str(args.per_gpu)]
     print(' '.join(cmd))
     if args.dry_run:

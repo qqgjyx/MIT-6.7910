@@ -36,6 +36,21 @@ schedule:
   decay: cosine               # cosine | constant
   min_lr_frac: 0.1
 
+balance:                      # curvature-balanced per-layer learning rates (optsplit/optim/balance.py)
+  variant: null               # null (off) | A (redistribute) | B (redistribute and scale to a target)
+  blocks: layer               # layer | sublayer (attention and MLP of each block apart)
+  every: 20                   # steps between refreshes of the top eigenvectors and the multipliers
+  k: 3                        # tracked eigenvectors (shares are averaged over those within `cluster` of the top)
+  iters: 2                    # block iterations per refresh (k (iters + 1) Hessian-vector products)
+  cluster: 0.05
+  ema: 0.2                    # weight of the new shares in their moving average
+  alpha: 0.3                  # A: step of log m_a per refresh
+  target: 0.9                 # B: lambda_max of the balanced operator, as a fraction of the threshold
+  gain: 0.2                   # B: step of log g per refresh, times log(lambda / target)
+  clip: [0.1, 10.0]           # every per-layer rate stays within these multiples of the schedule's rate
+  start: null                 # first step that updates the multipliers (null: end of warmup)
+  check_every: 500            # full Lanczos check of the tracked lambda_max
+
 shadow: []                    # optimizers whose state is accumulated in shadow, for swaps
 
 fork:

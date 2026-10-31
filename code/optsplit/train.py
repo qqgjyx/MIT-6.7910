@@ -16,8 +16,10 @@ import torch
 from .config import load_config, run_dir, save_config, step_grid
 from .data import build_data
 from .measure import measure_step
+from .measure.hessian import HVP
 from .models import build_model
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
+from .optim.balance import Balancer
 from .probe import Probe
 
 INTERRUPTED = 3
@@ -51,6 +53,11 @@ def main(argv):
                         num_classes=getattr(data, 'num_classes', None)).to(device)
     opt = build_optimizer(cfg.optimizer, model, cfg)
     shadow = Shadow(model, cfg)
+    balancer = None
+    if cfg.balance.variant:
+        named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+        xh, yh = data.fixed_batch('train', cfg.measure.hessian_batch, seed=1)
+        balancer = Balancer(cfg, opt, named, lambda: HVP(model, xh, yh, [p for _, p in named]))
     probe = Probe(cfg, data)
     T = cfg.train.max_steps
 
@@ -60,6 +67,8 @@ def main(argv):
         model.load_state_dict(ck['model'])
         load_optimizer_state(opt, ck['optimizer'])
         shadow.load(ck['shadow'])
+        if balancer:
+            balancer.load(ck['balance'])
         start = ck['step']
         print(f'resuming at step {start}')
     elif cfg.fork.parent:
@@ -90,7 +99,8 @@ def main(argv):
 
     def save_latest(step):
         atomic_save(dict(model=model.state_dict(), optimizer=opt.state_dict(),
-                         shadow=shadow.state_dicts(), step=step), out / 'latest.pt')
+                         shadow=shadow.state_dicts(), step=step,
+                         balance=balancer and balancer.state_dict()), out / 'latest.pt')
 
     use_amp = device.type == 'cuda' and cfg.train.dtype == 'bfloat16'
     autocast = (lambda: torch.autocast('cuda', dtype=torch.bfloat16)) if use_amp else contextlib.nullcontext
@@ -122,6 +132,10 @@ def main(argv):
                 log('measure', step, **rec)
             break
 
+        if balancer:
+            bal = balancer.step(step, lr_mult(step, cfg))
+            if bal:
+                log('balance', step, **bal)
         x, y = data.get_batch(step)
         set_lr(opt, lr_mult(step, cfg))
         with autocast():

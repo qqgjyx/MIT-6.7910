@@ -21,19 +21,8 @@ from optsplit.analysis.io import load_runs
 from optsplit.analysis.plots import _group
 from optsplit.data import build_data
 from optsplit.measure.hessian import HVP, adam_preconditioner, lanczos
-from optsplit.models import build_model, double_backward_ok
+from optsplit.models import build_model, double_backward_ok, layer
 from optsplit.optim import build_optimizer, load_optimizer_state
-
-
-def layer(name, split='layer'):
-    if name.startswith(('transformer.wte', 'transformer.wpe')):
-        return 'emb'
-    if name.startswith('transformer.h.'):
-        _, _, i, part = name.split('.')[:4]
-        if split == 'sublayer':
-            return ('attn' if part in ('ln_1', 'attn') else 'mlp') + str(int(i) + 1)
-        return str(int(i) + 1)
-    return 'head'  # transformer.ln_f, lm_head
 
 
 def steps(run):

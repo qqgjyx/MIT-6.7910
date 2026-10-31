@@ -2,34 +2,44 @@ import math
 
 import torch
 
-from ..models import muon_params
+from ..models import layer, muon_params
 from .muon import SingleDeviceMuonWithAuxAdam
 
 OPTIMIZERS = ('sgd', 'adamw', 'muon')
 
 
 def build_optimizer(name, model, cfg):
+    """Each param group keeps its base learning rate in `base_lr` and a multiplier `lr_mult` (1). With
+    `balance.variant` set, every group is split by layer (`balance.blocks`), named in `block`."""
     o = cfg.optim[name]
     named = dict(model.named_parameters())
     if name == 'muon':
         hidden, other = muon_params(model)
-        groups = [dict(params=[named[n] for n in hidden], lr=o.lr, momentum=o.momentum,
-                       weight_decay=o.weight_decay, use_muon=True),
-                  dict(params=[named[n] for n in other], lr=o.adam_lr, betas=tuple(o.adam_betas),
-                       eps=o.adam_eps, weight_decay=o.adam_weight_decay, use_muon=False)]
-        opt = SingleDeviceMuonWithAuxAdam(groups)
+        groups = [dict(params=hidden, lr=o.lr, momentum=o.momentum, weight_decay=o.weight_decay, use_muon=True),
+                  dict(params=other, lr=o.adam_lr, betas=tuple(o.adam_betas), eps=o.adam_eps,
+                       weight_decay=o.adam_weight_decay, use_muon=False)]
     else:
-        decay = [p for p in named.values() if p.ndim >= 2]
-        no_decay = [p for p in named.values() if p.ndim < 2]
-        groups = [dict(params=decay, weight_decay=o.weight_decay), dict(params=no_decay, weight_decay=0.0)]
-        if name == 'sgd':
-            opt = torch.optim.SGD(groups, lr=o.lr, momentum=o.momentum, nesterov=o.nesterov)
-        elif name == 'adamw':
-            opt = torch.optim.AdamW(groups, lr=o.lr, betas=tuple(o.betas), eps=o.eps)
-        else:
-            raise ValueError(name)
-    for g in opt.param_groups:
-        g['base_lr'] = g['lr']
+        groups = [dict(params=[n for n, p in named.items() if p.ndim >= 2], weight_decay=o.weight_decay),
+                  dict(params=[n for n, p in named.items() if p.ndim < 2], weight_decay=0.0)]
+    split = cfg.get('balance', {}).get('variant') and cfg.balance.blocks
+    if split:
+        groups = [{**g, 'params': [n for n in g['params'] if layer(n, split) == b]}
+                  for g in groups for b in dict.fromkeys(layer(n, split) for n in g['params'])]
+    blocks = [layer(g['params'][0], split) if split else None for g in groups]
+    for g in groups:
+        g['params'] = [named[n] for n in g['params']]
+    if name == 'muon':
+        opt = SingleDeviceMuonWithAuxAdam(groups)
+    elif name == 'sgd':
+        opt = torch.optim.SGD(groups, lr=o.lr, momentum=o.momentum, nesterov=o.nesterov)
+    elif name == 'adamw':
+        opt = torch.optim.AdamW(groups, lr=o.lr, betas=tuple(o.betas), eps=o.eps)
+    else:
+        raise ValueError(name)
+    for g, b in zip(opt.param_groups, blocks):
+        g['base_lr'], g['lr_mult'] = g['lr'], 1.0
+        if b:
+            g['block'] = b
     return opt
 
 
@@ -54,7 +64,7 @@ def lr_mult(step, cfg):
 
 def set_lr(opt, mult):
     for g in opt.param_groups:
-        g['lr'] = g['base_lr'] * mult
+        g['lr'] = g['base_lr'] * g.get('lr_mult', 1.0) * mult
 
 
 class Shadow:

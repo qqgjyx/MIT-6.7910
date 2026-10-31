@@ -49,6 +49,20 @@ def param_blocks(model):
     return blocks
 
 
+def layer(name, split='layer'):
+    """The layer of a GPT parameter: 'emb' (wte, wpe; also the head when tied, as the parameter is named wte),
+    '1'..'n' (transformer blocks) or 'head' (final norm and lm_head). `split='sublayer'` splits each block into
+    attnN and mlpN, each with the LayerNorm that feeds it (ln_1 with attention, ln_2 with the MLP)."""
+    if name.startswith(('transformer.wte', 'transformer.wpe')):
+        return 'emb'
+    if name.startswith('transformer.h.'):
+        _, _, i, part = name.split('.')[:4]
+        if split == 'sublayer':
+            return ('attn' if part in ('ln_1', 'attn') else 'mlp') + str(int(i) + 1)
+        return str(int(i) + 1)
+    return 'head'  # transformer.ln_f, lm_head
+
+
 def muon_params(model):
     """(hidden, other): parameter names updated by Muon and by its auxiliary AdamW."""
     hidden, other = [], []
