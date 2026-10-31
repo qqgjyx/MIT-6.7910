@@ -1055,17 +1055,39 @@ ratio of 1.07 at the lowest common loss (\cref{fig:app-divergence}).
 
 \subsection{Stochastic edge of stability for AdamW and Muon\extra}
 \label{sec:res-stoch-eos}
-% TODO: final numbers from stochastic-EoS agent
 
 To second order, a step $s$ lowers the loss if and only if $R=s^\top Hs/(-2g^\top s)<1$, with $g$ and $H$ the gradient and
 Hessian before the step; this is the curvature along the update the optimizer actually takes, the quantity
-\citet{lee2026road} find near 1 for full-batch training. On TinyStories-10M (data order 0), with $g$ and $H$ on the
-step's own batch, $R$ is about 0.3 for AdamW and 0.15 for Muon, against about 1 for
-SGD (0.85--1.09), the edge of stochastic stability of \citet{andreyev2024eoss}. On 256 fresh training sequences,
-which estimate the population loss, $R$ is 0.95--1.03 for AdamW and 0.92--0.98 for Muon, at $\tfrac12$, 1 and 2
-times the tuned rate. The gap comes from the alignment: the batch gradient is 3--5 (AdamW) and 8--9 (Muon) times as
-aligned with the step as the population gradient. AdamW and Muon thus sit at an edge of stability of the population
-loss along the step they take, not of the batch loss.
+\citet{lee2026road} find near 1 for full-batch training. On TinyStories-10M (data order 0) we measure it along the
+actual step (without decoupled weight decay, which changes AdamW's ratio by less than 1\%) at three constant rates per optimizer
+(\cref{fig:stoch-eos}). With $g_B$ and $H_B$ on the step's own batch, $R_B$ does not settle at 1: it falls throughout
+training, and over the second half of the run it is 0.13--0.15 for AdamW, 0.08--0.10 for Muon and 0.34--0.67 for SGD.
+With $\bar g$ and $\bar H$ on 256 fresh training sequences, which estimate the population loss, $\bar R$ settles
+within about 500 steps, at 1.01--1.03 for AdamW, 0.95--1.00 for Muon and 0.90--1.05 for SGD. It stays there at
+batch 32 (1.00 for AdamW, 0.99 for Muon) and under the cosine schedule (0.95, 0.92 and 1.05 over its second half),
+while $\eta\lmax$ falls to about 0.3 of its threshold (\cref{fig:app-stoch-eos}). The two ratios differ by the
+alignment of the step with the gradient: exactly $R_B=\bar R\,\kappa\,\rho$, with the curvature ratio
+$\kappa=s^\top H_Bs/s^\top\bar Hs$ at 1.0--1.4 and the coherence $\rho=\bar g^\top s/g_B^\top s$ at 0.10--0.12 for
+AdamW, 0.06--0.07 for Muon and 0.30--0.66 for SGD, so $R_B$ falls as the coherence does. AdamW and Muon thus sit at an
+edge of stability of the population loss along the step they take, not of their batch loss. For Muon neither part
+of the step is at 1 alone (about 0.84 on the hidden matrices and 0.45 on the auxiliary AdamW part); the cross term
+brings the full step to 1. $\bar R\approx1$ is a weak descent: from the exact loss change, $1-\bar R$ is the fraction
+of its first-order decrease of the population loss that a step achieves, between $-2\%$ and $6\%$ for AdamW and Muon at a constant rate.
+
+\begin{figure}[t]
+\centering
+\includegraphics[page=2,width=\linewidth,trim=0 0 0 22,clip]{figures/stochastic_eos.pdf}
+%% python -m optsplit.analysis.stochastic_eos 'ts10m_stoch_eos/*' --out stochastic_eos.pdf
+\caption{Stochastic edge of stability\extra\ on TinyStories-10M: constant rate after 200 warmup steps, 3000 steps,
+data order 0. Each ratio's plateau over the second half (median of 6 blocks; bars: half the interquartile range)
+against the rate; filled: batch 128, open and shifted right: batch 32. Blue: $R_B$ on the step's own batch;
+orange: the same along the step without momentum ($-\eta g_B$, $-\eta D^{-1}g_B$, $-\eta\,\mathrm{polar}(g_B)$ on
+Muon's matrices); green: $\bar R$ on 256 fresh sequences (crosses: from the exact loss change); squares:
+$\eta\lmax$ over its threshold on 32 fixed sequences (preconditioned for AdamW). SGD's tuned rate is 0.06; Muon's
+auxiliary AdamW takes $10^{-3}$, $2\cdot10^{-3}$ and $4\cdot10^{-3}$. SGD at 0.03 blew up at step 2300, after
+$\bar R$ had been above 1 for 300 steps.}
+\label{fig:stoch-eos}
+\end{figure}
 
 \subsection{Swaps and mode connectivity}
 \label{sec:res-swap}
@@ -2360,6 +2382,21 @@ exceedance $t^\ast_X$ of the AdamW--Muon pair red dashed.}
 (10{,}000, where $\eta$ is 10\% of the peak) of the TinyStories-10M sweep with sharpness measurements, against the
 peak learning rate; left also $\lmax(H)$, with the log-log slopes.}
 \label{fig:app-spectral-lr}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[page=3,width=\linewidth,trim=0 0 0 22,clip]{figures/stochastic_eos.pdf}\\[2pt]
+\includegraphics[page=9,width=0.49\linewidth]{figures/stochastic_eos.pdf}\hfill
+\includegraphics[page=14,width=0.49\linewidth]{figures/stochastic_eos.pdf}
+\caption{Stochastic edge of stability\extra\ on TinyStories-10M (\cref{sec:res-stoch-eos}). Top: at the tuned
+rate and a constant schedule, the own-batch ratio $R_B$, the population ratio $\bar R$ and the two factors between
+them, $R_B=\bar R\,\kappa\,\rho$ (ratio of sums over $\pm250$ steps). Bottom: AdamW (left) and Muon (right) with
+warmup and cosine decay over 10{,}000 steps; ratios on the step's own batch (top panel) and on 256 fresh sequences
+(middle), $\eta(t)$ (bottom). Hessian-vector products in float32 on the step's batch every 10 steps (+ 60
+log-spaced steps) and on fresh sequences every 50; $\eta\lmax$ on 32 fixed sequences every 500. Per-run pages for all 14
+runs, Muon's two parts and the step with weight decay are in \texttt{figures/stochastic\_eos.pdf}.}
+\label{fig:app-stoch-eos}
 \end{figure}
 
 \begin{figure}[ht]

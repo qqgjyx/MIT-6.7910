@@ -217,7 +217,7 @@ def summary_page(pdf, runs, start_frac=0.5):
         ax.set_title(NAMES[o], fontsize=10)
         ax.set_xlabel(r'$\eta$' + (' (Muon matrices; AdamW part scaled with it)' if o == 'muon' else ''), fontsize=8)
         ax.grid(alpha=0.2, which='both')
-    axes[0].set_ylabel(f'plateau over steps $\\geq$ {start_frac:g} T (median of 6 blocks, bars: half IQR)')
+    axes[0].set_ylabel(f'plateau over steps $\\geq$ {start_frac:g} T\n(median of 6 blocks, bars: half IQR)')
     fig.legend(*axes[0].get_legend_handles_labels(), loc='lower center', ncol=5, fontsize=8)
     fig.suptitle('Constant rate, 3000 steps: filled = batch 128 at x1/2, x1, x2 the main rate; '
                  'open, shifted right = batch 32 at the main rate', fontsize=9)
@@ -229,7 +229,7 @@ def summary_page(pdf, runs, start_frac=0.5):
 def coherence_page(pdf, runs, half=250):
     """Own batch against population at the main rate: R_B = R_pop * kappa * rho, at the steps with both."""
     import matplotlib.pyplot as plt
-    main = {'sgd': 0.03, 'adamw': 2e-3, 'muon': 0.01}
+    main = {'sgd': 0.06, 'adamw': 2e-3, 'muon': 0.01}
     fig, axes = plt.subplots(1, 3, figsize=(12, 4.5), sharey=True)
     for ax, o in zip(axes, ('sgd', 'adamw', 'muon')):
         r = [r for r in runs if r.optimizer == o and r.cfg.schedule.decay == 'constant' and r.lr == main[o]
@@ -299,8 +299,9 @@ every 50 steps (population: R_pop = s^T H s / (-2 g^T s)). Also: the ratio from 
 step without momentum (SGD: -eta g_B, Andreyev's eta * batch sharpness / 2; AdamW: -eta D^-1 g_B; Muon: -eta polar(g_B)
 on its matrices), Muon's two parts, the step with weight decay, and eta lambda_max / threshold (Lanczos, 32 fixed seqs).
 Runs: constant rate after 200 warmup steps, 3000 steps, batch 128, at x1/2, x1, x2 the main rate (SGD 0.03, momentum
-0.9; AdamW 2e-3; Muon 0.01 with its AdamW part 2e-3, scaled together); batch 32 at the main rate; the main rate with
-warmup and cosine decay over 10k steps. Plateau: median over 6 blocks of the second half (ratio of sums per block).
+0.9, so x2 is its re-tuned 0.06; AdamW 2e-3; Muon 0.01 with its AdamW part 2e-3, scaled together); batch 32 at the main rate;
+the main rate with warmup and cosine decay over 10k steps. Plateau: median over 6 blocks of the second half (ratio of
+sums per block).
 
 Plateaus, range over x1/2, x1, x2 (batch 128, constant rate):
   own batch, actual step     R_B        {rng('B.s')}
