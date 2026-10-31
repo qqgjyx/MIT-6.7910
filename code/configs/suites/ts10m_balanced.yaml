@@ -20,3 +20,10 @@ runs:
      name: "sgd_B{balance.target}-fe_d0"}
   - {optimizer: sgd, balance.variant: B, balance.target: 1.0, train.data_seed: [1, 2],
      name: "sgd_B{balance.target}_d{train.data_seed}"}
+  # AdamW, second round: A was the only variant on par with the baseline (B pushed g down to 0.1 below the target
+  # and up to 5-10x above it, both worse). The tracked lambda_max was often below the Lanczos check and the
+  # embedding's preconditioned curvature spikes, so `-fe` also keeps the embedding at 1x and tracks 4 vectors with 3
+  # iterations. A on data orders 1-2.
+  - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
+     name: "adamw_A-fe_d0"}
+  - {optimizer: adamw, balance.variant: A, train.data_seed: [1, 2], name: "adamw_A_d{train.data_seed}"}
