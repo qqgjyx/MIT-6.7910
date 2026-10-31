@@ -155,8 +155,8 @@ def main(argv):
         if mults:  # m_a^f, f = 1, or with `balance.ramp: [a, b]` rising linearly from 0 at step a to 1 at step b
             r = cfg.balance.get('ramp')
             f = 1.0 if r is None else min(1.0, max(0.0, (step - r[0]) / (r[1] - r[0])))
-            for g, m in mults:
-                g['lr_mult'] = m ** f
+            for g, ma in mults:
+                g['lr_mult'] = ma ** f
         x, y = data.get_batch(step)
         set_lr(opt, lr_mult(step, cfg))
         probed = tracker is not None and tracker.before(step)
