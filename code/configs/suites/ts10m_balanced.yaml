@@ -8,7 +8,8 @@ overrides:
   optim.adamw.lr: 2.0e-3
   optim.muon.lr: 0.01
   measure.batch_sharpness_batches: 0  # its 128-sequence double backward is the memory peak; 3 runs then fit a 44 GB GPU
+# Muon is balanced on its spectral-norm sharpness instead of H (see balance.py).
 runs:
-  - {optimizer: [sgd, adamw], balance.variant: A, train.data_seed: 0, name: "{optimizer}_A_d{train.data_seed}"}
-  - {optimizer: [sgd, adamw], balance.variant: B, balance.target: [0.5, 0.7, 0.9, 1.0], train.data_seed: 0,
+  - {optimizer: [sgd, adamw, muon], balance.variant: A, train.data_seed: 0, name: "{optimizer}_A_d{train.data_seed}"}
+  - {optimizer: [sgd, adamw, muon], balance.variant: B, balance.target: [0.5, 0.7, 0.9, 1.0], train.data_seed: 0,
      name: "{optimizer}_B{balance.target}_d{train.data_seed}"}
