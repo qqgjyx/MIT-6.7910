@@ -10,6 +10,9 @@ K=${2:-${K:-1}}
 source "${OPTSPLIT_CODE:-$SLURM_SUBMIT_DIR}/slurm/env.sh"
 cd "$OPTSPLIT_CODE"
 
+# this task alone: requeueing an array's master job id (that of one of its tasks) would requeue every task
+JOB=${SLURM_ARRAY_JOB_ID:+${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}}
+JOB=${JOB:-$SLURM_JOB_ID}
 runs=()
 pids=()
 
@@ -24,7 +27,7 @@ stop() {
     echo "signal received, stopping runs"
     kill -TERM "${pids[@]}" 2>/dev/null
     wait
-    if unfinished; then scontrol requeue "$SLURM_JOB_ID"; fi
+    if unfinished; then scontrol requeue "$JOB"; fi
     exit 0
 }
 trap stop USR1 TERM
@@ -49,5 +52,5 @@ for i in "${!pids[@]}"; do
     echo "exit $rc: ${runs[$i]}"
     if [ $rc -eq 3 ]; then requeue=1; elif [ $rc -ne 0 ]; then failed=1; fi
 done
-if [ $requeue -eq 1 ]; then scontrol requeue "$SLURM_JOB_ID"; fi
+if [ $requeue -eq 1 ]; then scontrol requeue "$JOB"; fi
 exit $failed
