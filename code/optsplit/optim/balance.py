@@ -204,5 +204,6 @@ class Balancer:
         return dict(log_m=self.log_m, log_g=self.log_g, ema=self.ema, X=self.X)
 
     def load(self, state):
-        self.log_m, self.log_g, self.ema, self.X = state['log_m'], state['log_g'], state['ema'], state['X']
+        self.log_m, self.log_g, self.X = state['log_m'].cpu(), state['log_g'], state['X']  # loaded onto the GPU
+        self.ema = None if state['ema'] is None else state['ema'].cpu()
         self.apply()
