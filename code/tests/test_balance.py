@@ -110,10 +110,11 @@ def test_muon_spectral():
         assert g['lr_mult'] == (pytest.approx(r[bal.blocks.index(g['block'])]) if g['use_muon'] else 1.0)
 
 
-def test_step_balancer():
+@pytest.mark.parametrize('own', [False, True])
+def test_step_balancer(own):
     """v2 on a block-diagonal quadratic, isotropic within each layer, with plain gradient descent: there
-    R_a = lr_a h_a / 2, so equalizing R_a sets every rate to 1 / h_a up to the common geometric mean 1, and the
-    whole step's R is the rate-weighted mean that the record reports."""
+    R_a = lr_a h_a / 2 (with or without the cross-layer terms, which vanish), so equalizing R_a sets every rate
+    to 1 / h_a up to the common geometric mean 1."""
     names = ['transformer.wte.weight', 'transformer.h.0.mlp.c_fc.weight', 'transformer.h.1.mlp.c_fc.weight',
              'lm_head.weight']
     h = torch.tensor([8.0, 2.0, 0.5, 4.0])
@@ -132,7 +133,7 @@ def test_step_balancer():
             return [(torch.zeros(n, 1), torch.zeros(n, 1))]
 
     cfg = load_config(None, ['optimizer=sgd', 'balance.variant=R', 'balance.every=1', 'balance.start=0',
-                             'balance.pop_seqs=4', 'balance.chunk=2'])
+                             'balance.pop_seqs=4', 'balance.chunk=2', f'balance.own={own}'])
     model = Quad()
     opt = torch.optim.SGD([dict(params=[p], block=layer(n)) for n, p in model.named_parameters()], lr=0.005)
     for group in opt.param_groups:
@@ -150,3 +151,5 @@ def test_step_balancer():
     torch.testing.assert_close(r.float() * h, torch.full((4,), (r.float() * h).mean().item()), rtol=0.03, atol=0)
     assert list(rec['R_a'].values()) == pytest.approx((0.005 * r * h / 2).tolist(), rel=1e-2)
     assert [group['lr_mult'] for group in opt.param_groups] == pytest.approx(r.tolist())
+    if own:
+        assert list(rec['R_own'].values()) == pytest.approx(list(rec['R_a'].values()), rel=1e-5)

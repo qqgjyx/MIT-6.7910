@@ -56,6 +56,7 @@ balance:                      # curvature-balanced per-layer learning rates (opt
   fresh: false                # true: Hessian on fresh training sequences at every refresh, not the fixed batch
   pop_seqs: 256               # R: fresh training sequences per refresh
   chunk: 32                   # R: sequences per Hessian-vector product pass (memory)
+  own: false                  # R: numerator s_a^T H_aa s_a (the layer's own block) instead of s_a^T (H s)_a
   check_every: 500            # full Lanczos check of the tracked lambda_max (Muon: Frank-Wolfe from scratch)
   fw_iters: 5                 # Muon: Frank-Wolfe steps per refresh
 

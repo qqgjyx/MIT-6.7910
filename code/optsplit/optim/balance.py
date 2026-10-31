@@ -226,7 +226,9 @@ class StepBalancer:
     population loss to first order, so it is mostly noise) gets the upper end (its rate goes down), one with
     negative curvature along its step the lower end, and the mean runs over the other layers. log m is recentred to
     geometric mean 1 and clipped to `balance.clip`, so that every layer is equally close to its own edge (in the
-    spirit of block Jacobi). No global scale. Every layer is balanced, Muon's AdamW part included.
+    spirit of block Jacobi). No global scale. Every layer is balanced, Muon's AdamW part included. With
+    `balance.own`, the numerator is the layer's own block s_a^T H_aa s_a (block Jacobi proper, one more
+    Hessian-vector product per layer) instead of s_a^T (H s)_a.
     `v1`, a Balancer on the old measure, is only evaluated (at the current rates) and logged for comparison."""
 
     def __init__(self, cfg, opt, model, data, v1=None):
@@ -235,7 +237,8 @@ class StepBalancer:
         named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
         self.params = [p for _, p in named]
         self.blocks = list(dict.fromkeys(layer(n, b.blocks) for n, _ in named))
-        self.bid = torch.cat([torch.full((p.numel(),), self.blocks.index(layer(n, b.blocks))) for n, p in named])
+        self.pid = [self.blocks.index(layer(n, b.blocks)) for n, _ in named]
+        self.bid = torch.cat([torch.full((p.numel(),), a) for a, p in zip(self.pid, self.params)])
         group = {p: g for g in opt.param_groups for p in g['params']}
         self.groups = [group[p] for p in self.params]
         self.start = cfg.schedule.warmup_steps if b.start is None else b.start
@@ -278,6 +281,7 @@ class StepBalancer:
                   for t0, t1, g in zip(self.theta0, theta1, self.groups)])
         x, y = self.data.random_batches(1, b.pop_seqs, seed=5 * 10**6 + step)[0]
         n, g, Hs, S = math.ceil(len(x) / b.chunk), 0.0, 0.0, split(s, self.params)
+        own = torch.zeros(L, dtype=torch.float64)  # s_a^T H_aa s_a
         with double_backward_ok(), torch.autocast(s.device.type, enabled=False):
             with torch.no_grad():
                 for p, t in zip(self.params, self.theta0):
@@ -286,17 +290,25 @@ class StepBalancer:
                 grads = _grad(self.model.loss(x[i:i + b.chunk], y[i:i + b.chunk]), self.params, create_graph=True)
                 g = g + flat([t.detach() for t in grads]) / n
                 dot = sum((t * u).sum() for t, u in zip(grads, S) if t.requires_grad)
-                Hs = Hs + flat(_grad(dot, self.params)) / n
+                Hs = Hs + flat(_grad(dot, self.params, retain_graph=b.own)) / n
+                for a in range(L) if b.own else []:
+                    ps = [j for j, q in enumerate(self.pid) if q == a]
+                    dot_a = sum((grads[j] * S[j]).sum() for j in ps if grads[j].requires_grad)
+                    if torch.is_tensor(dot_a) and dot_a.requires_grad:
+                        h = _grad(dot_a, [self.params[j] for j in ps], retain_graph=True)
+                        own[a] += sum((t * S[j]).sum().item() for t, j in zip(h, ps)) / n
                 del grads, dot
             with torch.no_grad():
                 for p, t in zip(self.params, theta1):
                     p.copy_(t)
         self.theta0 = None
         per = lambda v: torch.zeros(L, dtype=torch.float64).index_add_(0, self.bid, v.double().cpu())  # noqa: E731
-        new = torch.stack([per(s * Hs), per(-2 * g * s)])
+        num, den = per(s * Hs), per(-2 * g * s)
+        new = torch.stack([own if b.own else num, den])
         named = lambda t: dict(zip(self.blocks, t.tolist()))  # noqa: E731
-        rec = dict(R=(new[0].sum() / new[1].sum()).item(), R_a=named(new[0] / new[1]), num=named(new[0]),
-                   den=named(new[1]), **self.rec)
+        rec = dict(R=(num.sum() / den.sum()).item(), R_a=named(num / den), num=named(num), den=named(den), **self.rec)
+        if b.own:
+            rec.update(R_own=named(own / den), own=named(own))
         if not torch.isfinite(new).all():
             return rec  # diverging; train.py stops at the next log step
         self.ema = new if self.ema is None else self.ema + b.ema * (new - self.ema)

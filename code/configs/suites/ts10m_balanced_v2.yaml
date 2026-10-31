@@ -11,3 +11,8 @@ overrides:
   measure.batch_sharpness_batches: 0
 runs:
   - {optimizer: [adamw, muon], balance.variant: R, train.data_seed: 0, name: "{optimizer}_R_d{train.data_seed}"}
+  # R_a stayed at 0.8-1.2 in every layer whatever its rate (AdamW's rates drifted 100x apart, into the caps, and its
+  # loss fell behind): each layer seems to sit at its own edge. Diagnostic: the layer's own block s_a^T H_aa s_a in
+  # the numerator (block Jacobi proper, without the cross-layer terms).
+  - {optimizer: [adamw, muon], balance.variant: R, balance.own: true, train.data_seed: 0,
+     name: "{optimizer}_Ro_d{train.data_seed}"}
