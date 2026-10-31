@@ -294,11 +294,13 @@ def page_trace_v2(pdf, title, d, plt, per_page=4):
             if r['balance'] and 'R' in r['balance'][-1]]
     for p in range(0, len(runs), per_page):
         chunk = runs[p:p + per_page]
-        fig, axes = plt.subplots(len(chunk), 3, figsize=(11, 8.5), squeeze=False)
+        fig, axes = plt.subplots(len(chunk), 4, figsize=(11, 8.5), squeeze=False)
         fig.suptitle(f'{title}: balancer trace' + (f' ({p // per_page + 1})' if len(runs) > per_page else ''),
                      fontsize=12)
         for row, (rid, r) in zip(axes, chunk):
             rec = [x for x in r['balance'] if 'rate' in x]
+            t0 = min(1000, rec[-1]['step'] // 2)
+            late = [x for x in rec if x['step'] >= t0]
             st = [x['step'] for x in rec]
             names = list(rec[-1]['rate'])
             cmap = plt.get_cmap('viridis')
@@ -310,6 +312,8 @@ def page_trace_v2(pdf, title, d, plt, per_page=4):
                 v1 = [(x['step'], x['v1_shares'][n]) for x in rec if n in x.get('v1_shares', {})]
                 if v1:
                     row[2].plot(*zip(*v1), color=c, lw=0.8)
+                pts = np.array([(x['rate'][n], x['rbar'][n]) for x in late[::5] if x['rbar'][n] > 0], float)
+                row[3].scatter(*pts.reshape(-1, 2).T, color=c, s=3, alpha=0.5)
             R = np.array([x['R'] for x in rec], float)
             w = min(10, len(R))
             row[1].plot(st[w - 1:], np.convolve(R, np.ones(w) / w, mode='valid'), color='k', lw=1.2,
@@ -319,12 +323,14 @@ def page_trace_v2(pdf, title, d, plt, per_page=4):
             row[1].set(yscale='log', ylabel=r'$\bar R_a$ (EMA ratio)', ylim=(1e-2, 1e2))
             row[1].axhline(1, color='k', lw=0.5, ls='--')
             row[2].set(ylabel='old measure: shares of top\neigenvector (32 fixed seqs)', ylim=(0, 1))
-            for a in row:
+            row[3].set(xscale='log', yscale='log', ylim=(1e-2, 1e2), xlabel='rate m_a',
+                       title=rf'$\bar R_a$ against $m_a$, steps $\geq$ {t0}', ylabel=r'$\bar R_a$')
+            for a in row[:3]:
                 a.set_xscale('symlog', linthresh=100)
                 a.set_xlim(0, None)
         axes[0, 0].legend(fontsize=6, ncol=2)
         axes[0, 1].legend(fontsize=6)
-        for a in axes[-1]:
+        for a in axes[-1][:3]:
             a.set_xlabel('step')
         fig.tight_layout()
         pdf.savefig(fig)
