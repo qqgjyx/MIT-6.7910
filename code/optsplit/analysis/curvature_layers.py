@@ -6,7 +6,8 @@ of the steps `anatomy_layers` averages (at the edge of stability; all steps for 
 optimizer state, so only fork checkpoints count for it. `--split sublayer` splits each block into attnN and mlpN,
 each with the LayerNorm that feeds it (ln_1 with attention, ln_2 with the MLP).
 python -m optsplit.analysis.curvature_layers 'ts10m_main/*' --out analysis/ts10m/curvature_layers.json
-python -m optsplit.analysis.curvature_layers --plot analysis/ts10m/curvature_layers.json --out fig.pdf"""
+python -m optsplit.analysis.curvature_layers --plot analysis/ts10m/curvature_{layers,sublayers}.json \
+    --out curvature.pdf  # one page per JSON"""
 
 import argparse
 import json
@@ -100,9 +101,7 @@ TITLES = dict(sgd='SGD: top eigenvector of $H$', adamw='AdamW: top eigenvector o
 NOTES = dict(muon="(threshold: spectral-norm sharpness)")
 
 
-def plot(res, path):
-    import matplotlib
-    matplotlib.use('Agg')
+def plot(res):
     import matplotlib.pyplot as plt
     plt.rcParams.update({'font.size': 7, 'pdf.fonttype': 42})
     opts = [o for o in TITLES if o in res]
@@ -147,21 +146,26 @@ def plot(res, path):
     cb = fig.colorbar(im, cax=axes(x, 0.07), extend='max')
     cb.set_label(r'% of $\lambda$', fontsize=6, labelpad=1)
     cb.ax.tick_params(labelsize=5, length=1.5)
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(path)
-    print(f'wrote {path}')
+    return fig
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('runs', nargs='*', help='glob patterns of run ids')
-    p.add_argument('--plot', help='only plot an earlier JSON')
+    p.add_argument('--plot', nargs='+', help='only plot earlier JSONs, one page each')
     p.add_argument('--split', choices=['layer', 'sublayer'], default='layer')
     p.add_argument('--device', default='cuda' if torch.cuda.is_available() else 'cpu')
     p.add_argument('--out', required=True)
     args = p.parse_args()
     if args.plot:
-        return plot(json.loads(Path(args.plot).read_text()), args.out)
+        import matplotlib
+        matplotlib.use('Agg')
+        from matplotlib.backends.backend_pdf import PdfPages
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        with PdfPages(args.out) as pdf:
+            for f in args.plot:
+                pdf.savefig(plot(json.loads(Path(f).read_text())))
+        return print(f'wrote {args.out}')
     torch.backends.cuda.matmul.allow_tf32 = True  # as in training, where the saved anatomy was measured
     res = {}
     for run in load_runs(args.runs):

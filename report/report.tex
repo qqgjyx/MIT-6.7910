@@ -1184,7 +1184,7 @@ the single-layer barriers between data orders sit (\cref{sec:res-swap}).
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/ts10m/curvature_layers.pdf}
+\includegraphics[page=1,width=\linewidth]{figures/ts10m/curvature.pdf}
 \caption{Split of the top eigenvalue by layer\extra\ on TinyStories-10M at the edge of stability: cell $(\ell,m)$ is
 $v_\ell^\top Av_m$ as a percentage of the eigenvalue, with $A$ the operator in each title (diagonal: curvature within
 a layer; off-diagonal: between layers); bars: share of the direction $\|v_\ell\|^2$. Mean over data orders of each
@@ -1195,7 +1195,7 @@ d0, because the preconditioned operator needs the optimizer state, which only th
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{figures/ts10m/curvature_sublayers.pdf}
+\includegraphics[page=2,width=\linewidth]{figures/ts10m/curvature.pdf}
 \caption{As \cref{fig:curv-layers}, with each block split into its attention and its MLP (each with the LayerNorm
 that feeds it). Same steps; the AdamW panel again uses 2 steps of d0.}
 \label{fig:curv-sublayers}
