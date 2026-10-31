@@ -39,7 +39,8 @@ schedule:
 balance:                      # curvature-balanced per-layer learning rates (optsplit/optim/balance.py)
   variant: null               # null (off) | A (redistribute) | B (redistribute and scale to a target) |
                               # R (v2: equalize each layer's curvature along its step, on fresh sequences) |
-                              # F (no balancing: fixed multipliers `mults`, {block: m_a}, others at 1)
+                              # F (no balancing: fixed multipliers `mults`, {block: m_a}, others at 1; with
+                              #    `ramp: [a, b]`, m_a^f with f rising linearly from 0 at step a to 1 at step b)
   blocks: layer               # layer | sublayer (attention and MLP of each block apart)
   every: 20                   # steps between refreshes of the top eigenvectors and the multipliers
   k: 3                        # tracked eigenvectors (shares are averaged over those within `cluster` of the top)

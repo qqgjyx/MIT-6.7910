@@ -55,11 +55,10 @@ def main(argv):
                         num_classes=getattr(data, 'num_classes', None)).to(device)
     opt = build_optimizer(cfg.optimizer, model, cfg)
     shadow = Shadow(model, cfg)
-    balancer = None
+    balancer, mults = None, []
     if cfg.balance.variant == 'F':  # fixed multipliers {block: m_a}, set as Balancer.apply does; no balancing
-        for g in opt.param_groups:
-            if g.get('use_muon', True):  # Muon's auxiliary AdamW keeps the schedule's rate
-                g['lr_mult'] = cfg.balance.mults.get(g['block'], 1.0)
+        mults = [(g, cfg.balance.mults.get(g['block'], 1.0)) for g in opt.param_groups
+                 if g.get('use_muon', True)]  # Muon's auxiliary AdamW keeps the schedule's rate
     elif cfg.balance.variant:
         named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
         if cfg.optimizer == 'muon':  # balanced on the matrices Muon updates
@@ -153,6 +152,11 @@ def main(argv):
             bal = balancer.step(step, lr_mult(step, cfg))
             if bal:
                 log('balance', step, **bal)
+        if mults:  # m_a^f, f = 1, or with `balance.ramp: [a, b]` rising linearly from 0 at step a to 1 at step b
+            r = cfg.balance.get('ramp')
+            f = 1.0 if r is None else min(1.0, max(0.0, (step - r[0]) / (r[1] - r[0])))
+            for g, m in mults:
+                g['lr_mult'] = m ** f
         x, y = data.get_batch(step)
         set_lr(opt, lr_mult(step, cfg))
         probed = tracker is not None and tracker.before(step)
