@@ -56,7 +56,11 @@ def main(argv):
     opt = build_optimizer(cfg.optimizer, model, cfg)
     shadow = Shadow(model, cfg)
     balancer = None
-    if cfg.balance.variant:
+    if cfg.balance.variant == 'F':  # fixed multipliers {block: m_a}, set as Balancer.apply does; no balancing
+        for g in opt.param_groups:
+            if g.get('use_muon', True):  # Muon's auxiliary AdamW keeps the schedule's rate
+                g['lr_mult'] = cfg.balance.mults.get(g['block'], 1.0)
+    elif cfg.balance.variant:
         named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
         if cfg.optimizer == 'muon':  # balanced on the matrices Muon updates
             named = [(n, p) for n, p in named if n in muon_params(model)[0]]
