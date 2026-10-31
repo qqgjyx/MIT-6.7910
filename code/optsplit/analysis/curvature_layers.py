@@ -97,7 +97,7 @@ def average(rows):
 
 TITLES = dict(sgd='SGD: top eigenvector of $H$', adamw='AdamW: top eigenvector of $P^{-1/2}HP^{-1/2}$',
               muon='Muon: top eigenvector of $H$')
-NOTES = dict(muon="(Muon's threshold is on spectral-norm sharpness, not on $H$)")
+NOTES = dict(muon="(threshold: spectral-norm sharpness)")
 
 
 def plot(res, path):
