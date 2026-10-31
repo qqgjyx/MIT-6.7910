@@ -43,3 +43,6 @@ runs:
   # EoS test, ts10m_stoch_eos, finds AdamW and Muon at the edge on fresh sequences, not on a fixed batch).
   - {optimizer: sgd, balance.variant: B, balance.target: [0.9, 1.0], balance.fixed: [[emb]], balance.fresh: true,
      name: "sgd_B{balance.target}-fe-fresh_d0"}
+  # B0.9-fe-fresh finished at 1.664 where B0.9-fe blew up (B1-fe-fresh still blew up at step 1240): orders 1-2.
+  - {optimizer: sgd, balance.variant: B, balance.target: 0.9, balance.fixed: [[emb]], balance.fresh: true,
+     train.data_seed: [1, 2], name: "sgd_B{balance.target}-fe-fresh_d{train.data_seed}"}

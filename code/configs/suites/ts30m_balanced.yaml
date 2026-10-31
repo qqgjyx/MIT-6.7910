@@ -17,3 +17,7 @@ runs:
   - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
      name: "adamw_A-fe_d0"}
   - {optimizer: muon, balance.variant: A, name: "muon_A_d0"}
+  # sgd_B1_d1 blew up at step 7510 (g at its cap of 10 with the tracked lambda_max under the target, then the head
+  # took over), the failure seen on TinyStories-10M with B1-fe and B0.9-fe; there B0.9-fe on fresh sequences held.
+  - {optimizer: sgd, balance.variant: B, balance.target: 0.9, balance.fixed: [[emb]], balance.fresh: true,
+     train.data_seed: [0, 1], name: "sgd_B{balance.target}-fe-fresh_d{train.data_seed}"}
