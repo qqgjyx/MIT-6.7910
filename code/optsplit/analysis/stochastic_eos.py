@@ -114,12 +114,12 @@ def summarize(run, start_frac=0.5):
 def table(runs, start_frac=0.5):
     cols = ['B.s', 'B.exact', 'B.nm', 'B.s.muon', 'B.s.adam', 'B.s+wd', 'pop.s', 'pop.exact', 'pop.nm', 'mix.s',
             'rho', 'kappa', 'lam']
-    lines = [f'{"run":20s}' + ''.join(f'{c:>12s}' for c in cols)]
+    lines = [f'{"run":20s}' + ''.join(f'{c:>13s}' for c in cols)]
     for run in runs:
         s = summarize(run, start_frac)
         cells = ['' if s.get(c) is None else f'{s[c][0]:.3f}±{s[c][1]:.2f}' if isinstance(s[c], tuple)
                  else f'{s[c]:.3f}' for c in cols]
-        lines.append(f'{run.id.split("/")[-1]:20s}' + ''.join(f'{x:>12s}' for x in cells))
+        lines.append(f'{run.id.split("/")[-1]:20s}' + ''.join(f'{x:>13s}' for x in cells))
     return '\n'.join(lines)
 
 
@@ -257,7 +257,7 @@ def coherence_page(pdf, runs, half=250):
     axes[0].set_ylabel(f'ratio of sums over $\\pm${half} steps')
     axes[0].legend(fontsize=7, loc='lower right')
     fig.suptitle(r'Why the own-batch ratio is not 1: $R_B = \bar R\,\kappa\,\rho$ exactly; $\bar R \approx 1$, '
-                 r'$\kappa \approx 1$, so $R_B \approx \rho$', fontsize=10)
+                 r'$\kappa \approx 1$-$1.4$, so $R_B \approx \rho$', fontsize=10)
     fig.tight_layout()
     pdf.savefig(fig)
     plt.close(fig)
@@ -316,10 +316,15 @@ Cosine, 2nd half (eta falls to 10%):  R_B {rng('B.s', 'cosine')};  R_pop {rng('p
 Findings
 1. R_B does not settle at 1 for any optimizer: it falls throughout training, and it is far below 1 for AdamW and Muon.
 2. R_pop, the same ratio with the population gradient and Hessian along the actual step, settles at 1 for all three
-   optimizers, at every rate and batch size, within ~500 steps, and stays there while the cosine schedule lowers eta.
-3. R_B = R_pop * kappa * rho exactly. kappa ~ 1-1.4, so R_B ~ rho: the own-batch ratio is the population threshold times
-   the step's batch-population coherence (cf. the 2 rho_b / eta of 2609.34915), which falls as gradient noise dominates.
-4. Along the literature directions on the own batch (no momentum) the ratio drifts too; it is not a plateau.
+   optimizers, at every rate and batch size, within ~500 steps, and stays there while the cosine schedule lowers eta
+   (when eta lambda_max / threshold falls well below 1). SGD at 0.03 blows up at step 2300 (loss 2.6 -> 6.5); R_pop
+   rises above 1 in the 300 steps before. Muon: neither part sits at 1 alone (population: matrices ~0.84, AdamW part
+   ~0.45); the cross term between them makes the full step's ratio 1.
+3. R_B = R_pop * kappa * rho exactly. kappa ~ 1-1.4 (2.1 for Muon at batch 32), so R_B ~ rho: the own-batch ratio is
+   the population threshold times the step's batch-population coherence (cf. the 2 rho_b / eta of 2609.34915), which
+   falls as gradient noise dominates (smaller at batch 32, smaller as training goes on).
+4. Along the literature directions on the own batch (no momentum) the ratio drifts too (AdamW along D^-1 g_B: from ~8
+   down through 1 at constant rate, to 0.2 on the cosine schedule); it is not a plateau.
 5. Exactly, 1 - R_pop(exact) = dL_pop / g^T S: R_pop ~ 1 means each step realizes only a few percent of its first-order
    decrease of the population loss. A stable step has R ~ eta lambda / 2 << 1, as early in training here.
 """
@@ -343,7 +348,7 @@ def main():
                       'each block, ± half the IQR\n'
                       'B = own batch, pop = fresh sequences, mix = own-batch Hessian with the population gradient\n'
                       'rho = g_pop^T s / g_B^T s, kappa = s^T H_B s / s^T H_pop s, so that B.s = pop.s * kappa * rho\n'
-                      'lam = eta lambda_max / threshold on the 32 fixed sequences (median)\n\n' + tab, size=6)
+                      'lam = eta lambda_max / threshold on the 32 fixed sequences (median)\n\n' + tab, size=6.5)
             for run in runs:
                 run_page(pdf, run)
 
