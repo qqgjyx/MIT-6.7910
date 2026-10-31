@@ -52,7 +52,10 @@ v2 (AdamW and Muon; runs named R)
   (0.2) of numerators and denominators, Rbar_a = their ratio; after warmup log m_a -= 0.3 (log Rbar_a - mean), the
   deviation clipped to [log 0.1, log 10] (a layer whose step does not lower the loss to first order counts as too
   fast); geometric mean of m fixed at 1, m_a in [0.1, 10]; no global scale. Every layer, Muon's AdamW part (embedding,
-  head) included. The old measure (shares on the 32 fixed sequences) is logged alongside.
+  head) included. The old measure (shares on the 32 fixed sequences) is logged alongside. Ro: the layer's own block
+  s_a^T H_aa s_a in the numerator instead (no cross-layer terms).
+  Finding: R_a settles at the same value in every layer (about 1; about 0.3 for the own block) whatever the layer's
+  rate, even with rates 100x apart, so each layer sits at its own edge and the rule random-walks the rates into the caps.
 
 Comparisons
   Baseline: the main runs (same initialization, same rate, same data orders). Speedup = the baseline's step at its
