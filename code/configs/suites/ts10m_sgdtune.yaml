@@ -1,0 +1,14 @@
+# Re-tuning SGD on TinyStories-10M: plain SGD as in ts10m_main (rate 0.03) at 0.045, 0.06 and 0.085 on data orders
+# 0-2, losses only (no Hessian, no checkpoints, validation every 500 steps). Reused: 0.06 on order 0 is
+# ts10m_lr/sgd_lr0.06, 0.12 on orders 0-2 is ts10m_balanced/sgd_plain-lr0.12_d*, 0.03 is ts10m_main/sgd_d*.
+suite: ts10m_sgdtune
+base: ../base/tinystories_10m.yaml
+overrides:
+  measure.hessian: false
+  measure.delta_loss: false
+  log.eval_steps: {every: 500, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.045, 0.085], train.data_seed: [0, 1, 2]}
+  - {optimizer: sgd, optim.sgd.lr: 0.06, train.data_seed: [1, 2]}
