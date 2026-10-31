@@ -20,6 +20,12 @@ runs:
      name: "sgd_B{balance.target}-fe_d0"}
   - {optimizer: sgd, balance.variant: B, balance.target: 1.0, train.data_seed: [1, 2],
      name: "sgd_B{balance.target}_d{train.data_seed}"}
+  # SGD, third round. B1 ends with most layers at the 10x cap (0.3) and block 1 near 1.6x, but ts10m_lr found plain SGD
+  # at 0.06-0.12 far better than 0.03 on data order 0 (1.62, 1.55) and ts10m_main found 0.1 unstable on orders 1-3:
+  # plain SGD at 0.12 against A (embedding fixed) from the same base rate, on orders 0-2.
+  - {optimizer: sgd, optim.sgd.lr: 0.12, train.data_seed: [0, 1, 2], name: "sgd_plain-lr0.12_d{train.data_seed}"}
+  - {optimizer: sgd, optim.sgd.lr: 0.12, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [0, 1, 2],
+     name: "sgd_A-fe-lr0.12_d{train.data_seed}"}
   # AdamW, second round: A was the only variant on par with the baseline (B pushed g down to 0.1 below the target
   # and up to 5-10x above it, both worse). The tracked lambda_max was often below the Lanczos check and the
   # embedding's preconditioned curvature spikes, so `-fe` also keeps the embedding at 1x and tracks 4 vectors with 3
