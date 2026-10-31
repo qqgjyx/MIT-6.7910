@@ -45,6 +45,15 @@ Variants
 Defaults: alpha = 0.3, gain = 0.2 per refresh. AdamW A-fe tracks 4 vectors with 3 iterations. Batch sharpness is not
 measured in these runs (memory).
 
+v2 (AdamW and Muon; runs named R)
+  Every 20 steps, along the step s the optimizer just took (without weight decay), on 256 fresh training sequences
+  (gradient g and Hessian H at the parameters before the step): R_a = s_a^T (H s)_a / (-2 g_a^T s_a) for each layer
+  (the sums over layers give the whole step's R, which sits near 1 for AdamW and Muon at their tuned rates). EMA
+  (0.2) of numerators and denominators, Rbar_a = their ratio; after warmup log m_a -= 0.3 (log Rbar_a - mean), the
+  deviation clipped to [log 0.1, log 10] (a layer whose step does not lower the loss to first order counts as too
+  fast); geometric mean of m fixed at 1, m_a in [0.1, 10]; no global scale. Every layer, Muon's AdamW part (embedding,
+  head) included. The old measure (shares on the 32 fixed sequences) is logged alongside.
+
 Comparisons
   Baseline: the main runs (same initialization, same rate, same data orders). Speedup = the baseline's step at its
   best validation loss / the first evaluated step at which the balanced run reaches it (same data order); the best
@@ -216,7 +225,8 @@ def page_js(pdf, title, d, plt, max_loss=5):
 
 
 def page_trace(pdf, title, d, plt, per_page=4):
-    runs = [(rid, r) for rid, r in sorted(d['runs'].items(), key=lambda kv: (kv[1]['seed'], kv[0])) if r['balance']]
+    runs = [(rid, r) for rid, r in sorted(d['runs'].items(), key=lambda kv: (kv[1]['seed'], kv[0]))
+            if r['balance'] and 'R' not in r['balance'][-1]]  # v1
     base = {b['seed']: b for b in d['base'].values()}
     for p in range(0, len(runs), per_page):
         chunk = runs[p:p + per_page]
@@ -269,6 +279,49 @@ def page_trace(pdf, title, d, plt, per_page=4):
         plt.close(fig)
 
 
+def page_trace_v2(pdf, title, d, plt, per_page=4):
+    """v2 runs (records with R): rates, smoothed per-layer R and the whole step's R, and the old measure's shares."""
+    runs = [(rid, r) for rid, r in sorted(d['runs'].items(), key=lambda kv: (kv[1]['seed'], kv[0]))
+            if r['balance'] and 'R' in r['balance'][-1]]
+    for p in range(0, len(runs), per_page):
+        chunk = runs[p:p + per_page]
+        fig, axes = plt.subplots(len(chunk), 3, figsize=(11, 8.5), squeeze=False)
+        fig.suptitle(f'{title}: balancer trace' + (f' ({p // per_page + 1})' if len(runs) > per_page else ''),
+                     fontsize=12)
+        for row, (rid, r) in zip(axes, chunk):
+            rec = [x for x in r['balance'] if 'rate' in x]
+            st = [x['step'] for x in rec]
+            names = list(rec[-1]['rate'])
+            cmap = plt.get_cmap('viridis')
+            for i, n in enumerate(names):
+                c = cmap(i / max(1, len(names) - 1))
+                row[0].plot(st, [x['rate'][n] for x in rec], color=c, lw=1, label=n)
+                rb = np.array([x['rbar'][n] for x in rec], float)
+                row[1].plot(st, np.where(rb > 0, rb, np.nan), color=c, lw=1)
+                v1 = [(x['step'], x['v1_shares'][n]) for x in rec if n in x.get('v1_shares', {})]
+                if v1:
+                    row[2].plot(*zip(*v1), color=c, lw=0.8)
+            R = np.array([x['R'] for x in rec], float)
+            w = min(10, len(R))
+            row[1].plot(st[w - 1:], np.convolve(R, np.ones(w) / w, mode='valid'), color='k', lw=1.2,
+                        label='whole step (mean of 10)')
+            row[0].set(yscale='log', ylabel=f'{rid.split("/")[-1]}\nrate / schedule (m_a)')
+            row[0].axhline(1, color='k', lw=0.5)
+            row[1].set(yscale='log', ylabel=r'$\bar R_a$ (EMA ratio)', ylim=(1e-2, 1e2))
+            row[1].axhline(1, color='k', lw=0.5, ls='--')
+            row[2].set(ylabel='old measure: shares of top\neigenvector (32 fixed seqs)', ylim=(0, 1))
+            for a in row:
+                a.set_xscale('symlog', linthresh=100)
+                a.set_xlim(0, None)
+        axes[0, 0].legend(fontsize=6, ncol=2)
+        axes[0, 1].legend(fontsize=6)
+        for a in axes[-1]:
+            a.set_xlabel('step')
+        fig.tight_layout()
+        pdf.savefig(fig)
+        plt.close(fig)
+
+
 def plot(sections, path, header=HEADER):
     import matplotlib
     matplotlib.use('Agg')
@@ -287,6 +340,7 @@ def plot(sections, path, header=HEADER):
             page_losses(pdf, title, d, plt)
             page_js(pdf, title, d, plt)
             page_trace(pdf, title, d, plt)
+            page_trace_v2(pdf, title, d, plt)
     print(f'wrote {path}')
 
 
