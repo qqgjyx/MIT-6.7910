@@ -1161,8 +1161,8 @@ between blocks, even more than for $H$.
 %% python -m optsplit.analysis.anatomy_layers --plot Shakespeare=... TinyStories-10M=... TinyStories-30M=... --out report/figures
 \caption{Share of the top eigenvector by layer at the edge of stability (sharpness at least 0.9 of the threshold),
 mean and standard deviation over the five data orders; in brackets, the number of measured steps. For AdamW,
-of $P^{-1/2}HP^{-1/2}$ (which sets its threshold) and of $H$ at the same steps; for Muon, whose threshold is
-not on $H$, all steps. L$i$: transformer block $i$; norms: the gains of all LayerNorms.}
+of $P^{-1/2}HP^{-1/2}$ (which sets its threshold) and of $H$ at the same steps; for Muon, of $H$
+(Muon's threshold is on spectral-norm sharpness, not on $H$), all steps. L$i$: transformer block $i$; norms: the gains of all LayerNorms.}
 \label{fig:anatomy-layers}
 \end{figure}
 

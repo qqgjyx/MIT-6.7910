@@ -95,8 +95,9 @@ def average(rows):
     return np.mean([p[0] for p in per], 0), np.mean([p[1] for p in per], 0), len(per), sum(map(len, rows.values()))
 
 
-TITLES = dict(sgd='SGD: top eigenvector of $H$', adamw='AdamW: of $P^{-1/2}HP^{-1/2}$',
-              muon='Muon: of $H$ (its threshold is not on $H$)')
+TITLES = dict(sgd='SGD: top eigenvector of $H$', adamw='AdamW: top eigenvector of $P^{-1/2}HP^{-1/2}$',
+              muon='Muon: top eigenvector of $H$')
+NOTES = dict(muon="(Muon's threshold is on spectral-norm sharpness, not on $H$)")
 
 
 def plot(res, path):
@@ -129,7 +130,10 @@ def plot(res, path):
         ax.tick_params(length=0, pad=1.5)
         for sp in ax.spines.values():
             sp.set_linewidth(0.6)
-        fig.text((x + (h + 0.06 + bar) / 2) / W, (bottom + h + 0.05) / H, TITLES[o], ha='center', va='bottom', fontsize=7)
+        xc = (x + (h + 0.06 + bar) / 2) / W
+        fig.text(xc, (bottom + h + 0.14) / H, TITLES[o], ha='center', va='bottom', fontsize=7)
+        if o in NOTES:
+            fig.text(xc, (bottom + h + 0.04) / H, NOTES[o], ha='center', va='bottom', fontsize=5.5)
         bx.barh(range(len(names)), mass, height=0.7, color='0.45')
         bx.set_ylim(len(names) - 0.5, -0.5)
         bx.set_xlim(0, 100)
