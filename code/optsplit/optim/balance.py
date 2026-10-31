@@ -24,7 +24,7 @@ import math
 
 import torch
 
-from ..measure.hessian import adam_preconditioner, flat, lanczos, split
+from ..measure.hessian import _grad, adam_preconditioner, flat, lanczos, split
 from ..models import double_backward_ok, layer
 from .muon import zeropower_via_newtonschulz5
 
@@ -206,4 +206,120 @@ class Balancer:
     def load(self, state):
         self.log_m, self.log_g, self.X = state['log_m'].cpu(), state['log_g'], state['X']  # loaded onto the GPU
         self.ema = None if state['ema'] is None else state['ema'].cpu()
+        self.apply()
+
+    def after(self, step):
+        return None
+
+
+class StepBalancer:
+    """v2 (`balance.variant: R`, for AdamW and Muon): balances each layer's curvature along the step it actually
+    takes, on fresh training sequences. Every `balance.every` steps, with s the update of that step (without the
+    decoupled weight decay) and g, H the gradient and Hessian at the parameters before it, on `balance.pop_seqs`
+    fresh training sequences, layer a has
+        R_a = s_a^T (H s)_a / (-2 g_a^T s_a)
+    (the numerators and denominators summed over layers give the R of the whole step, which sits near 1 for AdamW
+    and Muon at their tuned rates: ts10m_stoch_eos). The numerators and denominators are smoothed by an EMA (weight
+    `balance.ema`), Rbar_a is their ratio, and after warmup
+        log m_a -= alpha dev_a,  dev_a = log Rbar_a - mean_b log Rbar_b,
+    with dev_a clipped to log `balance.clip`; a layer whose smoothed -2 g_a^T s_a <= 0 (its step does not lower the
+    population loss to first order, so it is mostly noise) gets the upper end (its rate goes down), one with
+    negative curvature along its step the lower end, and the mean runs over the other layers. log m is recentred to
+    geometric mean 1 and clipped to `balance.clip`, so that every layer is equally close to its own edge (in the
+    spirit of block Jacobi). No global scale. Every layer is balanced, Muon's AdamW part included.
+    `v1`, a Balancer on the old measure, is only evaluated (at the current rates) and logged for comparison."""
+
+    def __init__(self, cfg, opt, model, data, v1=None):
+        b = self.b = cfg.balance
+        self.opt, self.model, self.data, self.v1 = opt, model, data, v1
+        named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+        self.params = [p for _, p in named]
+        self.blocks = list(dict.fromkeys(layer(n, b.blocks) for n, _ in named))
+        self.bid = torch.cat([torch.full((p.numel(),), self.blocks.index(layer(n, b.blocks))) for n, p in named])
+        group = {p: g for g in opt.param_groups for p in g['params']}
+        self.groups = [group[p] for p in self.params]
+        self.start = cfg.schedule.warmup_steps if b.start is None else b.start
+        self.log_m, self.ema = torch.zeros(len(self.blocks), dtype=torch.float64), None
+        self.free = torch.tensor([n not in b.get('fixed', []) for n in self.blocks])
+        self.theta0, self.rec = None, {}
+
+    def rates(self):
+        return torch.where(self.free, self.log_m.exp().clamp(*self.b.clip), 1.0)
+
+    def apply(self):
+        r = self.rates()
+        for g in self.opt.param_groups:
+            g['lr_mult'] = r[self.blocks.index(g['block'])].item()
+
+    def step(self, step, mult):
+        """Before the update of `step`: at refresh steps, keep the parameters and log the old measure."""
+        if step % self.b.every:
+            return None
+        self.theta0 = [p.detach().clone() for p in self.params]
+        self.rec = {}
+        if self.v1 is not None:
+            v1 = self.v1
+            v1.log_m = torch.tensor([self.log_m[self.blocks.index(n)].item() for n in v1.blocks], dtype=torch.float64)
+            out = v1.spectral(step, mult) if v1.muon else v1.hhat(step, mult)
+            if out is not None:
+                lam, sh, rec = out
+                self.rec = dict(v1_lam=lam, v1_thr=v1.thr, v1_shares=dict(zip(v1.blocks, sh.tolist())),
+                                **{f'v1_{k}': v for k, v in rec.items()})
+        return None
+
+    def after(self, step):
+        """After the update of `step`: at refresh steps, measure R_a and update the multipliers. -> record or None."""
+        if self.theta0 is None:
+            return None
+        b, L = self.b, len(self.blocks)
+        theta1 = [p.detach().clone() for p in self.params]
+        # AdamW and Muon first decay p by (1 - lr wd), then add the update s
+        s = flat([t1 - t0 * (1 - g['lr'] * g.get('weight_decay', 0))
+                  for t0, t1, g in zip(self.theta0, theta1, self.groups)])
+        x, y = self.data.random_batches(1, b.pop_seqs, seed=5 * 10**6 + step)[0]
+        n, g, Hs, S = math.ceil(len(x) / b.chunk), 0.0, 0.0, split(s, self.params)
+        with double_backward_ok(), torch.autocast(s.device.type, enabled=False):
+            with torch.no_grad():
+                for p, t in zip(self.params, self.theta0):
+                    p.copy_(t)
+            for i in range(0, len(x), b.chunk):
+                grads = _grad(self.model.loss(x[i:i + b.chunk], y[i:i + b.chunk]), self.params, create_graph=True)
+                g = g + flat([t.detach() for t in grads]) / n
+                dot = sum((t * u).sum() for t, u in zip(grads, S) if t.requires_grad)
+                Hs = Hs + flat(_grad(dot, self.params)) / n
+                del grads, dot
+            with torch.no_grad():
+                for p, t in zip(self.params, theta1):
+                    p.copy_(t)
+        self.theta0 = None
+        per = lambda v: torch.zeros(L, dtype=torch.float64).index_add_(0, self.bid, v.double().cpu())  # noqa: E731
+        new = torch.stack([per(s * Hs), per(-2 * g * s)])
+        named = lambda t: dict(zip(self.blocks, t.tolist()))  # noqa: E731
+        rec = dict(R=(new[0].sum() / new[1].sum()).item(), R_a=named(new[0] / new[1]), num=named(new[0]),
+                   den=named(new[1]), **self.rec)
+        if not torch.isfinite(new).all():
+            return rec  # diverging; train.py stops at the next log step
+        self.ema = new if self.ema is None else self.ema + b.ema * (new - self.ema)
+        lo, hi = map(math.log, b.clip)
+        f, rbar = self.free, self.ema[0] / self.ema[1]
+        ok = (self.ema[0] > 0) & (self.ema[1] > 0)
+        logr = torch.where(ok, rbar.abs().log(), 0.0)
+        # log Rbar_a - mean over the layers with a positive ratio; a step that does not lower the loss to first
+        # order counts as too fast, one along negative curvature as too slow
+        dev = torch.where(ok, logr - (logr[ok & f].mean() if (ok & f).any() else 0.0),
+                          torch.where(self.ema[1] <= 0, hi, lo)).clamp(lo, hi)
+        if step >= self.start:
+            self.log_m = torch.where(f, self.log_m - b.alpha * dev, 0.0)
+            self.log_m = torch.where(f, self.log_m - self.log_m[f].mean(), 0.0).clamp(lo, hi)
+        self.apply()
+        return dict(rbar=named(rbar), dev=named(dev), m=named(self.log_m.exp()), rate=named(self.rates()), **rec)
+
+    def state_dict(self):
+        return dict(log_m=self.log_m, ema=self.ema, v1=self.v1 and self.v1.state_dict())
+
+    def load(self, state):
+        self.log_m = state['log_m'].cpu()
+        self.ema = None if state['ema'] is None else state['ema'].cpu()
+        if self.v1 is not None and state['v1'] is not None:
+            self.v1.X = state['v1']['X']
         self.apply()

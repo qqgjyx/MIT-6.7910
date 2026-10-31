@@ -21,7 +21,7 @@ from .measure.hessian import HVP
 from .measure.step_sharpness import StepSharpness
 from .models import build_model, muon_params
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
-from .optim.balance import Balancer
+from .optim.balance import Balancer, StepBalancer
 from .probe import Probe
 
 INTERRUPTED = 3
@@ -68,6 +68,8 @@ def main(argv):
                 if cfg.balance.fresh else (xh, yh)
             return HVP(model, x, y, [p for _, p in named])
         balancer = Balancer(cfg, opt, named, hvp)
+        if cfg.balance.variant == 'R':  # v2; the old measure is only logged
+            balancer = StepBalancer(cfg, opt, model, data, v1=balancer)
     probe = Probe(cfg, data)
     T = cfg.train.max_steps
 
@@ -157,6 +159,10 @@ def main(argv):
         opt.step()
         shadow.step()
         opt.zero_grad(set_to_none=True)
+        if balancer:
+            bal = balancer.after(step)
+            if bal:
+                log('balance', step, **bal)
         if probed:
             log('step_sharpness', step, **tracker.after(x, y, step))
 

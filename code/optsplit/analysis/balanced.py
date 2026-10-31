@@ -205,8 +205,9 @@ def page_js(pdf, title, d, plt, max_loss=5):
                 ax.plot(c['loss'], c['js'], color=col[variant(a)], lw=0.8, ls=':',
                         label=f'{variant(a)}: two data orders')
         ax.set(xlabel='training loss (fixed training probe)', title=f'data order {s}', yscale='log', ylim=(1e-3, 1))
-        lo = min([min(c['loss']) for c in [*floor, *d['cross'].values()] if c['loss']] or [0])
-        ax.set_xlim(max_loss, lo - 0.05)  # high to low loss
+        curves = [c['loss'] for c in [*floor, *d['cross'].values()] if c['loss']]
+        lo, hi = min(map(min, curves), default=0), max(map(max, curves), default=max_loss)
+        ax.set_xlim(min(max_loss, hi + 0.05), lo - 0.05)  # high to low loss
         ax.legend(fontsize=6)
     axes[0, 0].set_ylabel('JS divergence (bits)')
     fig.tight_layout()

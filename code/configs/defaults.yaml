@@ -37,7 +37,8 @@ schedule:
   min_lr_frac: 0.1
 
 balance:                      # curvature-balanced per-layer learning rates (optsplit/optim/balance.py)
-  variant: null               # null (off) | A (redistribute) | B (redistribute and scale to a target)
+  variant: null               # null (off) | A (redistribute) | B (redistribute and scale to a target) |
+                              # R (v2: equalize each layer's curvature along its step, on fresh sequences)
   blocks: layer               # layer | sublayer (attention and MLP of each block apart)
   every: 20                   # steps between refreshes of the top eigenvectors and the multipliers
   k: 3                        # tracked eigenvectors (shares are averaged over those within `cluster` of the top)
@@ -51,6 +52,8 @@ balance:                      # curvature-balanced per-layer learning rates (opt
   start: null                 # first step that updates the multipliers (null: end of warmup)
   fixed: []                   # blocks kept at the schedule's rate (still in the operator)
   fresh: false                # true: Hessian on fresh training sequences at every refresh, not the fixed batch
+  pop_seqs: 256               # R: fresh training sequences per refresh
+  chunk: 32                   # R: sequences per Hessian-vector product pass (memory)
   check_every: 500            # full Lanczos check of the tracked lambda_max (Muon: Frank-Wolfe from scratch)
   fw_iters: 5                 # Muon: Frank-Wolfe steps per refresh
 

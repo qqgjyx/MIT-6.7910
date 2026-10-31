@@ -7,7 +7,7 @@ from optsplit.config import load_config
 from optsplit.measure.hessian import HVP, flat
 from optsplit.models import build_model, double_backward_ok, layer, muon_params
 from optsplit.optim import build_optimizer, set_lr
-from optsplit.optim.balance import Balancer
+from optsplit.optim.balance import Balancer, StepBalancer
 
 GPT = ['task=gpt', 'model.n_layer=2', 'model.n_embd=8', 'model.n_head=2', 'model.block_size=6']
 
@@ -108,3 +108,45 @@ def test_muon_spectral():
     assert len(set(r)) > 1
     for g in opt.param_groups:
         assert g['lr_mult'] == (pytest.approx(r[bal.blocks.index(g['block'])]) if g['use_muon'] else 1.0)
+
+
+def test_step_balancer():
+    """v2 on a block-diagonal quadratic, isotropic within each layer, with plain gradient descent: there
+    R_a = lr_a h_a / 2, so equalizing R_a sets every rate to 1 / h_a up to the common geometric mean 1, and the
+    whole step's R is the rate-weighted mean that the record reports."""
+    names = ['transformer.wte.weight', 'transformer.h.0.mlp.c_fc.weight', 'transformer.h.1.mlp.c_fc.weight',
+             'lm_head.weight']
+    h = torch.tensor([8.0, 2.0, 0.5, 4.0])
+
+    class Quad:
+        params = [torch.nn.Parameter(torch.ones(n)) for n in (3, 4, 2, 3)]
+
+        def named_parameters(self):
+            return list(zip(names, self.params))
+
+        def loss(self, x, y):
+            return sum(0.5 * c * (p ** 2).sum() for c, p in zip(h, self.params))
+
+    class Data:
+        def random_batches(self, n_batches, n, seed):
+            return [(torch.zeros(n, 1), torch.zeros(n, 1))]
+
+    cfg = load_config(None, ['optimizer=sgd', 'balance.variant=R', 'balance.every=1', 'balance.start=0',
+                             'balance.pop_seqs=4', 'balance.chunk=2'])
+    model = Quad()
+    opt = torch.optim.SGD([dict(params=[p], block=layer(n)) for n, p in model.named_parameters()], lr=0.005)
+    for group in opt.param_groups:
+        group['base_lr'] = group['lr']
+    bal = StepBalancer(cfg, opt, model, Data())
+    for step in range(200):
+        bal.step(step, 1.0)
+        set_lr(opt, 1.0)
+        model.loss(None, None).backward()
+        opt.step()
+        opt.zero_grad()
+        rec = bal.after(step)
+    r = bal.rates()
+    assert r.log().mean().item() == pytest.approx(0, abs=1e-6)
+    torch.testing.assert_close(r.float() * h, torch.full((4,), (r.float() * h).mean().item()), rtol=0.03, atol=0)
+    assert list(rec['R_a'].values()) == pytest.approx((0.005 * r * h / 2).tolist(), rel=1e-2)
+    assert [group['lr_mult'] for group in opt.param_groups] == pytest.approx(r.tolist())
