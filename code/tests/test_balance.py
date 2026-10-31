@@ -4,7 +4,8 @@ import pytest
 import torch
 
 from optsplit.config import load_config
-from optsplit.models import build_model, layer
+from optsplit.measure.hessian import HVP, flat
+from optsplit.models import build_model, double_backward_ok, layer, muon_params
 from optsplit.optim import build_optimizer, set_lr
 from optsplit.optim.balance import Balancer
 
@@ -75,3 +76,32 @@ def test_quadratic(variant):
         assert r.log().mean().item() == pytest.approx(0, abs=1e-6)
     else:
         assert evals[-1].item() == pytest.approx(0.9 * 3.8, rel=1e-3)
+
+
+def test_muon_spectral():
+    """Muon: the balancer rescales only the Muon groups, its sigma_a sum to 1, and its rho is the spectral-norm
+    sharpness ratio of the Frank-Wolfe maximizer it tracks."""
+    cfg = load_config(None, GPT + ['optimizer=muon', 'balance.variant=B', 'balance.every=1', 'balance.start=0',
+                                   'balance.fw_iters=10'])
+    torch.manual_seed(0)
+    model = build_model(cfg, vocab_size=11)
+    x, y = torch.randint(0, 11, (4, 6)), torch.randint(0, 11, (4, 6))
+    opt = build_optimizer('muon', model, cfg)
+    named = [(n, p) for n, p in model.named_parameters() if n in muon_params(model)[0]]
+    mats = [p for _, p in named]
+    bal = Balancer(cfg, opt, named, lambda: HVP(model, x, y, mats))
+    rec = bal.step(0, 1.0)
+    assert sum(rec['shares'].values()) == pytest.approx(1)
+    with double_backward_ok():
+        hvp = HVP(model, x, y, mats)
+        q = (flat(bal.X) @ hvp(flat(bal.X))).item()
+        nuc = sum(s * torch.linalg.matrix_norm(g, 'nuc').item() for g, s in zip(hvp.grads, bal.shape))
+    assert q == pytest.approx(rec['S'], rel=1e-4)
+    assert rec['nuc'] == pytest.approx(nuc, rel=1e-4)
+    assert rec['lam'] == pytest.approx(cfg.optim.muon.lr * q / (2 * nuc), rel=1e-4)
+    for step in range(1, 4):
+        bal.step(step, 1.0)
+    r = bal.rates().tolist()
+    assert len(set(r)) > 1
+    for g in opt.param_groups:
+        assert g['lr_mult'] == (pytest.approx(r[bal.blocks.index(g['block'])]) if g['use_muon'] else 1.0)

@@ -17,7 +17,7 @@ from .config import load_config, run_dir, save_config, step_grid
 from .data import build_data
 from .measure import measure_step
 from .measure.hessian import HVP
-from .models import build_model
+from .models import build_model, muon_params
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
 from .optim.balance import Balancer
 from .probe import Probe
@@ -56,6 +56,8 @@ def main(argv):
     balancer = None
     if cfg.balance.variant:
         named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
+        if cfg.optimizer == 'muon':  # balanced on the matrices Muon updates
+            named = [(n, p) for n, p in named if n in muon_params(model)[0]]
         xh, yh = data.fixed_batch('train', cfg.measure.hessian_batch, seed=1)
         balancer = Balancer(cfg, opt, named, lambda: HVP(model, xh, yh, [p for _, p in named]))
     probe = Probe(cfg, data)
