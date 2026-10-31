@@ -13,3 +13,10 @@ runs:
   - {optimizer: [sgd, adamw, muon], balance.variant: A, train.data_seed: 0, name: "{optimizer}_A_d{train.data_seed}"}
   - {optimizer: [sgd, adamw, muon], balance.variant: B, balance.target: [0.5, 0.7, 0.9, 1.0], train.data_seed: 0,
      name: "{optimizer}_B{balance.target}_d{train.data_seed}"}
+  # SGD, second round. sgd_B0.9 blew up at step 3020 with the embedding at 10x: the 32-sequence Hessian batch sees
+  # only part of the vocabulary, so the embedding's curvature is underestimated. `-fe`: embedding kept at 1x.
+  - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], name: "sgd_A-fe_d0"}
+  - {optimizer: sgd, balance.variant: B, balance.target: [0.9, 1.0], balance.fixed: [[emb]],
+     name: "sgd_B{balance.target}-fe_d0"}
+  - {optimizer: sgd, balance.variant: B, balance.target: 1.0, train.data_seed: [1, 2],
+     name: "sgd_B{balance.target}_d{train.data_seed}"}

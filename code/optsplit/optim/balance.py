@@ -5,7 +5,8 @@ the run's schedule. Every `balance.every` steps, the top eigenpairs of Hhat = D^
 warm-started block iteration. With v the top eigenvector, s_a = ||v_a||^2 = d log lambda_max / d log m_a and
 sum_a s_a = 1; near-ties are handled by averaging the shares of the Ritz vectors within `balance.cluster` of the
 top. The shares are smoothed by an EMA, then
-  A: log m_a -= alpha (s_a - 1/L), recentred to mean 0 (equal shares maximize prod_a m_a at fixed lambda_max);
+  A: log m_a -= alpha (s_a - 1/L), recentred to mean 0 (equal shares maximize prod_a m_a at fixed lambda_max;
+     blocks in `balance.fixed` keep m_a = g = 1 and the others equalize their shares among themselves);
   B: A, and log g -= gain log(lambda_max / (target * threshold)), with the linear-stability threshold of Hhat:
      2 + 2 mu for SGD (heavy ball: buf = mu buf + grad, step lr buf), (2 + 2 beta1) / (1 - beta1) for AdamW.
 Every g m_a is clipped to `balance.clip`. Before `balance.start` (default: the end of warmup) the multipliers stay
@@ -96,6 +97,7 @@ class Balancer:
         self.eta, self.thr = cfg.optim[cfg.optimizer].lr, 1.0 if self.muon else threshold(cfg)
         self.start = cfg.schedule.warmup_steps if b.start is None else b.start
         self.log_m, self.log_g, self.ema = torch.zeros(len(self.blocks), dtype=torch.float64), 0.0, None
+        self.free = torch.tensor([n not in b.get('fixed', []) for n in self.blocks])
         gen = torch.Generator(device=dev).manual_seed(0)
         if self.muon:  # one block per matrix; the tracked state is the maximizer D
             self.pid = [self.blocks.index(layer(n, b.blocks)) for n, _ in named]
@@ -105,8 +107,8 @@ class Balancer:
             self.X = torch.randn(len(self.bid), b.k, generator=gen, device=dev)
 
     def rates(self):
-        """Each block's multiplier g m_a of the schedule's rate."""
-        return (self.log_m + self.log_g).exp().clamp(*self.b.clip)
+        """Each block's multiplier g m_a of the schedule's rate (1 for the blocks in `balance.fixed`)."""
+        return torch.where(self.free, (self.log_m + self.log_g).exp().clamp(*self.b.clip), 1.0)
 
     def apply(self):
         r = self.rates()
@@ -128,9 +130,9 @@ class Balancer:
             return dict(lam=lam, **rec)  # diverging; train.py stops at the next log step
         self.ema = new if self.ema is None else self.ema + b.ema * (new - self.ema)
         if step >= self.start:
-            lo, hi = map(math.log, b.clip)
-            self.log_m -= b.alpha * (self.ema - 1 / L)
-            self.log_m = (self.log_m - self.log_m.mean()).clamp(lo, hi)
+            lo, hi, f = *map(math.log, b.clip), self.free
+            self.log_m = torch.where(f, self.log_m - b.alpha * (self.ema - self.ema[f].mean()), 0.0)
+            self.log_m = torch.where(f, self.log_m - self.log_m[f].mean(), 0.0).clamp(lo, hi)
             if b.variant == 'B':
                 self.log_g = min(hi, max(lo, self.log_g - b.gain * math.log(lam / (b.target * self.thr))))
         self.apply()

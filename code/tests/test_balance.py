@@ -44,10 +44,11 @@ def test_group_rates(name):
         torch.testing.assert_close(scaled[n], mult[layer(n)] * plain[n])
 
 
-@pytest.mark.parametrize('variant', ['A', 'B'])
-def test_quadratic(variant):
+@pytest.mark.parametrize('variant,fixed', [('A', []), ('B', []), ('B', ['head'])])
+def test_quadratic(variant, fixed):
     """On a quadratic with known H (dominated by a rank-one part spread unevenly over 4 layers), A equalizes the
-    shares of the top eigenvector of D^1/2 H D^1/2, and B also brings its eigenvalue to the target."""
+    shares of the top eigenvector of D^1/2 H D^1/2, and B also brings its eigenvalue to the target. A fixed block
+    keeps rate 1 while the others equalize their shares."""
     names = ['transformer.wte.weight', 'transformer.h.0.mlp.c_fc.weight', 'transformer.h.1.mlp.c_fc.weight',
              'lm_head.weight']
     sizes, norms = [3, 4, 2, 3], [2.0, 1.0, 0.6, 0.4]
@@ -56,7 +57,8 @@ def test_quadratic(variant):
     E = torch.randn(12, 12, generator=g)
     H = 120 * torch.outer(u, u) + E @ E.T / 12
     cfg = load_config(None, ['optimizer=sgd', 'optim.sgd.lr=0.01', f'balance.variant={variant}', 'balance.every=1',
-                             'balance.start=0', 'balance.ema=0.5', 'balance.alpha=0.5', 'balance.gain=0.5'])
+                             'balance.start=0', 'balance.ema=0.5', 'balance.alpha=0.5', 'balance.gain=0.5',
+                             f'balance.fixed={fixed}'])
     params = [torch.nn.Parameter(torch.zeros(n)) for n in sizes]
     opt = torch.optim.SGD([dict(params=[p], block=layer(n)) for n, p in zip(names, params)], lr=0.01, momentum=0.9)
     for group in opt.param_groups:
@@ -69,8 +71,9 @@ def test_quadratic(variant):
     assert [group['lr_mult'] for group in opt.param_groups] == pytest.approx(r.tolist())
     d = (0.01 * r.float())[bal.bid].sqrt()
     evals, V = torch.linalg.eigh(d[:, None] * H * d[None, :])
-    shares = torch.zeros(4).index_add_(0, bal.bid, V[:, -1] ** 2)
-    torch.testing.assert_close(shares, torch.full((4,), 0.25), atol=0.01, rtol=0)
+    shares = torch.zeros(4).index_add_(0, bal.bid, V[:, -1] ** 2)[bal.free]
+    torch.testing.assert_close(shares, torch.full_like(shares, shares.mean().item()), atol=0.01, rtol=0)
+    assert (r[~bal.free] == 1).all()
     assert rec['lam'] == pytest.approx(evals[-1].item(), rel=1e-3)
     if variant == 'A':
         assert r.log().mean().item() == pytest.approx(0, abs=1e-6)
