@@ -33,3 +33,9 @@ runs:
   - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
      name: "adamw_A-fe_d0"}
   - {optimizer: adamw, balance.variant: A, train.data_seed: [1, 2], name: "adamw_A_d{train.data_seed}"}
+  # SGD final: B1 (best final loss, stable on orders 0-2) and A-fe (the baseline's mean rate, only redistributed
+  # across layers; second best on order 0) on orders 0-2. B0.9-fe blew up at step 5470: its tracked lambda_max sat
+  # just below the target, so g kept rising (2.7 -> 3.5) until an instability the 32-sequence Hessian batch did
+  # not show.
+  - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [1, 2],
+     name: "sgd_A-fe_d{train.data_seed}"}
