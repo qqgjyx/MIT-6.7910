@@ -1,0 +1,16 @@
+run                                              status      step        lr   train     val    acc
+shakespeare_main/adamw_d0                        done        1500    0.0003  1.1638  1.5525  0.548
+shakespeare_main/adamw_d1                        done        1500    0.0003  1.1626  1.5464  0.548
+shakespeare_main/adamw_d2                        done        1500    0.0003  1.1538  1.5491  0.548
+shakespeare_main/adamw_d3                        done        1500    0.0003  1.1736  1.5435  0.550
+shakespeare_main/adamw_d4                        done        1500    0.0003  1.1606  1.5511  0.548
+shakespeare_main/muon_d0                         done        1500      0.04  0.1916  2.8586  0.530
+shakespeare_main/muon_d1                         done        1500      0.04  0.1890  2.8657  0.530
+shakespeare_main/muon_d2                         done        1500      0.04  0.1939  2.8389  0.527
+shakespeare_main/muon_d3                         done        1500      0.04  0.1809  2.8648  0.528
+shakespeare_main/muon_d4                         done        1500      0.04  0.1884  2.8766  0.529
+shakespeare_main/sgd_d0                          done        1500      0.05  2.4162  2.4339  0.284
+shakespeare_main/sgd_d1                          done        1500      0.05  2.5803  2.5781  0.264
+shakespeare_main/sgd_d2                          done        1500      0.05  2.3173  2.3513  0.309
+shakespeare_main/sgd_d3                          done        1500      0.05  2.3292  2.3513  0.305
+shakespeare_main/sgd_d4                          done        1500      0.05  1.6642  1.8341  0.452

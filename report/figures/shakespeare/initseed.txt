@@ -1,0 +1,28 @@
+adamw other init: 0.0677, other data: 0.0627, vs muon: 0.2612, vs sgd: 0.3807 (step 1500)
+muon other init: 0.2880, other data: 0.2919, vs adamw: 0.2612, vs sgd: 0.5777 (step 1500)
+sgd other init: 0.0530, other data: 0.0670, vs adamw: 0.3807, vs muon: 0.5777 (step 1500)
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare/figures/initseed_js.png
+adamw vs muon: t* at loss 4.1748 (95% CI 4.1748-4.1748, split found in 49% of bootstraps)
+  shakespeare_initseed/adamw_i1_d0: step 1 (CI [1, 1])
+  shakespeare_initseed/adamw_i1_d1: step 1 (CI [1, 1])
+  shakespeare_initseed/muon_i1_d0: step 2 (CI [2, 2])
+  shakespeare_initseed/muon_i1_d1: step 2 (CI [2, 2])
+  episodes above the floor (loss from, to): 4.175-2.859, 2.410-2.023
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_initseed/adamw_i1_d0': None, 'shakespeare_initseed/adamw_i1_d1': None, 'shakespeare_initseed/muon_i1_d0': None, 'shakespeare_initseed/muon_i1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare/split_i1_adamw_muon.json
+adamw vs sgd: t* at loss 4.1748 (95% CI 4.1748-4.1748, split found in 49% of bootstraps)
+  shakespeare_initseed/adamw_i1_d0: step 1 (CI [1, 1])
+  shakespeare_initseed/adamw_i1_d1: step 1 (CI [1, 1])
+  shakespeare_initseed/sgd_i1_d0: step 1 (CI [1, 1])
+  shakespeare_initseed/sgd_i1_d1: step 1 (CI [1, 1])
+  episodes above the floor (loss from, to): 4.175-3.039, 2.766-2.537
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_initseed/adamw_i1_d0': None, 'shakespeare_initseed/adamw_i1_d1': None, 'shakespeare_initseed/sgd_i1_d0': None, 'shakespeare_initseed/sgd_i1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare/split_i1_adamw_sgd.json
+muon vs sgd: t* at loss 4.2003 (95% CI 4.2003-4.2003, split found in 49% of bootstraps)
+  shakespeare_initseed/muon_i1_d0: step 1 (CI [1, 1])
+  shakespeare_initseed/muon_i1_d1: step 1 (CI [1, 1])
+  shakespeare_initseed/sgd_i1_d0: step 1 (CI [1, 1])
+  shakespeare_initseed/sgd_i1_d1: step 1 (CI [1, 1])
+  episodes above the floor (loss from, to): 4.200-3.125, 2.799-2.509
+  persistent split at loss 2.7990 (95% CI 2.7990-2.7990, found in 49% of bootstraps); steps: {'shakespeare_initseed/muon_i1_d0': 14, 'shakespeare_initseed/muon_i1_d1': 17, 'shakespeare_initseed/sgd_i1_d0': 335, 'shakespeare_initseed/sgd_i1_d1': 250}
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare/split_i1_muon_sgd.json

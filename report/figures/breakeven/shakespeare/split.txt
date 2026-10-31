@@ -1,0 +1,10 @@
+sgd vs sgd: t* at loss 3.7448 (95% CI 3.3195-3.7448, split found in 68% of bootstraps)
+  episodes above the floor (loss from, to): 3.745-3.282
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_breakeven/sgd_lr0.03_d0': None, 'shakespeare_breakeven/sgd_lr0.03_d1': None, 'shakespeare_breakeven/sgd_lr0.03_d2': None, 'shakespeare_breakeven/sgd_lr0.1_d0': None, 'shakespeare_breakeven/sgd_lr0.1_d1': None, 'shakespeare_breakeven/sgd_lr0.1_d2': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/shakespeare_breakeven/split_0.03_0.1.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/shakespeare_breakeven/figures/divergence_0.03_0.1.png
+sgd vs sgd: t* at loss nan (95% CI nan-nan, split found in 0% of bootstraps)
+  episodes above the floor (loss from, to): 
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_breakeven/sgd_lr0.1_d0': None, 'shakespeare_breakeven/sgd_lr0.1_d1': None, 'shakespeare_breakeven/sgd_lr0.1_d2': None, 'shakespeare_breakeven/sgd_lr0.3_d0': None, 'shakespeare_breakeven/sgd_lr0.3_d1': None, 'shakespeare_breakeven/sgd_lr0.3_d2': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/shakespeare_breakeven/split_0.1_0.3.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/shakespeare_breakeven/figures/divergence_0.1_0.3.png

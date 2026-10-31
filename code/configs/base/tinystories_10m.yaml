@@ -1,0 +1,16 @@
+# TinyStories with a 4096-token BPE; ~11M (body) + 3M (embedding and head) parameters.
+# 128 x 256 tokens per step, 10k steps = 330M tokens (about 0.6 epochs).
+task: gpt
+dataset: tinystories
+model: {block_size: 256, n_layer: 6, n_head: 6, n_embd: 384}
+train: {batch_size: 128, max_steps: 10000}
+optim:
+  adamw: {lr: 2.0e-3}
+  muon: {adam_lr: 2.0e-3}
+schedule: {warmup_steps: 200, decay: cosine, min_lr_frac: 0.1}
+log:
+  eval_steps: {every: 250, geometric: 30}
+  ckpt_steps: {every: 1000, geometric: 12}
+probe: {n_seqs: 128, positions_per_seq: 16, train_seqs: 64}
+measure:
+  steps: {every: 500, geometric: 30}

@@ -1,0 +1,452 @@
+[
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.0003",
+  "optimizer": "adamw",
+  "lr": 0.0003,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 0.42198111260324955,
+  "last": 0.6597471189974056,
+  "last_loss": 1.1703317165374756
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.0003",
+  "optimizer": "adamw",
+  "lr": 0.0003,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.1073738953477508,
+  "last": 1.000001153271573,
+  "last_loss": 1.1703317165374756
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.0003",
+  "optimizer": "adamw",
+  "lr": 0.0003,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.447968742376994,
+  "last": 1.447968742376994,
+  "last_loss": 2.4687438011169434
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.001",
+  "optimizer": "adamw",
+  "lr": 0.001,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.4954883490044386,
+  "last": 1.453705494657299,
+  "last_loss": 1.2077606916427612
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.001",
+  "optimizer": "adamw",
+  "lr": 0.001,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.0345129619435764,
+  "last": 1.0693123744976696,
+  "last_loss": 0.7104469537734985
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.001",
+  "optimizer": "adamw",
+  "lr": 0.001,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.612024207723471,
+  "last": 1.612024207723471,
+  "last_loss": 2.443535804748535
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.002",
+  "optimizer": "adamw",
+  "lr": 0.002,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.5989187607906357,
+  "last": 1.5746431224361928,
+  "last_loss": 1.202846884727478
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.002",
+  "optimizer": "adamw",
+  "lr": 0.002,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.036522880524627,
+  "last": 1.080504564331008,
+  "last_loss": 0.7606802582740784
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.002",
+  "optimizer": "adamw",
+  "lr": 0.002,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.5263740358150162,
+  "last": 1.5263740358150162,
+  "last_loss": 2.4276139736175537
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.004",
+  "optimizer": "adamw",
+  "lr": 0.004,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.5891351183313263,
+  "last": 1.5539046823421216,
+  "last_loss": 1.1706074476242065
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.004",
+  "optimizer": "adamw",
+  "lr": 0.004,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.0647440591288335,
+  "last": 1.0752153989104785,
+  "last_loss": 1.0548717975616455
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.004",
+  "optimizer": "adamw",
+  "lr": 0.004,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.9697900011199803,
+  "last": 1.9697900011199803,
+  "last_loss": 2.4357826709747314
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.008",
+  "optimizer": "adamw",
+  "lr": 0.008,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 3.086326589301741,
+  "last": 3.086326589301741,
+  "last_loss": 2.4393601417541504
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.008",
+  "optimizer": "adamw",
+  "lr": 0.008,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 2.824388642577537,
+  "last": 3.0077242094302172,
+  "last_loss": 2.4393601417541504
+ },
+ {
+  "run": "shakespeare_lrsweep/adamw_lr0.008",
+  "optimizer": "adamw",
+  "lr": 0.008,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.5443029434173057,
+  "last": 1.5443029434173057,
+  "last_loss": 2.4393601417541504
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.005",
+  "optimizer": "muon",
+  "lr": 0.005,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.030544128191051,
+  "last": 0.9619567980252032,
+  "last_loss": 1.1529911756515503
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.005",
+  "optimizer": "muon",
+  "lr": 0.005,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.0659609231780824,
+  "last": 1.0471278189710564,
+  "last_loss": 0.1931905746459961
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.005",
+  "optimizer": "muon",
+  "lr": 0.005,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.49428340996226,
+  "last": 1.49428340996226,
+  "last_loss": 2.4054982662200928
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.01",
+  "optimizer": "muon",
+  "lr": 0.01,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.123504093042699,
+  "last": 0.9838670489143719,
+  "last_loss": 1.1869981288909912
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.01",
+  "optimizer": "muon",
+  "lr": 0.01,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.0514008436921853,
+  "last": 1.053580429885373,
+  "last_loss": 0.2339460849761963
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.01",
+  "optimizer": "muon",
+  "lr": 0.01,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": NaN,
+  "last_loss": NaN
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.02",
+  "optimizer": "muon",
+  "lr": 0.02,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.0771161400141347,
+  "last": 1.004707473276034,
+  "last_loss": 1.1557157039642334
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.02",
+  "optimizer": "muon",
+  "lr": 0.02,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.0213268074465995,
+  "last": 1.0199481686805587,
+  "last_loss": 0.6059590578079224
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.02",
+  "optimizer": "muon",
+  "lr": 0.02,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": NaN,
+  "last_loss": NaN
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.04",
+  "optimizer": "muon",
+  "lr": 0.04,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.0598029223851002,
+  "last": 1.0598029223851002,
+  "last_loss": 1.1875901222229004
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.04",
+  "optimizer": "muon",
+  "lr": 0.04,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 0.9214738885568297,
+  "last": 0.964258784656269,
+  "last_loss": 0.34688442945480347
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.04",
+  "optimizer": "muon",
+  "lr": 0.04,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": NaN,
+  "last_loss": NaN
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.08",
+  "optimizer": "muon",
+  "lr": 0.08,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 1.4223218222562948,
+  "last": 1.5670572184322518,
+  "last_loss": 1.5438941717147827
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.08",
+  "optimizer": "muon",
+  "lr": 0.08,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 1.2078720247778842,
+  "last": 1.527176018782385,
+  "last_loss": 1.5438941717147827
+ },
+ {
+  "run": "shakespeare_lrsweep/muon_lr0.08",
+  "optimizer": "muon",
+  "lr": 0.08,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": NaN,
+  "last_loss": NaN
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.05",
+  "optimizer": "sgd",
+  "lr": 0.05,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": NaN,
+  "last": 1.3015535884248495,
+  "last_loss": 2.484968662261963
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.05",
+  "optimizer": "sgd",
+  "lr": 0.05,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": NaN,
+  "last": 1.4514944000728243,
+  "last_loss": 2.484968662261963
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.05",
+  "optimizer": "sgd",
+  "lr": 0.05,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": 0.780733500083621,
+  "last_loss": 2.484968662261963
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.1",
+  "optimizer": "sgd",
+  "lr": 0.1,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": NaN,
+  "last": 1.9110838611927317,
+  "last_loss": 2.639564037322998
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.1",
+  "optimizer": "sgd",
+  "lr": 0.1,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": NaN,
+  "last": 2.5424843661990466,
+  "last_loss": 2.639564037322998
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.1",
+  "optimizer": "sgd",
+  "lr": 0.1,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": 0.7298293696092844,
+  "last_loss": 2.639564037322998
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.15",
+  "optimizer": "sgd",
+  "lr": 0.15,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": NaN,
+  "last": 1.9399254334388598,
+  "last_loss": 2.616732120513916
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.15",
+  "optimizer": "sgd",
+  "lr": 0.15,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": NaN,
+  "last": 2.361692436405393,
+  "last_loss": 2.616732120513916
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.15",
+  "optimizer": "sgd",
+  "lr": 0.15,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": 1.1501742109349697,
+  "last_loss": 2.616732120513916
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.2",
+  "optimizer": "sgd",
+  "lr": 0.2,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": 2.1651716706815645,
+  "last": 2.284735069391021,
+  "last_loss": 2.4195916652679443
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.2",
+  "optimizer": "sgd",
+  "lr": 0.2,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": 2.3783879464950655,
+  "last": 2.214374041742561,
+  "last_loss": 2.4195916652679443
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.2",
+  "optimizer": "sgd",
+  "lr": 0.2,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": 1.489321969138306,
+  "last": 1.5122487908219573,
+  "last_loss": 2.4195916652679443
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.25",
+  "optimizer": "sgd",
+  "lr": 0.25,
+  "ref": "shakespeare_main/adamw_d0",
+  "ref_optimizer": "adamw",
+  "median_late": NaN,
+  "last": 1.8172043101334485,
+  "last_loss": 2.640270233154297
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.25",
+  "optimizer": "sgd",
+  "lr": 0.25,
+  "ref": "shakespeare_main/muon_d0",
+  "ref_optimizer": "muon",
+  "median_late": NaN,
+  "last": 2.446260069206714,
+  "last_loss": 2.640270233154297
+ },
+ {
+  "run": "shakespeare_lrsweep/sgd_lr0.25",
+  "optimizer": "sgd",
+  "lr": 0.25,
+  "ref": "shakespeare_main/sgd_d0",
+  "ref_optimizer": "sgd",
+  "median_late": NaN,
+  "last": 0.7007812947541191,
+  "last_loss": 2.640270233154297
+ }
+]

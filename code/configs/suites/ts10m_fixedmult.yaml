@@ -1,0 +1,27 @@
+# Are the per-layer rates the balancer finds better by themselves, without the online adaptation? No balancing:
+# layer a trains at eta(t) m_a for the whole run (warmup included), with m_a fixed at the final multipliers (step
+# 9980) of the redistribution-only balanced runs on data order 0 (ts10m_balanced: sgd_A-fe_d0, adamw_A-fe_d0,
+# muon_A_d0; geometric mean 1). Embedding at 1 as in -fe; for Muon only the Muon groups (the matrices of blocks 1-6)
+# are scaled, its auxiliary AdamW (embedding, head, norms) keeps the schedule's rate, as in muon_A. Rates,
+# initialization and schedule of ts10m_main, data orders 0-2.
+suite: ts10m_fixedmult
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  balance.variant: F
+  measure.batch_sharpness_batches: 0  # as in ts10m_balanced, so that 3 runs fit a 44 GB GPU
+name: "{optimizer}_fixed_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, train.data_seed: [0, 1, 2], balance.mults: {emb: 1.0, '1': 0.1324, '2': 0.9172, '3': 0.8397,
+                                                                '4': 0.5839, '5': 0.9508, '6': 2.7136, head: 6.5089}}
+  - {optimizer: adamw, train.data_seed: [0, 1], balance.mults: {emb: 1.0, '1': 0.1572, '2': 0.9213, '3': 0.9441,
+                                                               '4': 1.2439, '5': 1.8440, '6': 2.2498, head: 1.4170}}
+  # d2 also saves the optimizer state (fork checkpoints) for the preconditioned layer heatmaps (curvature_layers.py);
+  # set before it started, d0-d1 were already running
+  - {optimizer: adamw, train.data_seed: 2, log.fork_steps: [[5000, 7500, 10000]],
+     balance.mults: {emb: 1.0, '1': 0.1572, '2': 0.9213, '3': 0.9441, '4': 1.2439, '5': 1.8440, '6': 2.2498,
+                     head: 1.4170}}
+  - {optimizer: muon, train.data_seed: [0, 1, 2], balance.mults: {'1': 0.2470, '2': 0.5595, '3': 0.8385, '4': 1.1972,
+                                                                 '5': 2.9195, '6': 2.4687}}

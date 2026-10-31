@@ -1,0 +1,7 @@
+# Swaps from the smoke runs (forks start from their parent's config).
+suite: smoke_forks
+base: ../base/shakespeare_char.yaml
+overrides: {shadow: [], log.fork_steps: []}
+runs:
+  - {fork.parent: smoke/adamw_d0, optimizer: [sgd, muon], fork.step: [50, 150], name: "adamw_to_{optimizer}_at{fork.step}"}
+  - {fork.parent: smoke/adamw_d0, optimizer: adamw, train.data_seed: 1, fork.step: [50, 150], name: "adamw_to_adamw_d1_at{fork.step}"}

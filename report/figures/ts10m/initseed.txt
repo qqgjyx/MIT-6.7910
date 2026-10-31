@@ -1,0 +1,28 @@
+adamw other init: 0.0539, other data: 0.0618, vs muon: 0.0578, vs sgd: 0.1556 (step 10000)
+muon other init: 0.0547, other data: 0.0587, vs adamw: 0.0578, vs sgd: 0.1614 (step 10000)
+sgd other init: 0.1167, other data: 0.1156, vs adamw: 0.1556, vs muon: 0.1614 (step 10000)
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts10m/figures/initseed_js.png
+adamw vs muon: t* at loss 8.3136 (95% CI 8.3136-8.3136, split found in 49% of bootstraps)
+  ts10m_initseed/adamw_i1_d0: step 1 (CI [1, 1])
+  ts10m_initseed/adamw_i1_d1: step 1 (CI [1, 1])
+  ts10m_initseed/muon_i1_d0: step 7 (CI [7, 7])
+  ts10m_initseed/muon_i1_d1: step 7 (CI [7, 7])
+  episodes above the floor (loss from, to): 8.314-4.270
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts10m_initseed/adamw_i1_d0': None, 'ts10m_initseed/adamw_i1_d1': None, 'ts10m_initseed/muon_i1_d0': None, 'ts10m_initseed/muon_i1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts10m/split_i1_adamw_muon.json
+adamw vs sgd: t* at loss 8.3136 (95% CI 8.3136-8.3136, split found in 49% of bootstraps)
+  ts10m_initseed/adamw_i1_d0: step 1 (CI [1, 1])
+  ts10m_initseed/adamw_i1_d1: step 1 (CI [1, 1])
+  ts10m_initseed/sgd_i1_d0: step 4 (CI [4, 4])
+  ts10m_initseed/sgd_i1_d1: step 4 (CI [4, 4])
+  episodes above the floor (loss from, to): 8.314-6.213
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts10m_initseed/adamw_i1_d0': None, 'ts10m_initseed/adamw_i1_d1': None, 'ts10m_initseed/sgd_i1_d0': None, 'ts10m_initseed/sgd_i1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts10m/split_i1_adamw_sgd.json
+muon vs sgd: t* at loss 8.4272 (95% CI 8.4272-8.4272, split found in 49% of bootstraps)
+  ts10m_initseed/muon_i1_d0: step 1 (CI [1, 1])
+  ts10m_initseed/muon_i1_d1: step 1 (CI [1, 1])
+  ts10m_initseed/sgd_i1_d0: step 1 (CI [1, 1])
+  ts10m_initseed/sgd_i1_d1: step 1 (CI [1, 1])
+  episodes above the floor (loss from, to): 8.427-6.776
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts10m_initseed/muon_i1_d0': None, 'ts10m_initseed/muon_i1_d1': None, 'ts10m_initseed/sgd_i1_d0': None, 'ts10m_initseed/sgd_i1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts10m/split_i1_muon_sgd.json

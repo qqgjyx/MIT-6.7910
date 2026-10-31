@@ -1,0 +1,13 @@
+# TinyStories, ~25M (body) + 4M (embedding and head) parameters; 20k steps = 650M tokens (~1.2 epochs).
+base: tinystories_10m.yaml
+model: {n_layer: 8, n_head: 8, n_embd: 512}
+train: {max_steps: 20000}
+optim:
+  adamw: {lr: 1.5e-3}
+  muon: {adam_lr: 1.5e-3}
+schedule: {warmup_steps: 400}
+log:
+  eval_steps: {every: 500, geometric: 30}
+  ckpt_steps: {every: 2000, geometric: 12}
+measure:
+  steps: {every: 1000, geometric: 30}

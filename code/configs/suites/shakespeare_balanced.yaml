@@ -1,0 +1,19 @@
+# Curvature-balanced per-layer learning rates (optsplit/optim/balance.py) on Shakespeare (characters), with the
+# settings that did best on TinyStories-10M (ts10m_balanced), from the rates, initialization and data orders of
+# shakespeare_main. Plain SGD stalls near the bigram loss (~2.5) at every rate there.
+suite: shakespeare_balanced
+base: ../base/shakespeare_char.yaml
+overrides:
+  optim.sgd.lr: 0.05
+  optim.adamw.lr: 3.0e-4
+  optim.muon.lr: 0.04
+  measure.batch_sharpness_batches: 0
+runs:
+  - {optimizer: sgd, balance.variant: B, balance.target: 1.0, train.data_seed: [0, 1, 2],
+     name: "sgd_B{balance.target}_d{train.data_seed}"}
+  - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [0, 1, 2],
+     name: "sgd_A-fe_d{train.data_seed}"}
+  # AdamW and Muon: the variant closest to the baseline on TinyStories-10M (none beat it by more than 0.01).
+  - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
+     train.data_seed: [0, 1, 2], name: "adamw_A-fe_d{train.data_seed}"}
+  - {optimizer: muon, balance.variant: A, train.data_seed: [0, 1, 2], name: "muon_A_d{train.data_seed}"}

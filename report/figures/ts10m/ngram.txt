@@ -1,0 +1,4 @@
+ts10m_main/adamw_d0: closest to unigram 0.195 at loss 5.52, to bigram 0.162 at loss 3.97
+ts10m_main/muon_d0: closest to unigram 0.163 at loss 5.81, to bigram 0.141 at loss 3.87
+ts10m_main/sgd_d0: closest to unigram 0.023 at loss 5.94, to bigram 0.197 at loss 3.79
+wrote /orcd/pool/014/conchell/optsplit/analysis/ts10m/figures/ngram.png

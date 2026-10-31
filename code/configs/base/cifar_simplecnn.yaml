@@ -1,0 +1,19 @@
+# SimpleCNN on CIFAR-10 as in Jastrzebski et al. (2020): constant learning rate, batch 128, no
+# augmentation; 390 steps per epoch, 100 epochs. Hessian on 5% of the training set, K from L = 25 gradients.
+task: cnn
+dataset: cifar10
+model: {cnn_width: 32, cnn_hidden: 128, activation: relu}
+train: {batch_size: 128, max_steps: 39000, dtype: float32}
+optimizer: sgd
+optim:
+  sgd: {lr: 0.01, momentum: 0.0}
+schedule: {warmup_steps: 0, decay: constant}
+log:
+  eval_steps: {every: 390, geometric: 40}
+  ckpt_steps: {every: 3900, geometric: 12}
+probe: {n_seqs: 10000, train_seqs: 2000}
+measure:
+  steps: {every: 390, geometric: 30}
+  hessian_batch: 2500
+  gradcov: true
+  gradcov_L: 25

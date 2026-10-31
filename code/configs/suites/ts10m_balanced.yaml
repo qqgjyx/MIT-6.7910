@@ -1,0 +1,48 @@
+# Curvature-balanced per-layer learning rates (optsplit/optim/balance.py) on TinyStories-10M, from the rates,
+# initialization and data orders of ts10m_main. Variant A only redistributes the rate across layers; B also scales
+# it so that lambda_max of the balanced operator sits at `balance.target` times its stability threshold.
+suite: ts10m_balanced
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  measure.batch_sharpness_batches: 0  # its 128-sequence double backward is the memory peak; 3 runs then fit a 44 GB GPU
+# Muon is balanced on its spectral-norm sharpness instead of H (see balance.py).
+runs:
+  - {optimizer: [sgd, adamw, muon], balance.variant: A, train.data_seed: 0, name: "{optimizer}_A_d{train.data_seed}"}
+  - {optimizer: [sgd, adamw, muon], balance.variant: B, balance.target: [0.5, 0.7, 0.9, 1.0], train.data_seed: 0,
+     name: "{optimizer}_B{balance.target}_d{train.data_seed}"}
+  # SGD, second round. sgd_B0.9 blew up at step 3020 with the embedding at 10x: the 32-sequence Hessian batch sees
+  # only part of the vocabulary, so the embedding's curvature is underestimated. `-fe`: embedding kept at 1x.
+  - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], name: "sgd_A-fe_d0"}
+  - {optimizer: sgd, balance.variant: B, balance.target: [0.9, 1.0], balance.fixed: [[emb]],
+     name: "sgd_B{balance.target}-fe_d0"}
+  - {optimizer: sgd, balance.variant: B, balance.target: 1.0, train.data_seed: [1, 2],
+     name: "sgd_B{balance.target}_d{train.data_seed}"}
+  # SGD, third round. B1 ends with most layers at the 10x cap (0.3) and block 1 near 1.6x, but ts10m_lr found plain SGD
+  # at 0.06-0.12 far better than 0.03 on data order 0 (1.62, 1.55) and ts10m_main found 0.1 unstable on orders 1-3:
+  # plain SGD at 0.12 against A (embedding fixed) from the same base rate, on orders 0-2.
+  - {optimizer: sgd, optim.sgd.lr: 0.12, train.data_seed: [0, 1, 2], name: "sgd_plain-lr0.12_d{train.data_seed}"}
+  - {optimizer: sgd, optim.sgd.lr: 0.12, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [0, 1, 2],
+     name: "sgd_A-fe-lr0.12_d{train.data_seed}"}
+  # AdamW, second round: A was the only variant on par with the baseline (B pushed g down to 0.1 below the target
+  # and up to 5-10x above it, both worse). The tracked lambda_max was often below the Lanczos check and the
+  # embedding's preconditioned curvature spikes, so `-fe` also keeps the embedding at 1x and tracks 4 vectors with 3
+  # iterations. A on data orders 1-2.
+  - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
+     name: "adamw_A-fe_d0"}
+  - {optimizer: adamw, balance.variant: A, train.data_seed: [1, 2], name: "adamw_A_d{train.data_seed}"}
+  # SGD final: B1 (best final loss, stable on orders 0-2) and A-fe (the baseline's mean rate, only redistributed
+  # across layers; second best on order 0) on orders 0-2. B0.9-fe blew up at step 5470: its tracked lambda_max sat
+  # just below the target, so g kept rising (2.7 -> 3.5) until an instability the 32-sequence Hessian batch did
+  # not show.
+  - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [1, 2],
+     name: "sgd_A-fe_d{train.data_seed}"}
+  # B1-fe and B0.9-fe again with lambda_max measured on fresh training sequences at every refresh (the stochastic
+  # EoS test, ts10m_stoch_eos, finds AdamW and Muon at the edge on fresh sequences, not on a fixed batch).
+  - {optimizer: sgd, balance.variant: B, balance.target: [0.9, 1.0], balance.fixed: [[emb]], balance.fresh: true,
+     name: "sgd_B{balance.target}-fe-fresh_d0"}
+  # B0.9-fe-fresh finished at 1.664 where B0.9-fe blew up (B1-fe-fresh still blew up at step 1240): orders 1-2.
+  - {optimizer: sgd, balance.variant: B, balance.target: 0.9, balance.fixed: [[emb]], balance.fresh: true,
+     train.data_seed: [1, 2], name: "sgd_B{balance.target}-fe-fresh_d{train.data_seed}"}

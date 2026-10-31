@@ -15,3 +15,7 @@ page of implications.
 
 Build from `litreview/` with `latexmk -pdf <file>.tex`. Shared preamble in `preamble.tex`;
 bibliography in `refs.bib` (titles and authors from arXiv, venues checked against proceedings).
+
+## Topic 3 project code
+
+`code/` holds the experiments of `project_plan/project_plan.pdf` (setup and usage in `code/README.md`).

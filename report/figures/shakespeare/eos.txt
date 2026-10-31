@@ -1,0 +1,15 @@
+shakespeare_main/adamw_d0        warmup  100  at EoS 1-500 (14% of measurements), max ratio 4.42  first(adamw|muon)=1 ratio 4.42 first(adamw|sgd)=1 ratio 4.42
+shakespeare_main/adamw_d1        warmup  100  at EoS 1-500 (12% of measurements), max ratio 3.09  first(adamw|muon)=1 ratio 3.09 first(adamw|sgd)=1 ratio 3.09
+shakespeare_main/adamw_d2        warmup  100  at EoS 1-425 (11% of measurements), max ratio 2.68  first(adamw|muon)=1 ratio 2.68 first(adamw|sgd)=1 ratio 2.68
+shakespeare_main/adamw_d3        warmup  100  at EoS 1-425 (11% of measurements), max ratio 8.27  first(adamw|muon)=1 ratio 8.27 first(adamw|sgd)=1 ratio 8.27
+shakespeare_main/adamw_d4        warmup  100  at EoS 1-600 (16% of measurements), max ratio 5.08  first(adamw|muon)=2 ratio 0.24 first(adamw|sgd)=2 ratio 0.24
+shakespeare_main/muon_d0         warmup  100  no threshold  first(adamw|muon)=2 first(muon|sgd)=1 persist(muon|sgd)=14
+shakespeare_main/muon_d1         warmup  100  no threshold  first(adamw|muon)=2 first(muon|sgd)=1 persist(muon|sgd)=14
+shakespeare_main/muon_d2         warmup  100  no threshold  first(adamw|muon)=2 first(muon|sgd)=1 persist(muon|sgd)=17
+shakespeare_main/muon_d3         warmup  100  no threshold  first(adamw|muon)=2 first(muon|sgd)=1 persist(muon|sgd)=17
+shakespeare_main/muon_d4         warmup  100  no threshold  first(adamw|muon)=2 first(muon|sgd)=1 persist(muon|sgd)=17
+shakespeare_main/sgd_d0          warmup  100  at EoS 21-120 (5% of measurements), max ratio 38.41  first(adamw|sgd)=1 ratio 0.12 first(muon|sgd)=1 ratio 0.12 persist(muon|sgd)=191 ratio 0.59
+shakespeare_main/sgd_d1          warmup  100  at EoS 21-547 (12% of measurements), max ratio 956.28  first(adamw|sgd)=1 ratio 0.12 first(muon|sgd)=1 ratio 0.12 persist(muon|sgd)=550 ratio 0.61
+shakespeare_main/sgd_d2          warmup  100  at EoS 21-73 (3% of measurements), max ratio 41.53  first(adamw|sgd)=1 ratio 0.12 first(muon|sgd)=1 ratio 0.12 persist(muon|sgd)=158 ratio 0.37
+shakespeare_main/sgd_d3          warmup  100  at EoS 21-21 (2% of measurements), max ratio 23.48  first(adamw|sgd)=1 ratio 0.12 first(muon|sgd)=1 ratio 0.12 persist(muon|sgd)=350 ratio 0.18
+shakespeare_main/sgd_d4          warmup  100  at EoS 21-1000 (14% of measurements), max ratio 7.90  first(adamw|sgd)=1 ratio 0.12 first(muon|sgd)=1 ratio 0.12 persist(muon|sgd)=43 ratio 0.80

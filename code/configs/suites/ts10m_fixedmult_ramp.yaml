@@ -1,0 +1,14 @@
+# SGD with the final multipliers of sgd_A-fe_d0 (as ts10m_fixedmult) diverged from step 0 (NaN at step 180 on d0, 460
+# on d1). Here m_a = 1 during warmup (steps 0-200), then m_a^f with f rising linearly from 0 to 1 over steps 200-1200
+# (geometric from 1 to the final value), then fixed. No balancing. Rates, initialization and schedule of ts10m_main.
+suite: ts10m_fixedmult_ramp
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  balance.variant: F
+  balance.ramp: [200, 1200]
+  measure.batch_sharpness_batches: 0  # as in ts10m_balanced, so that 3 runs fit a 44 GB GPU
+name: "{optimizer}_ramp_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, train.data_seed: [0, 1, 2], balance.mults: {emb: 1.0, '1': 0.1324, '2': 0.9172, '3': 0.8397,
+                                                                '4': 0.5839, '5': 0.9508, '6': 2.7136, head: 6.5089}}

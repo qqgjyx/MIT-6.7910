@@ -1,0 +1,17 @@
+# Added after the plan: AdamW and Muon trained 8000 steps instead of 1500, so that both reach the
+# memorization regime (at 1500 steps AdamW is at training loss 1.16, Muon at 0.19) and the loss-matched
+# comparison extends to near-interpolation, where the linear positive control does split. Same learning
+# rates as the main runs, five data orders, no curvature measurements.
+suite: shakespeare_long
+base: ../base/shakespeare_char.yaml
+overrides:
+  train.max_steps: 8000
+  optim.adamw.lr: 3.0e-4
+  optim.muon.lr: 0.04
+  log.eval_steps: {every: 100, geometric: 40}
+  log.ckpt_steps: {every: 2000, geometric: 0}
+  measure.hessian: false
+  measure.delta_loss: false
+name: "{optimizer}_long_d{train.data_seed}"
+runs:
+  - {optimizer: [adamw, muon], train.data_seed: [0, 1, 2, 3, 4]}

@@ -1,0 +1,98 @@
+# Defaults for every run. Base configs (configs/base/) and overrides are merged on top. See DESIGN.md.
+suite: dev
+name: null
+task: gpt                     # gpt | cnn
+dataset: shakespeare_char     # shakespeare_char | tinystories | cifar10
+
+model:
+  block_size: 256
+  n_layer: 6
+  n_head: 6
+  n_embd: 384
+  bias: false
+  tie_weights: false
+  cnn_width: 32               # SimpleCNN: filters in the first two convolutions (doubled after)
+  cnn_hidden: 128
+  activation: gelu            # SimpleCNN only: gelu | relu
+
+train:
+  batch_size: 64
+  max_steps: 5000
+  grad_clip: 0.0              # 0 disables clipping (clipping hides edge-of-stability dynamics)
+  dtype: bfloat16             # autocast dtype of the training step on GPU: bfloat16 | float32
+  compile: false
+  init_seed: 0                # model initialization
+  data_seed: 0                # batch order
+
+optimizer: adamw              # sgd | adamw | muon
+optim:
+  sgd: {lr: 0.1, momentum: 0.9, nesterov: false, weight_decay: 0.0}
+  adamw: {lr: 1.0e-3, betas: [0.9, 0.95], eps: 1.0e-8, weight_decay: 0.1}
+  muon: {lr: 0.02, momentum: 0.95, weight_decay: 0.0,
+         adam_lr: 1.0e-3, adam_betas: [0.9, 0.95], adam_eps: 1.0e-8, adam_weight_decay: 0.0}
+
+schedule:
+  warmup_steps: 100
+  decay: cosine               # cosine | constant
+  min_lr_frac: 0.1
+
+balance:                      # curvature-balanced per-layer learning rates (optsplit/optim/balance.py)
+  variant: null               # null (off) | A (redistribute) | B (redistribute and scale to a target) |
+                              # R (v2: equalize each layer's curvature along its step, on fresh sequences) |
+                              # F (no balancing: fixed multipliers `mults`, {block: m_a}, others at 1; with
+                              #    `ramp: [a, b]`, m_a^f with f rising linearly from 0 at step a to 1 at step b)
+  blocks: layer               # layer | sublayer (attention and MLP of each block apart)
+  every: 20                   # steps between refreshes of the top eigenvectors and the multipliers
+  k: 3                        # tracked eigenvectors (shares are averaged over those within `cluster` of the top)
+  iters: 2                    # block iterations per refresh (k (iters + 1) Hessian-vector products)
+  cluster: 0.05
+  ema: 0.2                    # weight of the new shares in their moving average
+  alpha: 0.3                  # A: step of log m_a per refresh
+  target: 0.9                 # B: lambda_max of the balanced operator, as a fraction of the threshold
+  gain: 0.2                   # B: step of log g per refresh, times log(lambda / target)
+  clip: [0.1, 10.0]           # every per-layer rate stays within these multiples of the schedule's rate
+  start: null                 # first step that updates the multipliers (null: end of warmup)
+  fixed: []                   # blocks kept at the schedule's rate (still in the operator)
+  fresh: false                # true: Hessian on fresh training sequences at every refresh, not the fixed batch
+  pop_seqs: 256               # R: fresh training sequences per refresh
+  chunk: 32                   # R: sequences per Hessian-vector product pass (memory)
+  own: false                  # R: numerator s_a^T H_aa s_a (the layer's own block) instead of s_a^T (H s)_a
+  check_every: 500            # full Lanczos check of the tracked lambda_max (Muon: Frank-Wolfe from scratch)
+  fw_iters: 5                 # Muon: Frank-Wolfe steps per refresh
+
+shadow: []                    # optimizers whose state is accumulated in shadow, for swaps
+
+fork:
+  parent: null                # '<suite>/<name>' of the run to fork from
+  step: null                  # one of the parent's log.fork_steps
+
+log:
+  train_every: 10
+  eval_steps: {every: 100, geometric: 30}
+  ckpt_steps: {every: 1000, geometric: 10}
+  fork_steps: []
+  resume_minutes: 15
+
+probe:
+  n_seqs: 128                 # LM: validation sequences; image: test images
+  positions_per_seq: 16       # LM: fixed positions stored per sequence (0 = all)
+  train_seqs: 64              # fixed training examples for the loss used to match runs by loss
+
+measure:
+  steps: {every: 100, geometric: 30}
+  hessian: true
+  hessian_batch: 32
+  lanczos_iters: 20
+  n_eigs: 1
+  preconditioned: true        # AdamW only
+  batch_sharpness_batches: 8
+  anatomy: true
+  gradcov: false              # Jastrzebski et al. (2020) gradient-covariance metrics (expensive)
+  gradcov_L: 25               # number of mini-batch gradients
+  gradcov_batch: null         # their batch size (null = train.batch_size; the paper uses 128 when varying it)
+  delta_loss: true
+  step_sharpness:             # curvature of each step along the update it takes (optsplit/measure/step_sharpness.py)
+    steps: null               # step grid, or null (off)
+    pop_steps: {every: 50}    # also on fresh sequences (population estimate) at these steps
+    pop_seqs: 256             # 0 disables the population estimate
+    chunk: 32                 # sequences per Hessian-vector product pass (memory)

@@ -1,0 +1,15 @@
+# The learning-rate sweep repeated with sharpness measurements, to test the break-even point of each optimizer
+# (report, Section "A model of the results"): lambda_max ~ 1/lr for SGD and AdamW at their thresholds, no such
+# scaling for Muon.
+suite: ts10m_lrsweep_hessian
+base: ../base/tinystories_10m.yaml
+overrides:
+  measure.delta_loss: false
+  measure.anatomy: false
+  measure.batch_sharpness_batches: 0
+  log.eval_steps: {every: 500, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.01, 0.03, 0.1], name: "sgd_lr{optim.sgd.lr}"}
+  - {optimizer: adamw, optim.adamw.lr: [1.0e-3, 2.0e-3, 4.0e-3], name: "adamw_lr{optim.adamw.lr}"}
+  - {optimizer: muon, optim.muon.lr: [0.005, 0.01, 0.02, 0.04], name: "muon_lr{optim.muon.lr}"}

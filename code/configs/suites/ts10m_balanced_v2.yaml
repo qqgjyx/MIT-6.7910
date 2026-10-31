@@ -1,0 +1,18 @@
+# Balanced per-layer learning rates, v2 (optsplit/optim/balance.py: StepBalancer), for AdamW and Muon on
+# TinyStories-10M: each layer's curvature along the step it takes, R_a = s_a^T (H s)_a / (-2 g_a^T s_a), on 256 fresh
+# training sequences every 20 steps, equalized across layers (no global scale). The whole step's R sits near 1 for
+# both optimizers at their tuned rates (ts10m_stoch_eos). Rates, initialization and data orders of ts10m_main; the
+# old measure (shares of the top eigenvector on the 32 fixed sequences) is logged alongside.
+suite: ts10m_balanced_v2
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  measure.batch_sharpness_batches: 0
+runs:
+  - {optimizer: [adamw, muon], balance.variant: R, train.data_seed: 0, name: "{optimizer}_R_d{train.data_seed}"}
+  # R_a stayed at 0.8-1.2 in every layer whatever its rate (AdamW's rates drifted 100x apart, into the caps, and its
+  # loss fell behind): each layer seems to sit at its own edge. Diagnostic: the layer's own block s_a^T H_aa s_a in
+  # the numerator (block Jacobi proper, without the cross-layer terms).
+  - {optimizer: [adamw, muon], balance.variant: R, balance.own: true, train.data_seed: 0,
+     name: "{optimizer}_Ro_d{train.data_seed}"}

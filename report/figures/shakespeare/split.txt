@@ -1,0 +1,15 @@
+adamw vs muon: t* at loss 4.2269 (95% CI 4.2269-4.2269, split found in 100% of bootstraps)
+  episodes above the floor (loss from, to): 4.227-2.770, 2.304-2.117
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_main/adamw_d0': None, 'shakespeare_main/adamw_d1': None, 'shakespeare_main/adamw_d2': None, 'shakespeare_main/adamw_d3': None, 'shakespeare_main/adamw_d4': None, 'shakespeare_main/muon_d0': None, 'shakespeare_main/muon_d1': None, 'shakespeare_main/muon_d2': None, 'shakespeare_main/muon_d3': None, 'shakespeare_main/muon_d4': None}
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/split_adamw_muon.json
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/figures/divergence_adamw_muon.png
+adamw vs sgd: t* at loss 4.2269 (95% CI 4.2269-4.2269, split found in 100% of bootstraps)
+  episodes above the floor (loss from, to): 4.227-3.101
+  persistent split at loss nan (95% CI 2.7697-4.2269, found in 34% of bootstraps); steps: {'shakespeare_main/adamw_d0': None, 'shakespeare_main/adamw_d1': None, 'shakespeare_main/adamw_d2': None, 'shakespeare_main/adamw_d3': None, 'shakespeare_main/adamw_d4': None, 'shakespeare_main/sgd_d0': None, 'shakespeare_main/sgd_d1': None, 'shakespeare_main/sgd_d2': None, 'shakespeare_main/sgd_d3': None, 'shakespeare_main/sgd_d4': None}
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/split_adamw_sgd.json
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/figures/divergence_adamw_sgd.png
+muon vs sgd: t* at loss 4.2527 (95% CI 4.2527-4.2527, split found in 100% of bootstraps)
+  episodes above the floor (loss from, to): 4.253-3.162, 2.821-2.607
+  persistent split at loss 2.8208 (95% CI 2.7505-4.2527, found in 96% of bootstraps); steps: {'shakespeare_main/muon_d0': 14, 'shakespeare_main/muon_d1': 14, 'shakespeare_main/muon_d2': 17, 'shakespeare_main/muon_d3': 17, 'shakespeare_main/muon_d4': 17, 'shakespeare_main/sgd_d0': 191, 'shakespeare_main/sgd_d1': 550, 'shakespeare_main/sgd_d2': 158, 'shakespeare_main/sgd_d3': 350, 'shakespeare_main/sgd_d4': 43}
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/split_muon_sgd.json
+wrote /private/tmp/claude-501/-Users-victor-Documents-courses-Statistical-Learning-Theory-and-Applications-MIT-6-7910-Juntang/f206f48c-8433-49c0-b24e-40aef5fffc25/scratchpad/mirror/analysis/shakespeare/figures/divergence_muon_sgd.png

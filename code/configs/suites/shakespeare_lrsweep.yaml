@@ -1,0 +1,14 @@
+# Learning-rate sweep, one data order, no measurements. Pick each optimizer's best final val loss with
+# python -m optsplit.analysis.table 'shakespeare_lrsweep/*' --sort val_loss
+# and copy it into shakespeare_main.yaml. Add points to the lists for a finer sweep.
+suite: shakespeare_lrsweep
+base: ../base/shakespeare_char.yaml
+overrides:
+  measure.hessian: false
+  measure.delta_loss: false
+  log.eval_steps: {every: 100, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.05, 0.1, 0.15, 0.2, 0.25], name: "sgd_lr{optim.sgd.lr}"}
+  - {optimizer: adamw, optim.adamw.lr: [3.0e-4, 1.0e-3, 2.0e-3, 4.0e-3, 8.0e-3], name: "adamw_lr{optim.adamw.lr}"}
+  - {optimizer: muon, optim.muon.lr: [0.005, 0.01, 0.02, 0.04, 0.08], name: "muon_lr{optim.muon.lr}"}

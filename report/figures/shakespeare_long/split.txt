@@ -1,0 +1,28 @@
+adamw vs muon: t* at loss 4.2269 (95% CI 4.2269-4.2269, split found in 100% of bootstraps)
+  shakespeare_long/adamw_long_d0: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d1: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d2: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d3: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d4: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d0: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d1: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d2: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d3: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d4: step 2 (CI [2, 2])
+  episodes above the floor (loss from, to): 4.227-2.640
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_long/adamw_long_d0': None, 'shakespeare_long/adamw_long_d1': None, 'shakespeare_long/adamw_long_d2': None, 'shakespeare_long/adamw_long_d3': None, 'shakespeare_long/adamw_long_d4': None, 'shakespeare_long/muon_long_d0': None, 'shakespeare_long/muon_long_d1': None, 'shakespeare_long/muon_long_d2': None, 'shakespeare_long/muon_long_d3': None, 'shakespeare_long/muon_long_d4': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare_long/split_adamw_muon_js.json
+adamw vs muon: t* at loss 4.2269 (95% CI 4.2269-4.2269, split found in 100% of bootstraps)
+  shakespeare_long/adamw_long_d0: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d1: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d2: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d3: step 1 (CI [1, 1])
+  shakespeare_long/adamw_long_d4: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d0: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d1: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d2: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d3: step 2 (CI [2, 2])
+  shakespeare_long/muon_long_d4: step 2 (CI [2, 2])
+  episodes above the floor (loss from, to): 4.227-2.848
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'shakespeare_long/adamw_long_d0': None, 'shakespeare_long/adamw_long_d1': None, 'shakespeare_long/adamw_long_d2': None, 'shakespeare_long/adamw_long_d3': None, 'shakespeare_long/adamw_long_d4': None, 'shakespeare_long/muon_long_d0': None, 'shakespeare_long/muon_long_d1': None, 'shakespeare_long/muon_long_d2': None, 'shakespeare_long/muon_long_d3': None, 'shakespeare_long/muon_long_d4': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/shakespeare_long/split_adamw_muon_disagree.json

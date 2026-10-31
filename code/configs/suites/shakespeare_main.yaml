@@ -1,0 +1,17 @@
+# Main runs: every optimizer from the same initialization, with data orders 0-4 (order 0 is shared across
+# optimizers; the others give each optimizer's seed-to-seed noise floor). The d0 runs accumulate the other
+# optimizers' state in shadow and save fork checkpoints for shakespeare_forks.yaml.
+# Learning rates: best minimum validation loss in shakespeare_lrsweep (the final loss is not used, as
+# the runs overfit). AdamW 1.54, Muon 1.56. SGD only reaches ~2.5 (bigram level) at any rate; 0.2 (2.44)
+# diverged on data orders 1 and 2, so it uses 0.05 (2.50).
+suite: shakespeare_main
+base: ../base/shakespeare_char.yaml
+overrides:
+  optim.sgd.lr: 0.05
+  optim.adamw.lr: 3.0e-4
+  optim.muon.lr: 0.04
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 0, shadow: [[sgd, adamw, muon]],
+     log.fork_steps: [[25, 50, 100, 200, 300, 450, 600, 800, 1000]]}
+  - {optimizer: [sgd, adamw, muon], train.data_seed: [1, 2, 3, 4]}
