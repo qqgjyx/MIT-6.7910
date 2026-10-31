@@ -146,7 +146,7 @@ def page_losses(pdf, title, d, plt):
     ax[1].set_ylim(lo - 0.1, lo + 2)
     dv = [abs(x) for a in ax[2].get_lines() for x in a.get_ydata()[len(a.get_ydata()) // 3:]]
     if dv:
-        ax[2].set_ylim(-1.2 * max(dv), 1.2 * max(dv))
+        ax[2].set_ylim(-min(0.6, 1.2 * max(dv)), min(0.6, 1.2 * max(dv)))  # blow-ups go off the panel
     ax[0].legend(fontsize=7, ncol=2)
     if len(seeds) > 1:
         ax[1].legend([plt.Line2D([], [], color='k', ls=['-', ':', '-.'][i % 3]) for i in range(len(seeds))],
@@ -166,7 +166,7 @@ def page_losses(pdf, title, d, plt):
     plt.close(fig)
 
 
-def page_js(pdf, title, d, plt):
+def page_js(pdf, title, d, plt, max_loss=5):
     vs = sorted({variant(r) for r in d['runs']})
     col = {v: f'C{i}' for i, v in enumerate(vs)}
     seeds = sorted({r['seed'] for r in d['runs'].values()})
@@ -187,8 +187,9 @@ def page_js(pdf, title, d, plt):
             if d['runs'][a]['seed'] == s and c['loss']:
                 ax.plot(c['loss'], c['js'], color=col[variant(a)], lw=0.8, ls=':',
                         label=f'{variant(a)}: two data orders')
-        ax.set(xlabel='training loss (fixed training probe)', title=f'data order {s}', yscale='log')
-        ax.invert_xaxis()
+        ax.set(xlabel='training loss (fixed training probe)', title=f'data order {s}', yscale='log', ylim=(1e-3, 1))
+        lo = min([min(c['loss']) for c in [*floor, *d['cross'].values()] if c['loss']] or [0])
+        ax.set_xlim(max_loss, lo - 0.05)  # high to low loss
         ax.legend(fontsize=6)
     axes[0, 0].set_ylabel('JS divergence (bits)')
     fig.tight_layout()
