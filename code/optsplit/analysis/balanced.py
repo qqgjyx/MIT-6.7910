@@ -275,7 +275,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest='cmd', required=True)
     s = sub.add_parser('summarize')
-    s.add_argument('runs', nargs='+', help='glob patterns of the balanced runs')
+    s.add_argument('runs', nargs='+', help='glob patterns of the balanced runs (and of unbalanced controls)')
     s.add_argument('--base', nargs='+', required=True, help='glob patterns of the baseline runs')
     s.add_argument('--out', required=True)
     q = sub.add_parser('plot')
@@ -285,7 +285,7 @@ def main():
     args = p.parse_args()
     if args.cmd == 'summarize':
         from optsplit.analysis.io import load_runs
-        runs = [r for r in load_runs(args.runs) if r.cfg.get('balance', {}).get('variant')]
+        runs = load_runs(args.runs)  # balanced runs and controls (unbalanced, e.g. another rate)
         base = [r for r in load_runs(args.base) if not r.cfg.fork.parent]
         out = Path(args.out)
         out.parent.mkdir(parents=True, exist_ok=True)
