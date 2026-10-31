@@ -5,8 +5,9 @@
 # - const: 200 warmup steps then constant, 3000 steps, at x1/2, x1, x2 the main rate (Muon scales its AdamW rate
 #   with it);
 # - cosine: the main rate on the usual schedule (10k steps);
-# - bs: batch 32 and 512 at the main rate, constant, for AdamW and Muon (batch 512: 1024 fresh sequences every
-#   100 steps).
+# - bs32: batch 32 at the main rate, constant, for AdamW and Muon.
+# Submitted with --per-gpu 3 (--per-gpu 2 for bs32): one GPU each for AdamW, Muon (constant), the cosine runs and
+# SGD (constant).
 suite: ts10m_stoch_eos
 base: ../base/tinystories_10m.yaml
 overrides:
@@ -21,8 +22,6 @@ overrides:
   log.eval_steps: {every: 500, geometric: 0}
   log.ckpt_steps: {every: 0, geometric: 0}
   log.resume_minutes: 5
-# Submitted with --per-gpu 6 --gpu-type h200: the order below packs AdamW and Muon (constant), then the cosine
-# runs with SGD (constant), then the batch-size variants.
 runs:
   - {optimizer: adamw, optim.adamw.lr: [1.0e-3, 2.0e-3, 4.0e-3], train.max_steps: 3000, schedule.decay: constant,
      name: "adamw_const_lr{optim.adamw.lr}"}
@@ -36,7 +35,4 @@ runs:
   - {optimizer: sgd, optim.sgd.lr: [0.015, 0.03, 0.06], train.max_steps: 3000, schedule.decay: constant,
      name: "sgd_const_lr{optim.sgd.lr}"}
   - {optimizer: [adamw, muon], train.batch_size: 32, train.max_steps: 3000, schedule.decay: constant,
-     name: "{optimizer}_bs{train.batch_size}"}
-  - {optimizer: [adamw, muon], train.batch_size: 512, train.max_steps: 3000, schedule.decay: constant,
-     measure.step_sharpness.pop_seqs: 1024, measure.step_sharpness.pop_steps: {every: 100},
      name: "{optimizer}_bs{train.batch_size}"}
