@@ -1,0 +1,40 @@
+# Stochastic edge of stability (optsplit/measure/step_sharpness.py): does R = s^T H_B s / (-2 g_B^T s), the
+# curvature of each step's own batch along the update it takes, settle at 1? Initialization and data order of
+# ts10m_main/<optimizer>_d0, its rates and hyperparameters. R every 10 steps (every step early on), also on 256
+# fresh sequences every 50; lambda_max on the 32 fixed sequences every 100 steps (250 on the cosine runs).
+# - const: 200 warmup steps then constant, 3000 steps, at x1/2, x1, x2 the main rate (Muon scales its AdamW rate
+#   with it);
+# - cosine: the main rate on the usual schedule (10k steps);
+# - bs: batch 32 and 512 at the main rate, constant, for AdamW and Muon (batch 512: 1024 fresh sequences every
+#   100 steps).
+suite: ts10m_stoch_eos
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  measure.step_sharpness.steps: {every: 10, geometric: 60}
+  measure.steps: {every: 100, geometric: 0}
+  measure.anatomy: false
+  measure.delta_loss: false
+  measure.batch_sharpness_batches: 0
+  log.eval_steps: {every: 500, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+  log.resume_minutes: 5
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.015, 0.03, 0.06], train.max_steps: 3000, schedule.decay: constant,
+     name: "sgd_const_lr{optim.sgd.lr}"}
+  - {optimizer: adamw, optim.adamw.lr: [1.0e-3, 2.0e-3, 4.0e-3], train.max_steps: 3000, schedule.decay: constant,
+     name: "adamw_const_lr{optim.adamw.lr}"}
+  - {optimizer: muon, optim.muon.lr: 0.005, optim.muon.adam_lr: 1.0e-3, train.max_steps: 3000,
+     schedule.decay: constant, name: "muon_const_lr{optim.muon.lr}"}
+  - {optimizer: muon, optim.muon.lr: 0.01, optim.muon.adam_lr: 2.0e-3, train.max_steps: 3000,
+     schedule.decay: constant, name: "muon_const_lr{optim.muon.lr}"}
+  - {optimizer: muon, optim.muon.lr: 0.02, optim.muon.adam_lr: 4.0e-3, train.max_steps: 3000,
+     schedule.decay: constant, name: "muon_const_lr{optim.muon.lr}"}
+  - {optimizer: [sgd, adamw, muon], measure.steps: {every: 250, geometric: 0}, name: "{optimizer}_cosine"}
+  - {optimizer: [adamw, muon], train.batch_size: 32, train.max_steps: 3000, schedule.decay: constant,
+     name: "{optimizer}_bs{train.batch_size}"}
+  - {optimizer: [adamw, muon], train.batch_size: 512, train.max_steps: 3000, schedule.decay: constant,
+     measure.step_sharpness.pop_seqs: 1024, measure.step_sharpness.pop_steps: {every: 100},
+     name: "{optimizer}_bs{train.batch_size}"}

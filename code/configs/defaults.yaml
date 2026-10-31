@@ -83,3 +83,8 @@ measure:
   gradcov_L: 25               # number of mini-batch gradients
   gradcov_batch: null         # their batch size (null = train.batch_size; the paper uses 128 when varying it)
   delta_loss: true
+  step_sharpness:             # curvature of each step along the update it takes (optsplit/measure/step_sharpness.py)
+    steps: null               # step grid, or null (off)
+    pop_steps: {every: 50}    # also on fresh sequences (population estimate) at these steps
+    pop_seqs: 256             # 0 disables the population estimate
+    chunk: 32                 # sequences per Hessian-vector product pass (memory)

@@ -17,6 +17,7 @@ from .config import load_config, run_dir, save_config, step_grid
 from .data import build_data
 from .measure import measure_step
 from .measure.hessian import HVP
+from .measure.step_sharpness import StepSharpness
 from .models import build_model, muon_params
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
 from .optim.balance import Balancer
@@ -88,6 +89,7 @@ def main(argv):
     m = cfg.measure
     measuring = m.hessian or m.gradcov or m.delta_loss
     measure_steps = set(step_grid(m.steps, T)) if measuring else set()
+    tracker = StepSharpness(model, opt, cfg, data) if m.step_sharpness.steps else None
 
     log_file = open(out / 'metrics.jsonl', 'a')
 
@@ -140,6 +142,7 @@ def main(argv):
                 log('balance', step, **bal)
         x, y = data.get_batch(step)
         set_lr(opt, lr_mult(step, cfg))
+        probed = tracker is not None and tracker.before(step)
         with autocast():
             loss = train_loss(x, y)
         loss.backward()
@@ -147,6 +150,8 @@ def main(argv):
         opt.step()
         shadow.step()
         opt.zero_grad(set_to_none=True)
+        if probed:
+            log('step_sharpness', step, **tracker.after(x, y, step))
 
         if measure:
             if m.delta_loss:
