@@ -19,7 +19,7 @@ HEADER = """Curvature-balanced learning rates
 Each layer a (embeddings; transformer blocks 1-n; final norm + head) trains at its own rate eta_a(t) = eta(t) g m_a,
 with eta(t) the tuned schedule of the baseline (warmup, then cosine to 10%). The balanced operator is
 Hhat = D^1/2 H D^1/2, D = diag(eta_a) for SGD and diag(eta_a) P^-1 for AdamW (P frozen from the current second
-moments), with H the Hessian on the 32 fixed training sequences. Its linear-stability threshold is 2 + 2 mu = 3.8 for
+moments), with H the Hessian on 32 fixed training sequences. Its linear-stability threshold is 2 + 2 mu = 3.8 for
 SGD (heavy ball) and (2 + 2 beta1)/(1 - beta1) = 38 for AdamW. With v the top eigenvector of Hhat, the share of layer a
 is s_a = ||v_a||^2 = d log lambda_max / d log m_a (sum_a s_a = 1); equal shares maximize prod_a m_a at fixed
 lambda_max. Every 20 steps a warm-started block iteration (3 vectors, 2 Rayleigh-Ritz steps on the vectors and their
@@ -27,15 +27,28 @@ residuals) refreshes the top eigenpairs; shares are averaged over the Ritz vecto
 smoothed (EMA weight 0.2). A 20-step Lanczos check of lambda_max(Hhat) runs every 500 steps. Multipliers stay at 1
 during warmup.
 
+Muon (orthogonalized updates) is balanced on its spectral-norm sharpness instead (Islamov et al.): with c_l = m_a times
+Muon's shape scale for each hidden matrix l, S = max <D, H D> over updates with every ||D_l||_2 <= c_l, and the
+stability ratio is rho = eta S / (2 sum_l c_l ||grad_l||_*) (edge at 1). S is tracked by 5 warm-started Frank-Wolfe
+steps per refresh (checked from scratch every 500 steps); the share of layer a is d log rho / d log m_a =
+2 <D_a, (HD)_a> / <D, HD> minus layer a's share of the c-weighted nuclear norm (sum 1). Embeddings and head (AdamW in
+Muon) keep the schedule's rate.
+
 Variants
   A  (redistribute):  log m_a -= alpha (s_a - 1/L), recentred to geometric mean 1; g = 1; m_a in [0.1, 10].
   B  (A + scale):     also log g -= gain log(lambda_max(Hhat) / (target x threshold)); every g m_a in [0.1, 10].
-                      B<t> below targets t x threshold.
-Defaults: alpha = 0.3, gain = 0.2 per refresh.
+                      B<t> targets t x threshold (Muon: rho = t).
+  -fe                 embedding kept at the schedule's rate (still in the operator): the 32 sequences see only part of
+                      the vocabulary, and SGD B0.9 blew up with the embedding at 10x.
+  -fresh              Hessian on 32 fresh training sequences at every refresh instead of the fixed ones.
+  plain-lr<x>         unbalanced control at base rate x.
+Defaults: alpha = 0.3, gain = 0.2 per refresh. AdamW A-fe tracks 4 vectors with 3 iterations. Batch sharpness is not
+measured in these runs (memory).
 
 Comparisons
-  Baseline: the main runs (same initialization, same rate, same data orders). Speedup = 10k steps / the first
-  evaluated step at which the balanced run reaches the baseline's final validation loss (same data order).
+  Baseline: the main runs (same initialization, same rate, same data orders). Speedup = the baseline's step at its
+  best validation loss / the first evaluated step at which the balanced run reaches it (same data order); the best
+  validation loss is the final one except on Shakespeare, where the runs overfit.
   JS: Jensen-Shannon divergence of next-token distributions on the fixed validation contexts, at equal training
   loss, between a balanced run and the baseline on the same data order; the grey band is the baseline's floor
   (min to max over pairs of its data orders)."""
@@ -85,17 +98,20 @@ def first_step(ev, level):
 
 
 def table(d):
-    """Rows: (run, final val, baseline final val, delta, step reaching the baseline's final val, speedup)."""
+    """Rows: (run, last step, final val, its difference to the baseline's, best val, its difference, first step
+    reaching the baseline's best val, speedup = the baseline's step at its best / that step). The best (minimum)
+    validation loss is the final one on TinyStories; on Shakespeare the runs overfit."""
     base = {r['seed']: r for r in d['base'].values()}
     rows = []
     for rid, r in sorted(d['runs'].items(), key=lambda kv: (kv[1]['seed'], kv[0])):
         b = base.get(r['seed'])
         if not r['eval'] or b is None:
             continue
-        fin, bfin = r['eval'][-1][2], b['eval'][-1][2]
-        s = first_step(r['eval'], bfin)
-        T = b['cfg']['max_steps']
-        rows.append((rid.split('/')[-1], r['eval'][-1][0], fin, bfin, fin - bfin, s, T / s if s else None))
+        fin, best = r['eval'][-1][2], min(v for _, _, v in r['eval'])
+        bstep, _, bbest = min(b['eval'], key=lambda e: e[2])
+        s = first_step(r['eval'], bbest)
+        rows.append((rid.split('/')[-1], r['eval'][-1][0], fin, fin - b['eval'][-1][2], best, best - bbest, s,
+                     bstep / s if s else None))
     return rows
 
 
@@ -154,11 +170,12 @@ def page_losses(pdf, title, d, plt):
     rows = table(d)
     tab = fig.add_axes([0.06, 0.03, 0.88, 0.34])
     tab.axis('off')
-    cells = [[n, str(st), f'{f:.4f}', f'{b:.4f}', f'{dl:+.4f}', str(s) if s else '-', f'{sp:.2f}x' if sp else '-']
-             for n, st, f, b, dl, s, sp in rows]
+    cells = [[n, str(st), f'{f:.4f}', f'{df:+.4f}', f'{b:.4f}', f'{db:+.4f}', str(s) if s else '-',
+              f'{sp:.2f}x' if sp else '-'] for n, st, f, df, b, db, s, sp in rows]
     if cells:
-        t = tab.table(cellText=cells, colLabels=['run', 'last step', 'final val', 'baseline final val', 'difference',
-                                                 'step reaching baseline final', 'speedup'], loc='upper center')
+        t = tab.table(cellText=cells, colLabels=['run', 'last step', 'final val', 'minus baseline', 'best val',
+                                                 'minus baseline', 'reaches baseline best', 'speedup'],
+                      loc='upper center')
         t.auto_set_font_size(False)
         t.set_fontsize(7)
         t.scale(1, 1.15)
