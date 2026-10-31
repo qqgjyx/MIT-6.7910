@@ -131,9 +131,14 @@ def _smooth(train, w=20):
     return s[w - 1:], np.convolve(y, np.ones(w) / w, mode='valid')
 
 
-def page_losses(pdf, title, d, plt):
+def colors(d, plt):
     vs = sorted({variant(r) for r in d['runs']})
-    col = {v: f'C{i}' for i, v in enumerate(vs)}
+    cmap = plt.get_cmap('tab10' if len(vs) <= 10 else 'tab20')
+    return {v: cmap(i) for i, v in enumerate(vs)}
+
+
+def page_losses(pdf, title, d, plt, max_rows=12):
+    col = colors(d, plt)
     seeds = sorted({r['seed'] for r in d['runs'].values()})
     fig = plt.figure(figsize=(11, 8.5))
     fig.suptitle(f'{title}: losses', fontsize=12)
@@ -177,7 +182,12 @@ def page_losses(pdf, title, d, plt):
         ax[1].legend([plt.Line2D([], [], color='k', ls=['-', ':', '-.'][i % 3]) for i in range(len(seeds))],
                      [f'data order {s}' for s in seeds], fontsize=7)
     rows = table(d)
-    tab = fig.add_axes([0.06, 0.03, 0.88, 0.34])
+    if len(rows) > max_rows:  # the table gets a page of its own
+        pdf.savefig(fig)
+        plt.close(fig)
+        fig = plt.figure(figsize=(11, 8.5))
+        fig.suptitle(f'{title}: final and best validation loss', fontsize=12)
+    tab = fig.add_axes([0.06, 0.03, 0.88, 0.34 if len(rows) <= max_rows else 0.88])
     tab.axis('off')
     cells = [[n, str(st), f'{f:.4f}', f'{df:+.4f}', f'{b:.4f}', f'{db:+.4f}', str(s) if s else '-',
               f'{sp:.2f}x' if sp else '-'] for n, st, f, df, b, db, s, sp in rows]
@@ -193,8 +203,7 @@ def page_losses(pdf, title, d, plt):
 
 
 def page_js(pdf, title, d, plt, max_loss=5):
-    vs = sorted({variant(r) for r in d['runs']})
-    col = {v: f'C{i}' for i, v in enumerate(vs)}
+    col = colors(d, plt)
     seeds = sorted({r['seed'] for r in d['runs'].values()})
     fig, axes = plt.subplots(1, len(seeds), figsize=(11, 4.6), squeeze=False, sharey=True)
     fig.suptitle(f'{title}: Jensen-Shannon divergence at equal training loss', fontsize=12)
@@ -217,7 +226,7 @@ def page_js(pdf, title, d, plt, max_loss=5):
         curves = [c['loss'] for c in [*floor, *d['cross'].values()] if c['loss']]
         lo, hi = min(map(min, curves), default=0), max(map(max, curves), default=max_loss)
         ax.set_xlim(min(max_loss, hi + 0.05), lo - 0.05)  # high to low loss
-        ax.legend(fontsize=6)
+        ax.legend(fontsize=5 if len(col) > 6 else 6, ncol=2 if len(col) > 6 else 1)
     axes[0, 0].set_ylabel('JS divergence (bits)')
     fig.tight_layout()
     pdf.savefig(fig)
