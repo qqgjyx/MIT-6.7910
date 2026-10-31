@@ -4,6 +4,7 @@ The run directory is $OPTSPLIT_ROOT/runs/<suite>/<name>. If it holds latest.pt t
 `fork.parent` is set it starts from the parent's fork checkpoint (see DESIGN.md)."""
 
 import contextlib
+import itertools
 import json
 import math
 import os
@@ -60,7 +61,13 @@ def main(argv):
         if cfg.optimizer == 'muon':  # balanced on the matrices Muon updates
             named = [(n, p) for n, p in named if n in muon_params(model)[0]]
         xh, yh = data.fixed_batch('train', cfg.measure.hessian_batch, seed=1)
-        balancer = Balancer(cfg, opt, named, lambda: HVP(model, xh, yh, [p for _, p in named]))
+        draws = itertools.count(1)
+
+        def hvp():  # on the fixed batch, or on fresh training sequences at every call
+            x, y = data.random_batches(1, cfg.measure.hessian_batch, seed=next(draws))[0] \
+                if cfg.balance.fresh else (xh, yh)
+            return HVP(model, x, y, [p for _, p in named])
+        balancer = Balancer(cfg, opt, named, hvp)
     probe = Probe(cfg, data)
     T = cfg.train.max_steps
 

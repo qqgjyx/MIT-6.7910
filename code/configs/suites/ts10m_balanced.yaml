@@ -39,3 +39,7 @@ runs:
   # not show.
   - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [1, 2],
      name: "sgd_A-fe_d{train.data_seed}"}
+  # B1-fe and B0.9-fe again with lambda_max measured on fresh training sequences at every refresh (the stochastic
+  # EoS test, ts10m_stoch_eos, finds AdamW and Muon at the edge on fresh sequences, not on a fixed batch).
+  - {optimizer: sgd, balance.variant: B, balance.target: [0.9, 1.0], balance.fixed: [[emb]], balance.fresh: true,
+     name: "sgd_B{balance.target}-fe-fresh_d0"}

@@ -50,6 +50,7 @@ balance:                      # curvature-balanced per-layer learning rates (opt
   clip: [0.1, 10.0]           # every per-layer rate stays within these multiples of the schedule's rate
   start: null                 # first step that updates the multipliers (null: end of warmup)
   fixed: []                   # blocks kept at the schedule's rate (still in the operator)
+  fresh: false                # true: Hessian on fresh training sequences at every refresh, not the fixed batch
   check_every: 500            # full Lanczos check of the tracked lambda_max (Muon: Frank-Wolfe from scratch)
   fw_iters: 5                 # Muon: Frank-Wolfe steps per refresh
 
