@@ -12,3 +12,8 @@ runs:
      name: "sgd_B{balance.target}_d{train.data_seed}"}
   - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [0, 1, 2],
      name: "sgd_A-fe_d{train.data_seed}"}
+  # AdamW and Muon: no variant beat the baseline on TinyStories-10M (B pushed the rate away from the tuned one and
+  # lost; AdamW A-fe and Muon A were within 0.01 of it), so only data order 0, with the closest variant.
+  - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
+     name: "adamw_A-fe_d0"}
+  - {optimizer: muon, balance.variant: A, name: "muon_A_d0"}

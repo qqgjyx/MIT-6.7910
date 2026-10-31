@@ -13,3 +13,7 @@ runs:
      name: "sgd_B{balance.target}_d{train.data_seed}"}
   - {optimizer: sgd, balance.variant: A, balance.fixed: [[emb]], train.data_seed: [0, 1, 2],
      name: "sgd_A-fe_d{train.data_seed}"}
+  # AdamW and Muon: the variant closest to the baseline on TinyStories-10M (none beat it by more than 0.01).
+  - {optimizer: adamw, balance.variant: A, balance.fixed: [[emb]], balance.k: 4, balance.iters: 3,
+     train.data_seed: [0, 1, 2], name: "adamw_A-fe_d{train.data_seed}"}
+  - {optimizer: muon, balance.variant: A, train.data_seed: [0, 1, 2], name: "muon_A_d{train.data_seed}"}
