@@ -121,10 +121,10 @@ def plot(res, path):
         M, mass = 100 * avg[o][0], 100 * avg[o][1]
         x = left + i * (h + 0.06 + bar + gap)
         ax, bx = axes(x, h), axes(x + h + 0.06, bar)
-        im = ax.imshow(M, cmap='Blues', vmin=0, vmax=vmax, aspect='auto')
+        im = ax.imshow(M, cmap='Reds', vmin=0, vmax=vmax, aspect='auto')
         for (l, m), val in np.ndenumerate(M):
             ax.text(m, l, f'{val:.0f}' if round(val) else '0', ha='center', va='center', fontsize=fs,
-                    color='white' if val > 0.6 * vmax else '0.6' if round(val) == 0 else 'black')
+                    color='white' if val > 0.65 * vmax else '0.6' if round(val) == 0 else 'black')
         ax.set_xticks(range(len(names)), names, fontsize=5 if big else 6, rotation=90 if big else 0)
         ax.set_yticks(range(len(names)), names if i == 0 else [], fontsize=5 if big else 6)
         ax.tick_params(length=0, pad=1.5)
