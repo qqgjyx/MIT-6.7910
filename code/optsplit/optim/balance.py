@@ -58,12 +58,23 @@ def block_iteration(op, X, iters):
     return theta.tolist(), X
 
 
+def batched(fn, mats):
+    """[fn(m) for m in mats], with one call of fn per shape on the stacked matrices of that shape."""
+    out, ids = [None] * len(mats), {}
+    for i, m in enumerate(mats):
+        ids.setdefault(tuple(m.shape), []).append(i)
+    for js in ids.values():
+        for j, r in zip(js, fn(torch.stack([mats[j] for j in js]))):
+            out[j] = r
+    return out
+
+
 def frank_wolfe(hvp, D, c, iters, k0=0):
     """Frank-Wolfe for max <D, H D> over max_l ||D_l||_2 / c_l <= 1 from the matrices D, steps 2 / (k + k0 + 2).
     -> (best <D, H D> at norm 1, its D, H D)."""
     best = (-math.inf, None, None)
     for k in range(iters + 1):
-        n = max((torch.linalg.matrix_norm(d, 2) / cl).item() for d, cl in zip(D, c))
+        n = max(torch.stack(batched(lambda x: torch.linalg.matrix_norm(x, 2), D)) / torch.tensor(c).to(D[0])).item()
         D = [d / n for d in D]
         HD = split(hvp(flat(D)), D)
         q = sum((d * h).sum() for d, h in zip(D, HD)).item()
@@ -71,7 +82,8 @@ def frank_wolfe(hvp, D, c, iters, k0=0):
             best = (q, D, HD)
         if k < iters:
             gam = 2 / (k + k0 + 2)
-            D = [(1 - gam) * d + gam * cl * zeropower_via_newtonschulz5(h, 5).float() for d, h, cl in zip(D, HD, c)]
+            P = batched(lambda x: zeropower_via_newtonschulz5(x, 5).float(), HD)
+            D = [(1 - gam) * d + gam * cl * p for d, p, cl in zip(D, P, c)]
     return best
 
 
@@ -173,7 +185,8 @@ class Balancer:
         rec = {}
         with double_backward_ok(), torch.autocast(self.params[0].device.type, enabled=False):
             hvp = self.hvp()
-            nuc = [cl * torch.linalg.matrix_norm(g.detach(), 'nuc').item() for g, cl in zip(hvp.grads, c)]
+            nuc = [cl * n.item() for n, cl in zip(batched(lambda x: torch.linalg.matrix_norm(x, 'nuc'),
+                                                          [g.detach() for g in hvp.grads]), c)]
             q, self.X, HD = frank_wolfe(hvp, self.X, c, b.fw_iters, k0=2)
             if step % b.check_every == 0:  # from scratch, as optsplit.analysis.spectral_sharpness
                 gen = torch.Generator(device=HD[0].device).manual_seed(step)
