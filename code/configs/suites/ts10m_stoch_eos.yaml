@@ -21,9 +21,9 @@ overrides:
   log.eval_steps: {every: 500, geometric: 0}
   log.ckpt_steps: {every: 0, geometric: 0}
   log.resume_minutes: 5
+# Submitted with --per-gpu 6 --gpu-type h200: the order below packs AdamW and Muon (constant), then the cosine
+# runs with SGD (constant), then the batch-size variants.
 runs:
-  - {optimizer: sgd, optim.sgd.lr: [0.015, 0.03, 0.06], train.max_steps: 3000, schedule.decay: constant,
-     name: "sgd_const_lr{optim.sgd.lr}"}
   - {optimizer: adamw, optim.adamw.lr: [1.0e-3, 2.0e-3, 4.0e-3], train.max_steps: 3000, schedule.decay: constant,
      name: "adamw_const_lr{optim.adamw.lr}"}
   - {optimizer: muon, optim.muon.lr: 0.005, optim.muon.adam_lr: 1.0e-3, train.max_steps: 3000,
@@ -33,6 +33,8 @@ runs:
   - {optimizer: muon, optim.muon.lr: 0.02, optim.muon.adam_lr: 4.0e-3, train.max_steps: 3000,
      schedule.decay: constant, name: "muon_const_lr{optim.muon.lr}"}
   - {optimizer: [sgd, adamw, muon], measure.steps: {every: 250, geometric: 0}, name: "{optimizer}_cosine"}
+  - {optimizer: sgd, optim.sgd.lr: [0.015, 0.03, 0.06], train.max_steps: 3000, schedule.decay: constant,
+     name: "sgd_const_lr{optim.sgd.lr}"}
   - {optimizer: [adamw, muon], train.batch_size: 32, train.max_steps: 3000, schedule.decay: constant,
      name: "{optimizer}_bs{train.batch_size}"}
   - {optimizer: [adamw, muon], train.batch_size: 512, train.max_steps: 3000, schedule.decay: constant,
