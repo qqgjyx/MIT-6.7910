@@ -5,6 +5,7 @@ the metric ranking and the metrics under swaps (from rank_metrics.py's metrics.j
     python -m optsplit.analysis.ckpt_figs forks --dir report/figures/ts10m --out f.pdf
     python -m optsplit.analysis.ckpt_figs ranking --metrics metrics.json --keys k1 k2 ... [--pairs adamw/muon ...] --out f.pdf
     python -m optsplit.analysis.ckpt_figs swaps --metrics metrics.json --swap-json swap.json --keys k1 ... --out f.pdf
+    python -m optsplit.analysis.ckpt_figs swap-traj --keys k1 ... --out f.pdf
 """
 
 import argparse
@@ -19,6 +20,7 @@ import numpy as np
 from optsplit.analysis.metric_ratios import PAIRS as RATIO_PAIRS, ratio, values
 from optsplit.analysis.plots import panel_labels
 from optsplit.analysis.rank_metrics import COLORS, METRICS, NAMES, loss_axis
+from optsplit.config import root_dir
 
 plt.rcParams.update({'font.size': 7, 'axes.titlesize': 7, 'axes.labelsize': 7, 'legend.fontsize': 6,
                      'xtick.labelsize': 6, 'ytick.labelsize': 6})
@@ -191,6 +193,51 @@ def forks(d, out, metrics=None, keys=()):
     print(f'wrote {out}')
 
 
+def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1, 2.6)):
+    """Whole-model metrics (metrics/trajectory.py) against the step, one row per direction of the AdamW<->Muon swaps
+    of `suite`: the parent's optimizer on data order 0 (from `pure`) in black, each swapped run from its fork step
+    (marker) to the end coloured by the fork step, and the new optimizer on data order 0 grey dashed."""
+    runs = root_dir() / 'runs'
+
+    def load(run):
+        ds = sorted((json.load(open(f)) for f in (runs / run / 'traj_metrics').glob('*.json')), key=lambda d: d['step'])
+        return lambda k: tuple(zip(*[(d['step'], d[k]) for d in ds if k in d and d['step'] >= 10])) or ((), ())
+
+    cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(50, 4000)
+    fig, axes = plt.subplots(2, len(keys), figsize=size, sharex=True, layout='constrained')
+    for row, (a, b) in zip(axes, (('adamw', 'muon'), ('muon', 'adamw'))):
+        swaps = sorted((int(p.name.rsplit('_at', 1)[1]), load(p.relative_to(runs)))
+                       for p in (runs / suite).glob(f'{a}_to_{b}_at*'))
+        parent, own = load(f'{pure}/{a}_d0'), load(f'{pure}/{b}_d0')
+        for ax, k in zip(row, keys):
+            for f, run in swaps:
+                x, y = run(k)
+                if x:
+                    ax.plot(x, y, color=cmap(norm(f)), lw=0.8)
+                    ax.plot(x[0], y[0], 'o', ms=2.5, color=cmap(norm(f)), zorder=3)
+            ax.plot(*own(k), color='0.55', ls='--', lw=0.9)
+            ax.plot(*parent(k), color='k', lw=0.9)
+            ax.set_xscale('log')
+            if k == 'lambda_max':
+                ax.set_yscale('log')
+        row[0].set_ylabel(f'{NAMES[a]} → {NAMES[b]}')
+    for ax, k in zip(axes[0], keys):
+        ax.set_title(METRICS[k][1])
+    for ax in axes[1]:
+        ax.set_xlabel('step')
+    forks = [s for s, _ in swaps]
+    cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm, cmap), ax=axes, label='fork step', aspect=30, pad=0.01)
+    cb.set_ticks(forks, labels=[str(s) for s in forks])
+    cb.minorticks_off()
+    fig.legend([plt.Line2D([], [], color='k', lw=0.9), plt.Line2D([], [], color='0.55', ls='--', lw=0.9),
+                plt.Line2D([], [], color=cmap(0.5), lw=0.8, marker='o', ms=2.5)],
+               ["parent's optimizer, no swap", 'new optimizer, no swap', 'swapped run (marker: swap)'],
+               loc='outside lower center', ncol=3, frameon=False)
+    panel_labels(axes.flat)
+    fig.savefig(out)
+    print(f'wrote {out}')
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     sub = p.add_subparsers(dest='fig', required=True)
@@ -209,6 +256,11 @@ def main():
     s.add_argument('--pairs', nargs='+', help='a/b pairs of optimizers (default: all of metric_ratios.PAIRS)')
     s.add_argument('--size', type=float, nargs=2, default=(7.1, 1.5), help='figure width and height (in)')
     s.add_argument('--out', required=True)
+    s = sub.add_parser('swap-traj')
+    s.add_argument('--keys', nargs='+', required=True)
+    s.add_argument('--suite', default='ts10m_forks_dense')
+    s.add_argument('--size', type=float, nargs=2, default=(7.1, 2.6))
+    s.add_argument('--out', required=True)
     s = sub.add_parser('swaps')
     s.add_argument('--metrics', required=True)
     s.add_argument('--swap-json', required=True, help='swap.json of analysis/swap.py, for the function')
@@ -219,6 +271,8 @@ def main():
         forks(args.dir, args.out, args.metrics, args.keys)
     elif args.fig == 'barriers':
         barriers([tuple(x.split('=', 1)) for x in args.lmc], args.out)
+    elif args.fig == 'swap-traj':
+        swap_traj(args.keys, args.out, args.suite, size=args.size)
     elif args.fig == 'ranking':
         ranking(args.metrics, args.keys, args.curves, args.out,
                 [tuple(x.split('/')) for x in args.pairs] if args.pairs else RATIO_PAIRS, args.size)

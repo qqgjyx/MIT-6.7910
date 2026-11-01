@@ -218,9 +218,10 @@ Swap $A\to B$ loads & parameters at $s$; $B$'s warm state \\
 Hyperparameters & $B$'s (\cref{tab:app-optim}) \\
 Steps & $s$ to 10{,}000, on the parent's schedule and batches (data order 0) \\
 Swap forks & 2 directions $\times$ 9 steps $=$ 18 \\
+Metrics (\cref{fig:swap}) & at $s+{}$0, 5, 10, 25, 50, 100, 250, 500, 1000, 2000, 4000, 6000 (each with the next
+  two steps, for the updates) and every 1000 steps \\
 \hline
 Same-batch control & the parent itself ($A$ continued with the same batches) \\
-Data-order control & $A$ continued from $s$ with its own state, data order 1: 18 forks \\
 \hline
 \end{tabular}\end{minipage}
 \end{center}

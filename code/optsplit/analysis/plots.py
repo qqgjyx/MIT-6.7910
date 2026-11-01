@@ -124,10 +124,14 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
 
 
 def panel_labels(axes):
-    """(a), (b), ... just above the top left corner of each panel."""
+    """(a), (b), ... just above the top left corner of each panel, or before its title (then moved to the left)."""
     for i, ax in enumerate(axes):
-        ax.annotate(f'({chr(97 + i)})', (0, 1), xycoords='axes fraction', xytext=(0, 3), textcoords='offset points',
-                    ha='right', va='bottom')
+        if ax.get_title():
+            ax.set_title(f'({chr(97 + i)}) {ax.get_title()}', loc='left')
+            ax.set_title('')
+        else:
+            ax.annotate(f'({chr(97 + i)})', (0, 1), xycoords='axes fraction', xytext=(0, 3),
+                        textcoords='offset points', ha='right', va='bottom')
 
 
 def sharpness(runs, split, path):
