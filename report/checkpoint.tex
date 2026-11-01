@@ -59,26 +59,26 @@ Validation loss.}
 \label{fig:div}
 \end{figure}
 
-\paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} The distance between two runs is the mean
+\paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} \emph{Comparing runs.} The distance between two runs is the mean
 Jensen--Shannon divergence (JS, in bits) of their next-token predictions on held-out text. We compare runs at equal
 training loss, so that speed does not count as a difference. The \emph{floor} is the mean distance between two data
 orders of one optimizer (for two optimizers, the larger floor). A distance of one floor means ``as different as two
 data orders''.
 
-After the learning-rate warmup, AdamW and Muon runs on the same data order stay close: they are nearest neighbours in the densMAP plot (a). Muon learns faster: it
+\emph{Close, but Muon faster.} After the learning-rate warmup, AdamW and Muon runs on the same data order stay close: they are nearest neighbours in the densMAP plot (a). Muon learns faster: it
 reaches AdamW's final validation loss, 1.344, by step 7500 (d).
 
-Muon does not just follow AdamW's path faster. The two share the initialization and the batches. If Muon only moved
+\emph{A different path.} Muon does not just follow AdamW's path faster. The two share the initialization and the batches. If Muon only moved
 faster along AdamW's path, their distance at equal training loss would be far below the floor. Instead it sits at the
 floor (c): 0.95--1.38 floors below training loss 4.85 (median 1.02), and 0.99 at the lowest loss all runs reach. So
 switching the optimizer moves the predictions about as much as changing the data order.
 
-If Muon were only faster, comparing at equal loss would also bring the two closer than comparing at equal step. The
+\emph{Equal step vs.\ equal loss.} If Muon were only faster, comparing at equal loss would also bring the two closer than comparing at equal step. The
 opposite happens: their JS is 0.102 and 0.079 at steps 1000 and 3000 (b), but 0.131 and 0.106 at AdamW's training losses at those steps (c). At
 equal step they are even closer than two data orders of AdamW (0.127 and 0.103), likely because both models have just
 trained on the same batches.
 
-Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
+\emph{Final weights.} Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
 how far the training loss rises, on the straight path between them, above the line joining its end values
 \citep{frankle2020lmc}. It is 3.5--4.1 nats between AdamW and Muon, against 1.2--1.9 between two AdamW data orders
 and 1.6--1.8 between two Muon ones.
