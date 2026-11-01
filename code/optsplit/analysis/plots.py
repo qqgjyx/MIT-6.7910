@@ -336,7 +336,7 @@ def loss_pairs(runs, path, max_loss=None, log_offset=None):
     1.5 to 1.25 take the same width."""
     G = {o: by_seed([r for r in runs if r.optimizer == o]) for o in sorted({r.optimizer for r in runs})}
     pairs = list(combinations(G, 2))
-    fig, axes = plt.subplots(1, len(pairs), figsize=(3.4 * len(pairs), 2.4), sharey=True, squeeze=False)
+    fig, axes = plt.subplots(1, len(pairs), figsize=(max(3.4 * len(pairs), 4.8), 2.4), sharey=True, squeeze=False)
 
     def line(ax, a, b, **kw):
         c = loss_curve(a, b)

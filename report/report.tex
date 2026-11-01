@@ -65,13 +65,14 @@ language-model settings. The exceptions involve SGD: on TinyStories-10M it is up
 AdamW or Muon at losses 4--2.5 (1.4--1.5 times on average) and within 1.1 times below 2.5, while on TinyStories-30M
 every pair stays within 1.1 times; on Shakespeare, where SGD barely trains, AdamW--SGD stays at 1.3 to 1.7 times
 the floor and Muon--SGD has the only persistent split, which is lost with another metric or a stricter
-threshold. Within warmup the ratio to the floor reaches 30 to 200, but there the runs still share their
+threshold. Within warmup the ratio to the floor reaches 32 to 240, but there the runs still share their
 initialization, the floor is near zero, and the ratios are inflated. At equal steps the optimizers do differ,
 mostly because they progress at different speeds: on TinyStories Muon's loss is below AdamW's at every logged
 step after warmup, and AdamW needs 1.35 and 1.22 times as many steps to reach its final validation loss. At equal
 steps AdamW and Muon on the same data order are at most about a fifth closer than two data orders of one
-optimizer, because they share their recent batches; at equal loss this vanishes. On TinyStories-10M every learning rate from a quarter to
-four times each optimizer's rate stays within 0.8--1.1 times the floor at equal loss. On TinyStories AdamW sits at
+optimizer, because they share their recent batches; at equal loss this vanishes. On TinyStories-10M learning rates from a quarter to
+four times AdamW's and Muon's stay at a median 0.8--1.06 times the floor of the tuned run at equal loss, and
+SGD's from an eighth to twice its rate at 0.85--1.25. On TinyStories AdamW sits at
 its adaptive edge of stability for much of training whether or not the optimizers differ, SGD reaches its
 threshold only early in training, and once the learning rate decays the sharpness levels off below the rising
 threshold; across learning rates the top Hessian eigenvalue of all three optimizers falls about as $1/\eta$, and
@@ -79,7 +80,7 @@ Muon's spectral-norm sharpness comes near its stability bound only around the en
 rate the break-even point marks where runs at different rates separate for none of the three optimizers. On
 CIFAR-10 we replicate the break-even effects of
 \citet{jastrzebski2020breakeven} on sharpness and gradient noise, but at equal loss, away from the initial loss,
-two learning rates differ by at most about twice the floor. When we switch optimizer at nine times during
+two learning rates are a median 1.04--1.24 times the floor apart, and above 1.5 times only in short episodes. When we switch optimizer at nine times during
 training, the run ends at the function of the new optimizer whenever that optimizer is fast enough to get there
 in the remaining steps, which on TinyStories is always the case when it is the faster of the two, so the endpoint
 is not decided early. Weight space keeps a mark that function space does not: after a change of optimizer a fork
@@ -95,8 +96,8 @@ n-gram class lie within a distance of the class optimum set by their excess loss
 symmetries of the weights let each optimizer reach the same function at its own weights; and the stability
 thresholds, for Muon one on a spectral-norm sharpness, cap the curvature without choosing between functions of
 equal loss. A toy bigram model reproduces the main effects. Finally, per-layer learning rates set to even out the
-curvature across layers help only SGD, as a self-tuned higher rate: for AdamW and Muon each layer's curvature along
-its step adapts to its own rate, so stability cannot allocate the rate across layers.
+curvature across layers match SGD's re-tuned rate, as a rate tuned on the fly, and do not help AdamW or Muon: each
+layer's curvature along its step adapts to its own rate, so stability cannot allocate the rate across layers.
 \end{abstract}
 
 %% =================================================================
@@ -171,8 +172,8 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   TinyStories-30M the AdamW--Muon distance equals the data-order floor. The n-gram references show in which
   order the optimizers pass the unigram and bigram solutions.
 \item \textbf{What coincides with the changes in distance}: sharpness against its optimizer-specific
-  stability threshold, batch sharpness, the end of warmup (\cref{sec:res-coincide}). The edge of stability does
-  not explain them: on TinyStories AdamW is at its threshold for long stretches whether or not the optimizers differ, and SGD only
+  stability threshold, batch sharpness, the end of warmup (\cref{sec:res-coincide}). We find no edge-of-stability
+  event that lines up with them: on TinyStories AdamW is at its threshold for long stretches whether or not the optimizers differ, and SGD only
   early in training. With the cosine schedule the sharpness levels off and does not follow the threshold up as the
   learning rate decays, and across learning rates\extra\ the top Hessian eigenvalue of all three optimizers falls about
   as $1/\eta$. Muon's spectral-norm sharpness\extra\ comes near its bound only around the end of warmup. Muon with
@@ -196,16 +197,18 @@ optimizer with different data orders. A SimpleCNN on CIFAR-10 replicates the bre
   AdamW's embeddings, most of the eigenvalue comes from curvature between layers (77\% for SGD, 71\% for Muon).
 \item \textbf{A replication of the break-even point} on CIFAR-10 and its transfer to the language models
   (\cref{sec:res-breakeven}). The sharpness and gradient-noise effects replicate, but at equal training loss,
-  away from the initial loss, two learning rates differ by at most about twice the floor. At a constant rate\extra,
+  away from the initial loss, two learning rates are a median 1.04--1.24 times the floor apart, and above 1.5 times
+  only in short episodes. At a constant rate\extra,
   reaching the stability threshold does not mark where the paths of different rates split, for any of the three
   optimizers.
 \item \textbf{Curvature-balanced per-layer rates}\extra\ (\cref{sec:res-balanced}): rates that equalize the
-  layers' shares of the top eigenvector of the stability operator, or the curvature along each layer's step. They
-  help only SGD, mostly as a self-tuned higher rate; for AdamW and Muon every layer sits at its own edge whatever its
-  rate, so stability cannot allocate rates across layers.
+  layers' shares of the top eigenvector of the stability operator, or the curvature along each layer's step. For
+  SGD they match its re-tuned rate, as a rate tuned on the fly; for AdamW and Muon every layer sits at its own edge
+  whatever its rate, so stability cannot allocate rates across layers.
 \item \textbf{Controls}\extra\ (\cref{sec:res-controls}): a second initialization moves the function as much as a
   new data order and reproduces the episodes; SGD's loss gap on rare tokens is a matter of speed; learning rates
-  from a quarter to four times each optimizer's rate stay within 0.8--1.1 times the floor at equal loss; and on a
+  from a quarter to four times AdamW's and Muon's rate stay at a median 0.8--1.06 times the floor at equal loss,
+  and SGD's from an eighth to twice its rate at 0.85--1.25; and on a
   linear model, where theory predicts different limits, the same detector finds a persistent split near
   interpolation, while AdamW and Muon trained into memorization on Shakespeare still do not split.
 \item \textbf{A model of the results}\extra\ (\cref{sec:theory}): at equal loss, predictors of one n-gram class
@@ -305,10 +308,12 @@ $^\ddagger$TinyStories-10M SGD: 0.06 (data orders 0--2) for the divergence analy
 (\cref{fig:div,fig:pairs,fig:overview}, \cref{tab:tstar}), the sharpness and edge of stability
 (\cref{fig:sharpness,tab:coincide}), the anatomy of the sharp direction and the curvature between layers
 (\cref{fig:anatomy-layers,fig:curv-layers}), the swaps, their metrics and mode connectivity
-(\cref{fig:swap,fig:swap-metrics}) and the barriers between pure runs (\cref{fig:lmc-layers}); the other SGD
-analyses on TinyStories-10M (function metrics of the pure runs, representations, controls and the baselines of the
-balanced rates) use the earlier runs at 0.03 (data orders 0--4;
-\cref{sec:setup}, Learning rates).}
+(\cref{fig:swap,fig:swap-metrics}), the barriers between pure runs (\cref{fig:lmc-layers}), the losses, divergence
+figures and n-gram distances of the appendix (\cref{fig:losses,fig:app-divergence10,fig:app-route}) and the
+learning-rate checks (\cref{fig:lr-robust,fig:traj-lr}, where 0.03 is one rate of the sweep); the other SGD
+analyses on TinyStories-10M (function metrics of the pure runs, representations, off-distribution distances, rare
+tokens, the second initialization, the stochastic edge of stability under the cosine schedule, and the balanced
+rates with their baselines) use the earlier runs at 0.03 (data orders 0--4; \cref{sec:setup}, Learning rates).}
 \label{tab:setup}
 \setlength{\tabcolsep}{4.5pt}
 \begin{tabular}{@{}llrrrrlll@{}}
@@ -368,9 +373,9 @@ blew up, 0.06 did not) and are sensitive to numerical noise: rerun with the main
 at 0.06 skipped the early spike of its tuning run (step 70) and ended at 1.66 instead of 1.84, while orders 0 and 1
 repeated exactly; a third repeat with checkpoints at the measured steps (for \cref{fig:curv-layers}) ended at
 1.622, 1.622 and 1.840, order 2 again with the spike. On TinyStories-10M the divergence analysis, the sharpness,
-the anatomy and curvature of the sharp direction, the swaps and the barriers between pure runs use SGD at 0.06
-(orders 0--2, final validation loss 1.62--1.66; \cref{tab:setup}); the other SGD analyses there keep the runs at
-0.03. On TinyStories-30M one of the five SGD runs at 0.1 blew up (order 1, by 9.9 nats at step 3170; final 1.61
+the anatomy and curvature of the sharp direction, the swaps, the barriers between pure runs and the learning-rate
+checks use SGD at 0.06 (orders 0--2, final validation loss 1.62--1.66; \cref{tab:setup}); the other SGD analyses
+there, including the balanced rates and their baselines, keep the runs at 0.03. On TinyStories-30M one of the five SGD runs at 0.1 blew up (order 1, by 9.9 nats at step 3170; final 1.61
 against 1.37--1.39). Half and twice that rate on orders 0--2, without measurements, did not do better: 0.05 never
 blew up but ended at 1.44--1.45, and 0.2 blew up during warmup on orders 0 and 2 (by 2.1 and 8.5 nats at steps 200
 and 210) and ended within 0.02 of 0.1 on both (1.35--1.39 on orders 0--2), so TinyStories-30M keeps 0.1. Runs whose training loss became non-finite were stopped and counted as diverged. Only the
@@ -665,7 +670,8 @@ the state interpolated) on the 64 sequences of the training probe. The barrier i
 \mathrm{Bar}(\theta_1,\theta_2)=\max_{\alpha\in\{0,0.1,\dots,1\}}\big[L(\alpha)-(1-\alpha)L(0)-\alpha L(1)\big],
 \label{eq:barrier}
 \end{equation}
-a loss version of the instability of \citet{frankle2020lmc}. We compute it between the parent $A_0$ and each
+a loss version of the instability of \citet{frankle2020lmc}; we call two weights linearly connected when it
+is below 0.05 nats. We compute it between the parent $A_0$ and each
 of its forks, as a function of the fork step: the forks $A\to A$ with data order 1 reproduce the instability
 analysis of \citet{frankle2020lmc} for each optimizer, and the forks $A\to B$ ask whether a change of
 optimizer at $s$ leaves the solution in the same basin.
@@ -740,7 +746,9 @@ trajectories in prediction space. The three optimizers\extra\ on TinyStories-10M
 hyperparameters at $\tfrac14$, $\tfrac12$, 1, 2 and 4 times its tuned rate, 200 warmup steps and then a constant rate,
 3000 steps, data order 0 (15 runs). Their break-even step is the first step after warmup at which the sharpness
 reaches 0.9 of its threshold ($\lmax$ for SGD, the preconditioned sharpness for AdamW) or, for Muon, which has no
-threshold on $\lmax(H)$, 0.9 of its maximum after warmup.
+threshold on $\lmax(H)$, 0.9 of its maximum after warmup. For AdamW, which is at its threshold when warmup ends,
+and for Muon, whose $\lmax(H)$ peaks within warmup, this rule returns the end of warmup (step 200) or a step
+shortly after it by construction (\cref{sec:res-breakeven}).
 
 \FloatBarrier
 %% =================================================================
@@ -836,8 +844,8 @@ loss, over the distance between two runs of one of them with different data orde
 right). The red line is the threshold $1+m_\times=1.5$ of the split rule. In the language models the large ratios
 at high loss lie within warmup, where the runs still share the initialization and the floor is near zero; after
 warmup the ratio stays near 1, except for the pairs with SGD on Shakespeare, where SGD stalls (Muon--SGD is the
-one persistent split), and on TinyStories-10M, where SGD (at 0.06) stays at 1.4--2.1 times the floor between losses
-4.9 and 3.4 and then returns to it. The learning rates and batch sizes of plain SGD on CIFAR-10 and TinyStories-10M (bottom
+one persistent split), and on TinyStories-10M, where SGD (at 0.06) is up to 2.1 times the floor at losses 4--2.5
+(1.4--1.5 times on average) and within 1.1 times below 2.5. The learning rates and batch sizes of plain SGD on CIFAR-10 and TinyStories-10M (bottom
 left) behave alike. Red, top left: AdamW--Muon trained to memorization (8000 steps\extra). Bottom middle: a linear
 model on separable data, where gradient descent and Adam have different limits\extra; there the rule finds a
 persistent split, near interpolation.}
@@ -1032,7 +1040,7 @@ spectral-norm sharpness (\cref{sec:theory}). Unlike \citet{jastrzebski2020breake
 rate constant, these runs use warmup and cosine decay to 10\%; our CIFAR-10 replication uses a constant rate, as
 they do (\cref{sec:res-breakeven}).
 
-\paragraph{Coincidences.} No edge-of-stability event explains the changes in distance. The first exceedance,
+\paragraph{Coincidences.} We find no edge-of-stability event that lines up with the changes in distance. The first exceedance,
 at steps 1--8, comes before the end of warmup and before SGD's onset; it coincides only with AdamW's onset at
 step 1, which reflects the preconditioner of the first steps rather than an edge of stability. The early
 episodes are short in steps: the $d=0$ runs reach the loss at which the episode ends at steps 9--85, within warmup,
@@ -1083,15 +1091,19 @@ actual step (without decoupled weight decay, which changes AdamW's ratio by less
 training, and over the second half of the run it is 0.13--0.15 for AdamW, 0.08--0.10 for Muon and 0.34--0.67 for SGD.
 With $\bar g$ and $\bar H$ on 256 fresh training sequences, which estimate the population loss, $\bar R$ settles
 within about 500 steps, at 1.01--1.03 for AdamW, 0.95--1.00 for Muon and 0.90--1.05 for SGD. It stays there at
-batch 32 (1.00 for AdamW, 0.99 for Muon) and under the cosine schedule (0.95, 0.92 and 1.05 over its second half),
+batch 32 (1.00 for AdamW, 0.99 for Muon) and under the cosine schedule (0.95, 0.92 and 1.05 over its second half; SGD at 0.03),
 while $\eta\lmax$ falls to about 0.3 of its threshold (\cref{fig:app-stoch-eos}). The two ratios differ by the
 alignment of the step with the gradient: exactly $R_B=\bar R\,\kappa\,\rho$, with the curvature ratio
-$\kappa=s^\top H_Bs/s^\top\bar Hs$ at 1.0--1.4 and the coherence $\rho=\bar g^\top s/g_B^\top s$ at 0.10--0.12 for
-AdamW, 0.06--0.07 for Muon and 0.30--0.66 for SGD, so $R_B$ falls as the coherence does. AdamW and Muon thus sit at an
-edge of stability of the population loss along the step they take, not of their batch loss. For Muon neither part
+$\kappa=s^\top H_Bs/s^\top\bar Hs$ and the coherence $\rho=\bar g^\top s/g_B^\top s$. The coherence, 0.10--0.12 for
+AdamW, 0.06--0.07 for Muon and 0.30--0.66 for SGD, is why $R_B$ falls; the curvature ratio is what separates the
+optimizers: 1.00--1.05 for SGD, up to 1.26 for AdamW and up to 1.4 for Muon, whose steps are sharper on their own
+batch than on fresh data. All three thus sit at an edge of stability of the population loss along the step they
+take, not of their batch loss. For Muon neither part
 of the step is at 1 alone (about 0.84 on the hidden matrices and 0.45 on the auxiliary AdamW part); the cross term
 brings the full step to 1. $\bar R\approx1$ is a weak descent: from the exact loss change, $1-\bar R$ is the fraction
 of its first-order decrease of the population loss that a step achieves, between $-2\%$ and $6\%$ for AdamW and Muon at a constant rate.
+$\bar R\approx1$ is therefore nearly built in: a late step realizes only a few percent of its first-order decrease,
+so its second-order term must cancel almost all of the first-order one.
 
 \begin{figure}[t]
 \centering
@@ -1182,8 +1194,9 @@ to their parent from step 300 on (0.015, then 0), and even the pure AdamW runs w
 barriers of only 0.11--0.17: at $3\cdot10^{-4}$ AdamW stays close to the initialization. Forks from AdamW into Muon or
 SGD keep barriers of 1.4--3.3 up to step 600, and those into Muon are still at 0.27 at step 1000; forks from SGD
 into Muon stay at 1.3--1.7 up to step 800. The exception is the Muon parent: its forks with another data order
-are connected only from step 800 (barrier 3.5 at step 25, 0.06 at 800), later than its forks into AdamW and SGD
-(0.9 and 0.7 at step 100, 0.01 at 800). Muon on Shakespeare is unstable to the data order for half of training,
+are connected only from step 1000 (barrier 3.5 at step 25, 0.055 at 800), later than its forks into AdamW and
+SGD (0.9 and 0.7 at step 100, connected from step 800 at 0.01). Muon on Shakespeare is unstable to the data
+order for two thirds of training,
 while it memorizes, and its forks into slower optimizers move the weights less after the fork. Apart from this
 case, a fork that changes the optimizer stays further from its parent in weight space than one that changes
 the data order, although it does not in function space.
@@ -1210,11 +1223,12 @@ so these swaps say little. Forks from AdamW and Muon into SGD land near pure SGD
 floors), and only those at steps 5000 and 8000 end closer to the parent (0.57--1.00 floors from it) than to pure SGD,
 against steps 1500--2500 on TinyStories-10M: SGD's rate is higher here (0.1 against 0.06), so it erases more. Forks that keep
 AdamW or Muon and change the data order are connected to their parent from step 2000 (0.022 and 0.040 nats, 0 from
-step 5000). Those that keep SGD have a barrier of only 0.14 at step 100 and below 0.06 from step 400, although the
+step 5000). Those that keep SGD have a barrier of only 0.14 at step 100, 0.059 at step 400 and below 0.05 from step 800, although the
 pure SGD runs with data orders 0 and 1 have a barrier of 8.8, as order 1 blew up at step 3170
 (\cref{sec:setup}). As on TinyStories-10M at 0.06, SGD's sensitivity to the data order is confined to the first few
-hundred steps. A change of optimizer again needs a later fork. From AdamW the SGD fork reaches 0.048 nats at
-step 3000, and the Muon fork 0.077 only at step 8000. From Muon the SGD fork is connected from step 3000 (0.068),
+hundred steps. A change of optimizer again needs a later fork. From AdamW the SGD fork is connected from step 3000 (0.048
+nats), and the Muon fork reaches only 0.077 at step 8000. From Muon the SGD fork is connected from step 5000
+(0.068 at step 3000),
 but the AdamW fork is still at 0.19 at step 8000. From SGD the AdamW and Muon forks are never connected (0.69 and
 0.29 at step 8000). The forks into Muon (4.4--5.7 nats) again end further from the pure run than another data order
 does (1.6--2.1), at every fork step. The forks into AdamW (3.5--18.8) do so only when forked at steps 200--400 from
@@ -1230,7 +1244,8 @@ which blew up).
 (5 per pair of optimizers) or only in the data order (10 per optimizer); mean and standard deviation over pairs.
 TinyStories-10M SGD at 0.06, with 3 pairs per optimizer pair and 3 data-order pairs.
 ``All'' is the ordinary barrier; for the other groups only that group of parameters moves along the straight line
-from the first run to the second, the rest stay at the first run's \citep{adilova2024layerwise}.}
+from the first run to the second, the rest stay at the first run's \citep{adilova2024layerwise}. Blocks are
+numbered from 1 at the input end.}
 \label{fig:lmc-layers}
 \end{figure}
 
@@ -1240,13 +1255,13 @@ moved at a time (\cref{fig:lmc-layers}). In size, a change of optimizer is consi
 data order only on TinyStories-10M: there AdamW and Muon are 3.5--4.1 nats apart and SGD at 0.06 is 2.2--2.5 from
 either, against 1.2--1.9, 1.6--1.8 and 0.1--1.0 between two data orders of AdamW, Muon and SGD (at 0.03 SGD's data
 orders were 0.1--4.1 apart, which contained the pairs with SGD). On TinyStories-30M AdamW's data orders are
-3.3--6.8 nats apart (AdamW--Muon 4.3--4.8) and SGD's 0.6--9.2 (0.6--7.1 without order 1, which blew up), which
+3.3--6.8 nats apart (AdamW--Muon 4.3--4.8), Muon's only 1.6--2.05 (10 pairs), and SGD's 0.6--9.2 (0.6--7.1 without order 1, which blew up), which
 contain the pairs with SGD; on Shakespeare Muon's are 3.6--6.6 apart (AdamW--Muon 2.1--2.7).
 Where the barrier sits does tell them apart. Between two data orders the single-layer barriers sit in the first
 block, up to 4.0 nats on average, and are at most 0.6 in any later block, or there are none at all (AdamW on
 Shakespeare, Muon on TinyStories-30M, SGD on TinyStories-10M) although the full barrier is not small. Between AdamW and Muon on the same
-data they extend into the middle of the network: 0.8 and 0.4 nats in blocks 1--2 on TinyStories-10M, 2.3--0.5 in
-blocks 1--4 on TinyStories-30M and 1.1--1.9 in blocks 1--5 on Shakespeare. The pairs with SGD look like data
+data they extend into the middle of the network: 0.8 and 0.4 nats in blocks 2--3 on TinyStories-10M, 2.3--0.5 in
+blocks 2--5 on TinyStories-30M and 1.1--1.9 in blocks 2--6 on Shakespeare. The pairs with SGD look like data
 orders, with the barrier mostly in the first block (and the embeddings on Shakespeare), and the head carries none
 (the loss is convex in the head). Two data orders, or SGD and an adaptive optimizer, thus end in solutions that
 differ in how the first block reads the embeddings, while AdamW and Muon also differ in how the middle blocks
@@ -1296,7 +1311,8 @@ between blocks, even more than for $H$.
 \caption{Share of the top eigenvector by layer at the edge of stability (sharpness at least 0.9 of the threshold),
 mean and standard deviation over the five data orders (TinyStories-10M SGD: three, at 0.06); in brackets, the number of measured steps. For AdamW,
 of $P^{-1/2}HP^{-1/2}$ (which sets its threshold) and of $H$ at the same steps; for Muon, of $H$
-(threshold: spectral-norm sharpness), all steps. L$i$: transformer block $i$; norms: the gains of all LayerNorms.}
+(threshold: spectral-norm sharpness), all steps. L$i$: transformer block $i$, numbered from 1 at the input end;
+norms: the gains of all LayerNorms.}
 \label{fig:anatomy-layers}
 \end{figure}
 
@@ -1326,7 +1342,7 @@ a layer; off-diagonal: between layers); bars: share of the direction $\|v_\ell\|
 run's mean over its saved checkpoints at the threshold (all saved steps for Muon). The AdamW panel uses 2 steps of
 d0, because the preconditioned operator needs the optimizer state, which only the fork checkpoints keep. The SGD
 panel is SGD at 0.06: the repeats of data orders 0 and 1 with checkpoints at the measured steps (10 steps between
-161 and 574); the repeat of order 2 took the early loss spike and is left out (\cref{sec:res-anatomy}).}
+161 and 574); the repeat of order 2 took the early loss spike and is left out (\cref{sec:setup}).}
 \label{fig:curv-layers}
 \end{figure}
 
@@ -1384,7 +1400,10 @@ $R_a=s_a^\top(Hs)_a/(-2g_a^\top s_a)$ on 256 fresh sequences (\cref{sec:res-stoc
 \caption{Curvature-balanced per-layer rates\extra: final validation loss minus that of the baseline on the same
 data order (on Shakespeare, best minus best, since the runs overfit), for data orders 0, 1, 2 or as a range over
 them (for B, over its targets on data order 0); single values are data order 0. In brackets, the speedup: the
-baseline's steps to its best validation loss over the balanced run's steps to reach it. --: not run.}
+baseline's steps to its best validation loss over the balanced run's steps to reach it. A run stopped early is
+compared with the baseline at the same step. --: not run. The SGD runs on TinyStories-10M and their baselines use
+SGD's earlier rate there, 0.03; against the re-tuned rate 0.06, B1 is $+0.06,-0.07,-0.08$ and B0.9-fe-fresh
+$+0.04,-0.02,-0.005$.}
 \label{tab:balanced}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}llll@{}}
@@ -1396,7 +1415,7 @@ SGD B0.9-fe-fresh & $-0.29,-0.16,-0.25$ ($1.8$--$2.0\times$) & $-0.05,-0.15$ ($1
 SGD A-fe & $-0.19,-0.06,-0.18$ ($1.4$--$2.1\times$) & $+0.04,-0.16,+0.03$ & $+0.00,-0.05,+0.17$ \\
 AdamW A-fe & $+0.006$ & $+0.003$ & $+0.013$ to $+0.022$ \\
 AdamW A; B & $+0.015$ to $+0.018$; $+0.06$ to $+0.16$ & -- & -- \\
-Muon A & $-0.004$ & cancelled & $+0.003$ to $+0.012$ \\
+Muon A & $-0.004$ & $+0.005$ at step 6500, cancelled & $+0.003$ to $+0.012$ \\
 Muon B & $+0.02$ to $+0.04$ & -- & -- \\
 v2: AdamW, Muon & $+0.094$, $+0.029$ & -- & -- \\
 v2, own block: AdamW, Muon & $+0.061$, $+0.020$ & -- & -- \\
@@ -1408,24 +1427,29 @@ v2, own block: AdamW, Muon & $+0.061$, $+0.020$ & -- & -- \\
 \centering
 \includegraphics[page=1,width=0.55\linewidth]{figures/ts10m/losses_balanced.pdf}\\[2pt]
 \includegraphics[page=3,width=\linewidth,trim=5 99 5 83,clip]{figures/ts10m/losses_balanced.pdf}
-\caption{Curvature-balanced rates\extra\ on TinyStories-10M. Top: validation loss of the baselines (solid) and of
-SGD B1, AdamW A-fe and Muon A (dashed), mean over data orders, band from minimum to maximum. Bottom: final
+\caption{Curvature-balanced rates\extra\ on TinyStories-10M. Top: validation loss of the baselines (solid; SGD at 0.03) and
+of SGD B1, AdamW A-fe and Muon A (dashed), mean over data orders, band from minimum to maximum. Bottom: final
 multiplier $m_a$ of each block in the runs that only redistribute the rate (A, A-fe), with a power-law fit
 $m_a\propto\ell^\alpha$ over blocks 1--6; the embeddings are fixed at 1, and Muon's embeddings and head are trained by
 its auxiliary AdamW at the schedule's rate. Dotted: the caps.}
 \label{fig:balanced}
 \end{figure}
 
-\paragraph{Results.} Balancing helps only SGD (\cref{tab:balanced}, \cref{fig:balanced}, top). SGD B1 beats the
-baseline on every data order of TinyStories-10M, 2.2--2.7 times faster, and on two of three orders of
-TinyStories-30M and Shakespeare. At a good rate, though, redistribution adds nothing: plain SGD at 0.12, four times
-the baseline rate, reaches 1.552 and 1.554 on data orders 0 and 2 (and blows up on order 1), and A-fe at 0.12
-reaches 1.567 and 1.569, so B's gain is mostly a rate tuned on the fly that stays below an instability. The SGD
-baseline rate is being re-tuned, so the gains over it may shrink. For AdamW and Muon, A stays within about 0.02 of
-the baseline everywhere and B is worse. B can also fail: several B runs blew up at an instability the 32 fixed
-sequences did not show, and low targets collapse $\kappa$ to its floor (\cref{app:balanced}). At equal training loss every balanced run is about as close to the
-baseline on the same data order as another data order is, or closer (\cref{fig:app-bal-js}): the per-layer rates
-change the speed, not the function.
+\paragraph{Results.} The balanced SGD runs on TinyStories-10M, and their baselines, use SGD's earlier rate there,
+0.03, at which two of the five baselines blew up (\cref{sec:setup}). Against these baselines SGD B1 is better on
+every data order, 2.2--2.7 times faster (\cref{tab:balanced}, \cref{fig:balanced}, top), as it is on two of three
+orders of TinyStories-30M and Shakespeare. Against the re-tuned rate, 0.06 (1.622, 1.628 and 1.658 on data orders
+0--2), the gain is gone: B1 ends at 1.682, 1.553 and 1.577 and B0.9-fe-fresh at 1.664, 1.604 and 1.653, so for
+SGD balancing matches the re-tuned rate, while A-fe, which only redistributes the rate, is worse (1.709--1.766).
+Redistribution adds nothing at a higher rate either: plain SGD at 0.12 reaches 1.552 and 1.554 on data orders 0
+and 2 (and blows up on order 1), and A-fe at 0.12 reaches 1.567 and 1.569, so B's gain is a rate tuned on the fly
+that stays below an instability. For AdamW and Muon, A stays within about 0.02 of the baseline everywhere and B is
+worse. B can also fail: several B runs blew up at an instability the 32 fixed
+sequences did not show, and low targets collapse $\kappa$ to its floor (\cref{app:balanced}). At equal training loss the AdamW and Muon runs end 0.84--1.03 times the
+data-order floor from their baseline on the same data order on TinyStories-10M (0.95--1.07 on Shakespeare;
+\cref{fig:app-bal-js}): for them the per-layer rates change the speed, not the function. Balanced SGD ends 1.4--2.0
+times the floor from its baseline at 0.03, most on data orders 0 and 2, whose baselines blew up: there it is above
+the floor's range at 74--96\% of the loss levels below 4, against 30--48\% on order 1.
 
 \paragraph{Where the rate goes.} After balancing the shares are even: over steps 5000--10{,}000, 12--15\% per block
 and the head and 3\% in the embeddings for SGD B1, against 0--44\% for the baselines (\cref{fig:curv-layers};
@@ -1442,7 +1466,8 @@ whatever the layer's rate, even with rates 100 times apart (\cref{fig:app-bal-v2
 the numerator, $s_a^\top H_{aa}s_a$ as in block Jacobi, it settles at 0.25--0.3, the curvature between layers being
 about 70\% of the numerator. Each layer's curvature along its step adapts to its own rate, so no quantity of this
 kind can choose the allocation, and the rule random-walks the rates into the caps. Curvature-based per-layer rates
-thus help only SGD, as a self-tuning rate; for AdamW and Muon, stability cannot allocate the rate across layers.
+thus at best match a tuned rate for SGD, by tuning it on the fly; for AdamW and Muon, stability cannot allocate the
+rate across layers.
 
 \subsection{Break-even replication}
 \label{sec:res-breakeven}
@@ -1506,8 +1531,10 @@ warmup.}
 \citet{jastrzebski2020breakeven}. At a constant rate (\cref{sec:method-breakeven}, \cref{fig:breakeven-lm}) SGD
 reaches its threshold between steps 650 and 200, earlier at larger rates, but its paths at different rates
 separate before that, around steps 50--100. AdamW is already at its threshold when warmup ends, so its break-even
-step is 200 at every rate, and its paths stay together. Muon's $\lmax(H)$ peaks within warmup and only falls after,
-so the rule returns steps 200--350, which mark nothing in particular; its paths fan out late. Reaching the threshold
+step is 200, the end of warmup, at every rate by the definition of the rule (the first step after warmup at
+the threshold), and its paths stay together. Muon's $\lmax(H)$ peaks within warmup and only falls after, so its
+maximum after warmup is at the end of warmup and the rule returns steps 200--350, again by construction; they
+mark nothing in particular, and its paths fan out late. Reaching the threshold
 does not mark where the paths of different rates split.
 
 \paragraph{Batch size.\extra} On CIFAR-10 at $\eta=0.05$, batch 30 against 300 also replicates the sharpness effect
@@ -1526,14 +1553,14 @@ episode and no persistent split (\cref{fig:app-breakeven2}).
 \caption{Function metrics over training for the $d=0$ runs on TinyStories-10M: distance of the weights from the
 initialization relative to the initial norm, Frobenius norm of the input Jacobian of the softmax output, top
 eigenvalue of the input Hessian of the loss (inputs are the token embeddings), and one-token substitution
-sensitivity (\cref{app:metrics}).}
+sensitivity (\cref{app:metrics}). SGD at 0.03.}
 \label{fig:metrics}
 \end{figure}
 
 \begin{table}[t]
 \centering\small
 \caption{Final function metrics on TinyStories, mean over the five data orders (standard deviations are small
-except for SGD's spectral norms and stable rank). ``Hidden'' are the matrices in the transformer blocks, the ones
+except for SGD's spectral norms and stable rank); TinyStories-10M SGD at 0.03. ``Hidden'' are the matrices in the transformer blocks, the ones
 Muon updates; the stable rank is $\|W\|_F^2/\|W\|_2^2$.}
 \label{tab:metrics}
 \begin{tabular}{@{}lrrrrrr@{}}
@@ -1587,8 +1614,8 @@ four times the substitution sensitivity of the others (0.19 against 0.10 and 0.0
 TinyStories, AdamW and Muon trained on the same data have less similar representations than two data orders of
 either optimizer, but not by much outside the first block: linear CKA 0.69 and 0.66 after the first block
 against 0.87--1.0, and 0.78--0.97 against 0.85--0.98 after the others, 0.82--0.85 against 0.85--0.88 after the
-final LayerNorm. SGD's representations are not even reproducible across its own data orders (0.57--0.83), and
-pairs with SGD are lower still. On Shakespeare, where Muon memorizes, AdamW and Muon differ clearly (0.40--0.87).
+final LayerNorm. SGD's representations vary much more across its own data orders (0.57--0.83; on
+TinyStories-10M these are the runs at 0.03, two of which blew up), and pairs with SGD are lower still. On Shakespeare, where Muon memorizes, AdamW and Muon differ clearly (0.40--0.87).
 Another initialization moves the representations as much as another data order. So the optimizer's mark fades
 from the weights (their geometry, and barriers in the middle blocks) through the representations (a small CKA gap) to the
 outputs (none).
@@ -1600,7 +1627,7 @@ outputs (none).
 \caption{Linear CKA\extra\ between the final hidden states of two pure runs after each transformer block (the last
 point is the final LayerNorm), averaged over pairs. Solid: other optimizer, same initialization and data order;
 dashed: same optimizer, other data order; dotted: same optimizer, other initialization (not run on
-TinyStories-30M).}
+TinyStories-30M). TinyStories-10M SGD at 0.03.}
 \label{fig:cka}
 \end{figure}
 
@@ -1620,7 +1647,8 @@ fits the data, not how it extrapolates.
 %% python -m optsplit.analysis.ood 'S_main/*' 'S_initseed/*' --out analysis/S
 \caption{Distance $D_\JS$ off the data distribution\extra\ between the final functions of two optimizers (same
 initialization and data order), averaged over the five data orders, over the larger of the two optimizers' mean distance between data orders, on
-validation sequences, on the same sequences with shuffled tokens, and on uniformly random tokens.}
+validation sequences, on the same sequences with shuffled tokens, and on uniformly random tokens.
+TinyStories-10M SGD at 0.03.}
 \label{fig:ood}
 \end{figure}
 
@@ -1667,7 +1695,7 @@ out (Muon--SGD in stable rank).}
 \caption{Controls added after the plan. Top: second initialization on Shakespeare; for each optimizer, at equal
 steps, the distance to the same optimizer from the other initialization (same data order), to the same
 optimizer with the other data order (same initialization), and to the other optimizers (same initialization
-and data order); median and range over the pairs. Middle: TinyStories-10M by target-token frequency (quintiles
+and data order); median and range over the pairs. Middle: TinyStories-10M (SGD at 0.03) by target-token frequency (quintiles
 of the training frequency of the target, rare to frequent): final validation loss of each optimizer (mean over
 data orders), and the distance between optimizers over the floor at the final step and at the lowest training
 loss both runs reach. Bottom: the linear positive control; loss-matched JS distance between SGD and Adam on the
@@ -1688,13 +1716,16 @@ initialization: 4.23--2.77 and 2.30--2.12) and no persistent split; AdamW--SGD 4
 On TinyStories-10M (\cref{fig:app-initseed}) the two distances also agree from about step 100 on, and at the
 final step the initialization, the data order and the change between AdamW and Muon all give the same distance:
 0.054, 0.062 and 0.058 bits from AdamW, 0.055, 0.059 and 0.058 from Muon. The episodes are again close to those
-of the first initialization, AdamW--Muon 8.31--4.27 (first: 8.26--4.85), AdamW--SGD 8.31--6.21 (8.26--6.32) and
-Muon--SGD 8.43--6.78 (8.38--5.81), with no persistent split. Changing the initialization thus moves the function by as much as changing the data
+of the first initialization (in brackets, over its five data orders): AdamW--Muon 8.31--4.27 (8.26--4.85),
+AdamW--SGD 8.31--6.21 (8.26--6.32) and Muon--SGD 8.43--6.78 (8.38--5.81), with no persistent split. The second
+initialization ran SGD at 0.03, so its pairs with SGD are compared with the first initialization's runs at 0.03
+(at 0.06 Muon--SGD's episode lasts until loss 3.54 and AdamW--SGD has a second one, 4.85--3.97). Changing the initialization thus moves the function by as much as changing the data
 order, and the structure of the episodes does not depend on the initialization.
 
 \paragraph{Rare and frequent tokens.} \citet{kunstner2024heavytail} attribute Adam's advantage over SGD on
 language models to the rare classes of a heavy-tailed vocabulary. We grouped the probe positions by the training
-frequency of their target token (\cref{fig:controls}, middle, for TinyStories-10M). SGD's loss gap is concentrated on the rare tokens:
+frequency of their target token (\cref{fig:controls}, middle, for TinyStories-10M, SGD at 0.03). SGD's loss gap is
+concentrated on the rare tokens:
 on TinyStories-10M it is 1.15 nats above AdamW on the rarest fifth and 0.12 on the most frequent (TinyStories-30M:
 0.48 and 0.07). At the final step its distance from AdamW and Muon is also largest on the rare tokens (1.8--2.1
 times the floor, against 1.4 on the most frequent), but at the lowest training loss both runs reach it is
@@ -1728,9 +1759,9 @@ runs (data order 0, same initialization) give the comparison at every other rate
 tuned run of every optimizer on the same data, at equal training loss, over the data-order floor of the tuned
 runs, summarized by the median below the bigram loss (\cref{fig:lr-robust}). On TinyStories every rate that
 trains stably, a 27-fold range for AdamW, 8-fold for Muon and 3- to 10-fold for SGD, is within 0.80--1.11 floors
-of all three tuned optimizers, with one exception: SGD at 0.1 is 1.35 floors from tuned SGD at 0.03 on
-TinyStories-10M, further than from tuned AdamW or Muon. Only rates at the edge of stability (Muon at 0.08, SGD
-at 0.3 on TinyStories-10M) are 1.5--2.3 floors away, and higher ones diverge. On Shakespeare, where SGD does not get below the bigram loss
+of all three tuned optimizers, with two exceptions on TinyStories-10M, both against tuned SGD at 0.06: SGD at 0.03
+is 1.17 floors from it and SGD at 0.1 1.44, further than from tuned AdamW or Muon (0.98--1.05). Only rates at the
+edge of stability (Muon at 0.08, SGD at 0.3 on TinyStories-10M) are 1.5--3.3 floors away, and higher ones diverge. On Shakespeare, where SGD does not get below the bigram loss
 at most rates, AdamW at 3--13 times its tuned rate is 1.5--1.6 floors from tuned AdamW but 1.03--1.06 from tuned
 Muon, since the floor of a cross comparison is the larger of the two optimizers' floors and Muon's is large
 (it memorizes). The floor of the tuned runs may not be the
@@ -1745,15 +1776,19 @@ TinyStories is not a property of the chosen rates.
 %% python -m optsplit.analysis.lr_robust --sweep 'S_lrsweep/*' --main 'S_main/*' --below 3.8 --out analysis/S
 \caption{Each learning-rate sweep run (rows) against the tuned run of each optimizer (columns) on the same data
 order: median loss-matched JS over the data-order floor of the tuned runs, below the bigram loss (2.47 on
-Shakespeare, 3.8 on TinyStories). Blue below 1, red above; ``--'': diverged or never below that loss.}
+Shakespeare, 3.8 on TinyStories). Blue below 1, red above; ``--'': diverged or never below that loss. Tuned SGD on
+TinyStories-10M: 0.06 (orders 0--2); the sweep's 0.03 is its earlier rate.}
 \label{fig:lr-robust}
 \end{figure}
 
-\paragraph{Rates around the tuned one.} On TinyStories-10M we also trained each optimizer at $\tfrac14$,
-$\tfrac12$, 2 and 4 times its tuned rate (SGD 0.0075--0.12, AdamW $5\cdot10^{-4}$--$8\cdot10^{-3}$, Muon
-0.0025--0.04; data order 0, the schedule and length of the main runs) and compared each run with the run at the
-tuned rate. At equal loss every rate stays within 0.8--1.1 times the data-order floor of the tuned runs, from
-loss about 3--4 to the end, for all three optimizers. In a densMAP of the trajectories, one per optimizer
+\paragraph{Rates around the tuned one.} On TinyStories-10M we also trained AdamW and Muon at $\tfrac14$,
+$\tfrac12$, 2 and 4 times their tuned rates ($5\cdot10^{-4}$--$8\cdot10^{-3}$ and 0.0025--0.04) and SGD at 0.0075,
+0.015 and 0.12, $\tfrac18$, $\tfrac14$ and 2 times its re-tuned 0.06 (data order 0, the schedule and length of the
+main runs); for SGD the main run at 0.03, the tuning runs at 0.045 and 0.085 and the sweep run at 0.1 add four
+more rates. We compared each run with the run at the tuned rate at equal loss, over the data-order floor of the
+tuned runs. Below the bigram loss (3.8) the median ratio is 0.79--1.06 for AdamW and Muon (at most 1.14 below
+loss 3), and 0.85--1.25 for SGD from $\tfrac18$ to 2 times its rate (0.03: 1.17), except at 0.085 and 0.1 (1.48
+and 1.44); against tuned AdamW and Muon every SGD rate is at 0.98--1.22. In a densMAP of the trajectories, one per optimizer
 (\cref{fig:traj-lr}), the SGD runs at different rates take separate paths from about loss 3, while the AdamW runs
 share one path down to loss 3, and so do the Muon runs. The embedding keeps neighbourhoods, not distances: in the
 actual distances at equal loss the SGD rates do not split either.
@@ -1761,8 +1796,9 @@ actual distances at equal loss the SGD rates do not split either.
 \begin{figure}[t]
 \centering
 \includegraphics[page=1,width=\linewidth,trim=0 0 0 45,clip]{figures/ts10m/trajectories_lr.pdf}
-\caption{Runs at $\tfrac14$ to 4 times each optimizer's rate on TinyStories-10M (data order 0, shared
-initialization; the $1\times$ run is the main run): densMAP of the $\sqrt{\JS}$ distance between their logged
+%% SGD around 0.06: figures/ts10m/trajectories_lr_sgd0.06.pdf (no trim) from code/slurm/ckw/ckw_lrtraj.py, ORCD job 27559254
+\caption{Runs at $\tfrac14$ to 4 times AdamW's and Muon's rate and $\tfrac18$ to 2 times SGD's (0.0075--0.12
+around 0.06) on TinyStories-10M (data order 0, shared initialization; the $1\times$ run is the main run): densMAP of the $\sqrt{\JS}$ distance between their logged
 steps, one embedding per optimizer. Markers: the initialization and the steps at which each run reaches training
 loss 7, 5, 3 and 1.8. densMAP keeps neighbourhoods, not distances.}
 \label{fig:traj-lr}
@@ -1917,7 +1953,9 @@ rates (their first conjecture).
 (ii) AdamW is linear in the gradient only for a frozen preconditioner, and $P$ changes over about
 $1/(1-\beta_2)$ steps. The threshold applies to $\lmax(P^{-1}H)$ \citep{cohen2022adaptive}, so the raw sharpness at
 break-even is about $38\,p/\eta$, with $p$ the preconditioner along the sharp direction, of the size of the
-gradient's root mean square. On TinyStories-30M $\lmax\approx5$ at $\eta=1.5\times10^{-3}$ gives $p\approx2\times10^{-4}$,
+gradient's root mean square. On TinyStories-30M, at the steps at which AdamW is at its threshold after warmup,
+$\lmax\approx5$ at $\eta_t\approx1.5\times10^{-3}$ (the peak rate $2\times10^{-3}$ after some cosine decay) gives
+$p\approx2\times10^{-4}$,
 and AdamW sits at the lowest raw sharpness of the three (5--10, against 12--20 for Muon and 20--30 for SGD;
 \cref{fig:app-sharpness}). A growing oscillation also raises $v$ and with it $P$, so AdamW stabilizes itself
 through its preconditioner as well as through the curvature. The test is whether, at the steps at which AdamW
@@ -1952,7 +1990,7 @@ direction costs $\frac12\lambda a^2$ of loss, so it moves the function no more t
 equally in floor pairs and in cross pairs. This is why the edge-of-stability events (AdamW at its threshold for
 much of training, SGD only early) do not line up with changes in the loss-matched distance
 (\cref{sec:res-coincide}), and why on CIFAR-10 the break-even effects on sharpness and gradient noise replicate
-while two learning rates stay within 1.75 floors at equal loss (\cref{sec:res-breakeven}).
+while at equal loss the rates 0.01 and 0.1 stay within 1.75 floors (\cref{sec:res-breakeven}).
 
 \paragraph{Predictions.} A persistent split needs a class without a best element, as when training into
 interpolation; AdamW and Muon memorize Shakespeare without splitting, so either their implicit biases agree on
@@ -2015,13 +2053,13 @@ overstates how differently two training procedures shape the function.
 
 \paragraph{Edge of stability.} On TinyStories AdamW is at its adaptive edge of stability through much of
 training whether or not the optimizers differ, and SGD meets its threshold only early in training; neither
-explains the start or the end of the early episode, which ends within warmup in all pairs but one and in the same
+lines up with the start or the end of the early episode, which ends within warmup in all pairs but one and in the same
 way for AdamW and Muon. With the cosine schedule the threshold acts as a ceiling: once the learning rate decays,
 the sharpness levels off instead of following the threshold up, and the runs leave the edge of stability. Across
 learning rates the top Hessian eigenvalue falls about as $1/\eta$ for all three optimizers, Muon included, whose
 threshold is on a spectral-norm sharpness \citep{islamov2026noneuclidean}. That sharpness comes near its bound only
 around the end of warmup, and at a constant rate the break-even step does not mark where the paths of different
-rates separate, for any of the three optimizers. Along the step they actually take, AdamW and Muon sit at an edge of
+rates separate, for any of the three optimizers. Along the step they actually take, all three optimizers sit at an edge of
 stability of the population loss, not of their batch loss (\cref{sec:res-stoch-eos}). The one edge-of-stability event that lines up with a change in function, Muon's
 auxiliary AdamW overshooting its threshold just before Muon memorizes on Shakespeare, is not what drives the
 memorization, which persists in the matched control (where the overshoot comes later and is smaller). The
@@ -2050,7 +2088,7 @@ sharp direction moves to the new optimizer's layers after a swap.
   spectral-norm sharpness is measured only on TinyStories-10M, without momentum and as a Frank--Wolfe lower bound
   (\cref{sec:method-sharpness}), and the AdamW ratio at the first steps reflects a preconditioner built from few
   gradients.
-\item The sweeps with sharpness use one data order and three or four rates per optimizer.
+\item The sweeps with sharpness use one data order and three to five rates per optimizer.
 \item Sharpness is measured on the training loss of a fixed batch of 32 training sequences with 20 Lanczos
   iterations, in float32 with TF32 matrix products, while training uses bfloat16 autocast and the predictions are
   compared on held-out validation contexts.
@@ -2074,7 +2112,7 @@ only persistent split, Muon--SGD, a fragile one. The large ratios within warmup 
 Muon is faster than AdamW, and at equal steps the two are at most about a fifth closer on the same data order than
 two data orders of one optimizer, because they share their recent batches; at the end of TinyStories-30M,
 replacing AdamW by Muon changes the function no more than reshuffling the data. Neither the edge of stability nor
-the end of warmup explains the changes in distance; at a constant rate, reaching the threshold does not mark where
+the end of warmup lines up with the changes in distance; at a constant rate, reaching the threshold does not mark where
 runs at different rates separate, and Muon's spectral-norm sharpness comes near its bound only around the end of
 warmup. Switching optimizers during training does not reveal an early decision either: the run ends at the
 function of the optimizer it switches to whenever that one is fast enough to get there, on TinyStories whenever
@@ -2084,18 +2122,20 @@ linearly connected to its parent, the barrier between AdamW and Muon extends bey
 between two data orders lies, and the weights carry each optimizer's geometry, mixed after a swap according to
 how far each moved them. On TinyStories the hidden representations differ after the first block and little after
 the others, and the functions no more than with another data order even off the data distribution. As a check,
-on TinyStories every rate of the sweeps that trains stably is within 0.8--1.1 floors of the tuned runs, with one
-exception at 1.35, and on TinyStories-10M rates from a quarter to four times each optimizer's rate stay within
-0.8--1.1 times the floor of the tuned runs at equal loss.
+on TinyStories every rate of the sweeps that trains stably is within 0.8--1.1 floors of the tuned runs, except
+SGD at 0.03 and 0.1 against SGD at 0.06 (1.17 and 1.44), and on TinyStories-10M rates from a quarter to four times
+AdamW's and Muon's stay at a median 0.8--1.06 times the floor of the tuned run at equal loss, and SGD's from an
+eighth to twice its rate at 0.85--1.25.
 A linear model on separable data, where the limits of training are known to differ, shows that our test can
 detect a split, and places it near interpolation; but AdamW and Muon trained on Shakespeare until they memorize
 the training set do not split either, so for these models the absence of a split is not only a matter of
 training too briefly. A simple model accounts for this pattern (\cref{sec:theory}): at equal loss, functions of
 one n-gram class are pinned by their excess loss whatever the optimizer, while the optimizer chooses the route,
 the speed, the weights among those computing a function, and a cap on the curvature, which for Muon applies to a
-spectral-norm sharpness. Per-layer rates that even out the curvature help only SGD, as a self-tuned rate: for AdamW
-and Muon each layer's curvature along its step adapts to its own rate, so stability cannot allocate the rate across
-layers, and at equal loss the balanced runs compute the function of the baseline up to data-order noise.
+spectral-norm sharpness. Per-layer rates that even out the curvature match SGD's re-tuned rate, as a rate tuned on
+the fly, and do not help AdamW or Muon: each layer's curvature along its step adapts to its own rate, so stability
+cannot allocate the rate across layers, and at equal loss their balanced runs compute the function of the baseline
+up to data-order noise.
 
 \printbibliography
 
@@ -2274,8 +2314,8 @@ All derivatives are taken by automatic differentiation in float32, with the exac
 \label{app:compute}
 %% =================================================================
 
-All runs used one NVIDIA L40S GPU each on the MIT ORCD cluster. The project took 103 GPU-hours in all, 60\% of
-them for the forks (\cref{tab:compute}), and 89 CPU core-hours for the offline analyses that run on CPU (mode
+All runs used one NVIDIA L40S GPU each on the MIT ORCD cluster. The runs of \cref{tab:compute} took 103
+GPU-hours, 60\% of them for the forks, and 89 CPU core-hours for the offline analyses that run on CPU (mode
 connectivity, representations, off-distribution distances, swap landing and the split statistics). Twelve smoke-test runs (0.2 GPU-hours) are
 not counted. The GPU-hours include runs that were later replaced and are not in the run counts (SGD at its best
 sweep rate on data orders 1--4, which diverged), and the Shakespeare break-even count includes the three runs at
@@ -2372,7 +2412,8 @@ early spike of its tuning run), against 1.88 at 0.03.}
 \includegraphics[width=0.49\linewidth]{figures/ts10m/losses.png}\\
 \includegraphics[width=0.49\linewidth]{figures/ts30m/losses.png}
 \caption{Training-probe and validation loss of the main runs against step: Shakespeare (top left),
-TinyStories-10M (top right), TinyStories-30M (bottom). Data order 0 thick, orders 1--4 thin.}
+TinyStories-10M (top right; SGD at 0.06, orders 0--2), TinyStories-30M (bottom). Data order 0 thick, the others
+thin.}
 \label{fig:losses}
 \end{figure}
 
@@ -2393,7 +2434,7 @@ Muon--AdamW (control); TinyStories-30M AdamW--SGD; TinyStories-30M Muon--SGD.}
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_adamw_sgd.png}\\
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_muon_sgd.png}
 \caption{Divergence figures as in \cref{fig:divergence} for TinyStories-10M. Rows: AdamW--Muon, AdamW--SGD,
-Muon--SGD.}
+Muon--SGD; SGD at 0.06 (data orders 0--2).}
 \label{fig:app-divergence10}
 \end{figure}
 
@@ -2404,7 +2445,7 @@ Muon--SGD.}
 \includegraphics[width=0.49\linewidth]{figures/ts30m/ngram.png}
 \caption{Top: optimizer against data order at equal steps on Shakespeare, as in \cref{fig:route} (top), for
 the three pairs. Bottom: distance of the $d=0$ runs from the unigram and bigram models on TinyStories-10M
-(left) and TinyStories-30M (right), as in \cref{fig:route} (bottom).}
+(left; SGD at 0.06) and TinyStories-30M (right), as in \cref{fig:route} (bottom).}
 \label{fig:app-route}
 \end{figure}
 
@@ -2617,7 +2658,7 @@ of $m$ stays 1, every $m_a$ lies in $[0.1,10]$, and there is no global scale. Ev
 of Muon's auxiliary AdamW. The own-block variant uses $s_a^\top H_{aa}s_a$ as numerator.
 
 \paragraph{Runs.} All runs start from the initialization and use the rates and data orders of the main runs, which
-are the baselines. On TinyStories-10M every variant ran on data order 0 and the best ones also on orders 1 and 2;
+are the baselines; for SGD on TinyStories-10M that is its earlier rate, 0.03, baselines included (\cref{sec:setup}). On TinyStories-10M every variant ran on data order 0 and the best ones also on orders 1 and 2;
 TinyStories-30M and Shakespeare repeat the settings that did best on TinyStories-10M. The speedup is the step of the
 baseline's best validation loss over the first evaluated step at which the balanced run reaches it, on the same data
 order; the best validation loss is the final one except on Shakespeare. Muon A on TinyStories-30M was cancelled at
@@ -2635,7 +2676,8 @@ $\kappa$ down to 0.1 below the target and up to 5--10 times above it, both worse
 \paragraph{SGD at a higher rate.} Plain SGD at 0.12, four times the baseline rate, reaches 1.552, 2.801 and 1.554 on
 data orders 0--2 of TinyStories-10M (on order 1 it spikes in warmup and never catches up), and A-fe at 0.12 reaches
 1.567, 2.516 and 1.569. Where the higher rate is stable it does as well as B1 (1.682, 1.553, 1.577) or better, and
-redistributing it across layers adds nothing (\cref{fig:app-bal-sgd}).
+redistributing it across layers adds nothing (\cref{fig:app-bal-sgd}). The re-tuned rate 0.06 ends at 1.622, 1.628
+and 1.658, so B1 is $+0.06$, $-0.07$ and $-0.08$ against it and B0.9-fe-fresh $+0.04$, $-0.02$ and $-0.005$.
 
 \paragraph{Shares after balancing.} \Cref{fig:app-bal-heat} shows the heatmaps of \cref{fig:curv-layers} for the
 balanced runs, with their logged multipliers, over steps 5000--10{,}000. In $\hat H$ the shares are even (SGD B1:
@@ -2650,7 +2692,7 @@ has 8--19\% per block, 7\% in the embeddings and 3\% in the head.
 order 0 and no balancing (\cref{fig:app-bal-fixed}), AdamW reaches 1.370, 1.373 and 1.384 on data orders 0--2 against
 1.339, 1.346 and 1.345 for the baseline, and Muon 1.353, 1.358 and 1.360 against 1.305, 1.307 and 1.314. SGD diverges
 at steps 180, 460 and 260; with the multipliers ramped in from 1 between steps 200 and 1200, after warmup, it
-diverges at step 1270 on order 0 and reaches 1.688 and 1.954 on orders 1 and 2 (baseline 1.766, 1.903).
+diverges at step 1270 on order 0 and reaches 1.688 and 1.954 on orders 1 and 2 (baseline at 0.03: 1.766, 1.903).
 
 \paragraph{v2.} $R_a$ settles at 0.8--1.2 in every layer from step 100 on, whatever the layer's rate
 (\cref{fig:app-bal-v2}, right): AdamW's rates drift 100 times apart, into the caps, and its loss falls behind

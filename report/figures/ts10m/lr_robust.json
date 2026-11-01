@@ -23,11 +23,11 @@
   "run": "ts10m_lrsweep/adamw_lr0.0003",
   "optimizer": "adamw",
   "lr": 0.0003,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 0.7984399154862165,
-  "last": 0.840199416304998,
-  "last_loss": 1.9607269763946533
+  "median_late": 0.8037214802163846,
+  "last": 0.8020789793983869,
+  "last_loss": 1.640080451965332
  },
  {
   "run": "ts10m_lrsweep/adamw_lr0.001",
@@ -53,11 +53,11 @@
   "run": "ts10m_lrsweep/adamw_lr0.001",
   "optimizer": "adamw",
   "lr": 0.001,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 0.9264604003828871,
-  "last": 0.940873498838718,
-  "last_loss": 1.9602656364440918
+  "median_late": 0.9191417823611725,
+  "last": 0.924533750775357,
+  "last_loss": 1.613381266593933
  },
  {
   "run": "ts10m_lrsweep/adamw_lr0.002",
@@ -83,11 +83,11 @@
   "run": "ts10m_lrsweep/adamw_lr0.002",
   "optimizer": "adamw",
   "lr": 0.002,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.0445143032195587,
-  "last": 1.0404173001913142,
-  "last_loss": 1.9529027938842773
+  "median_late": 0.9737983565723731,
+  "last": 0.952186811140213,
+  "last_loss": 1.6173551082611084
  },
  {
   "run": "ts10m_lrsweep/adamw_lr0.004",
@@ -113,11 +113,11 @@
   "run": "ts10m_lrsweep/adamw_lr0.004",
   "optimizer": "adamw",
   "lr": 0.004,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.075249680519251,
-  "last": 1.0360182749039721,
-  "last_loss": 1.9517590999603271
+  "median_late": 1.0276628846965394,
+  "last": 1.045535752528317,
+  "last_loss": 1.6063227653503418
  },
  {
   "run": "ts10m_lrsweep/adamw_lr0.008",
@@ -143,11 +143,11 @@
   "run": "ts10m_lrsweep/adamw_lr0.008",
   "optimizer": "adamw",
   "lr": 0.008,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.1098477217796152,
-  "last": 1.072682518669011,
-  "last_loss": 2.022484540939331
+  "median_late": 1.046803119707881,
+  "last": 1.0486760200394198,
+  "last_loss": 1.6262001991271973
  },
  {
   "run": "ts10m_lrsweep/muon_lr0.005",
@@ -173,11 +173,11 @@
   "run": "ts10m_lrsweep/muon_lr0.005",
   "optimizer": "muon",
   "lr": 0.005,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 0.9624167839393252,
-  "last": 0.9624167839393252,
-  "last_loss": 2.049046754837036
+  "median_late": 0.9514555383348046,
+  "last": 0.9160814142666313,
+  "last_loss": 1.6546531915664673
  },
  {
   "run": "ts10m_lrsweep/muon_lr0.01",
@@ -203,11 +203,11 @@
   "run": "ts10m_lrsweep/muon_lr0.01",
   "optimizer": "muon",
   "lr": 0.01,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 0.9935276665272357,
-  "last": 0.9935276665272357,
-  "last_loss": 2.0180470943450928
+  "median_late": 0.9698769628721274,
+  "last": 0.9514256666653541,
+  "last_loss": 1.6608201265335083
  },
  {
   "run": "ts10m_lrsweep/muon_lr0.02",
@@ -233,11 +233,11 @@
   "run": "ts10m_lrsweep/muon_lr0.02",
   "optimizer": "muon",
   "lr": 0.02,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.0198795658751103,
-  "last": 1.0198795658751103,
-  "last_loss": 2.023427963256836
+  "median_late": 0.9760885391299353,
+  "last": 0.9637030711685401,
+  "last_loss": 1.6089797019958496
  },
  {
   "run": "ts10m_lrsweep/muon_lr0.04",
@@ -263,11 +263,11 @@
   "run": "ts10m_lrsweep/muon_lr0.04",
   "optimizer": "muon",
   "lr": 0.04,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.0092009112357223,
-  "last": 1.0092009112357223,
-  "last_loss": 2.029435873031616
+  "median_late": 0.9814249739931428,
+  "last": 0.9543058325743026,
+  "last_loss": 1.6264089345932007
  },
  {
   "run": "ts10m_lrsweep/muon_lr0.08",
@@ -293,10 +293,10 @@
   "run": "ts10m_lrsweep/muon_lr0.08",
   "optimizer": "muon",
   "lr": 0.08,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.7741330366633667,
-  "last": 1.7741330366633667,
+  "median_late": 1.7535075596614298,
+  "last": 1.7535075596614298,
   "last_loss": 2.6383965015411377
  },
  {
@@ -323,10 +323,10 @@
   "run": "ts10m_lrsweep/sgd_lr0.03",
   "optimizer": "sgd",
   "lr": 0.03,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 0.0,
-  "last": 0.0,
+  "median_late": 1.17139419765584,
+  "last": 1.118351098515609,
   "last_loss": 1.9714748859405518
  },
  {
@@ -353,11 +353,11 @@
   "run": "ts10m_lrsweep/sgd_lr0.1",
   "optimizer": "sgd",
   "lr": 0.1,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 1.3452389019511104,
-  "last": 1.2016274975768932,
-  "last_loss": 1.9763672351837158
+  "median_late": 1.442769711945295,
+  "last": 1.2392726727813337,
+  "last_loss": 1.945284128189087
  },
  {
   "run": "ts10m_lrsweep/sgd_lr0.3",
@@ -375,7 +375,7 @@
   "lr": 0.3,
   "ref": "ts10m_main/muon_d0",
   "ref_optimizer": "muon",
-  "median_late": 2.2940071445544827,
+  "median_late": 2.7551788936426695,
   "last": 2.1924727021413104,
   "last_loss": 3.075639247894287
  },
@@ -383,10 +383,10 @@
   "run": "ts10m_lrsweep/sgd_lr0.3",
   "optimizer": "sgd",
   "lr": 0.3,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
-  "median_late": 2.234439600222284,
-  "last": 2.234439600222284,
+  "median_late": 3.297200609488465,
+  "last": 2.9415421802747757,
   "last_loss": 2.8681278228759766
  },
  {
@@ -413,7 +413,7 @@
   "run": "ts10m_lrsweep/sgd_lr1",
   "optimizer": "sgd",
   "lr": 1.0,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
   "median_late": NaN,
   "last": NaN,
@@ -443,7 +443,7 @@
   "run": "ts10m_lrsweep/sgd_lr3",
   "optimizer": "sgd",
   "lr": 3.0,
-  "ref": "ts10m_main/sgd_d0",
+  "ref": "ts10m_main_sgd0.06/sgd_d0",
   "ref_optimizer": "sgd",
   "median_late": NaN,
   "last": NaN,

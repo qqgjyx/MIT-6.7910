@@ -6,8 +6,8 @@ per-layer curvature: layer x layer heatmaps of the top eigenvector (`curvature_l
 eigenvalue by block Lanczos (`layer_lanczos.py`). Report: "Curvature-balanced per-layer learning rates" (§5.8,
 Appendix E) and the heatmaps in "Anatomy of the sharp direction" (§5.7).
 
-Results: it helps only SGD, as a self-tuning rate (B1 beats SGD at 0.03, about as a better plain rate does); AdamW and
-Muon gain nothing. Each layer self-stabilizes at its own edge (R_a settles near 1 whatever its rate), so curvature
+Results: for SGD it matches the re-tuned rate, as a self-tuning one (B1 beats SGD at 0.03 by about as much as the
+re-tuned 0.06 does); AdamW and Muon gain nothing. Each layer self-stabilizes at its own edge (R_a settles near 1 whatever its rate), so curvature
 cannot allocate the rate across layers.
 
 Run: a config with `balance.variant` (defaults in `defaults.yaml`) makes `build_optimizer` and `train.py` load this

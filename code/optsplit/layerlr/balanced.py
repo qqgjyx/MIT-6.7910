@@ -60,7 +60,8 @@ v2 (AdamW and Muon; runs named R)
 Comparisons
   Baseline: the main runs (same initialization, same rate, same data orders). Speedup = the baseline's step at its
   best validation loss / the first evaluated step at which the balanced run reaches it (same data order); the best
-  validation loss is the final one except on Shakespeare, where the runs overfit.
+  validation loss is the final one except on Shakespeare, where the runs overfit. "Minus baseline" compares with
+  the baseline at the run's last evaluated step, so a run stopped early is compared at the same step.
   JS: Jensen-Shannon divergence of next-token distributions on the fixed validation contexts, at equal training
   loss, between a balanced run and the baseline on the same data order; the grey band is the baseline's floor
   (min to max over pairs of its data orders)."""
@@ -113,18 +114,22 @@ def first_step(ev, level):
 
 def table(d):
     """Rows: (run, last step, final val, its difference to the baseline's, best val, its difference, first step
-    reaching the baseline's best val, speedup = the baseline's step at its best / that step). The best (minimum)
-    validation loss is the final one on TinyStories; on Shakespeare the runs overfit."""
+    reaching the baseline's best val, speedup = the baseline's step at its best / that step). The differences are
+    to the baseline at the run's last evaluated step (its loss there, and its best up to there), so that a run
+    stopped early is not scored against the end of the baseline. The best (minimum) validation loss is the final
+    one on TinyStories; on Shakespeare the runs overfit."""
     base = {r['seed']: r for r in d['base'].values()}
     rows = []
     for rid, r in sorted(d['runs'].items(), key=lambda kv: (kv[1]['seed'], kv[0])):
         b = base.get(r['seed'])
         if not r['eval'] or b is None:
             continue
+        last = r['eval'][-1][0]
         fin, best = r['eval'][-1][2], min(v for _, _, v in r['eval'])
+        upto = [e for e in b['eval'] if e[0] <= last] or b['eval'][:1]
         bstep, _, bbest = min(b['eval'], key=lambda e: e[2])
         s = first_step(r['eval'], bbest)
-        rows.append((rid.split('/')[-1], r['eval'][-1][0], fin, fin - b['eval'][-1][2], best, best - bbest, s,
+        rows.append((rid.split('/')[-1], last, fin, fin - upto[-1][2], best, best - min(v for _, _, v in upto), s,
                      bstep / s if s else None))
     return rows
 
@@ -261,8 +266,10 @@ def page_trace(pdf, title, d, plt, per_page=4):
             row[1].axhline(1 / len(names), color='k', lw=0.5, ls='--')
             row[1].set(ylabel='share s_a (EMA)', ylim=(0, None))
             thr = r['cfg']['balance'] and next(x['thr'] for x in rec if 'thr' in x)
+            muon = r['optimizer'] == 'muon'  # tracks the spectral-norm stability ratio rho, not lambda_max(Hhat)
             ls, lam = zip(*[(x['step'], x['lam']) for x in rec])
-            row[2].plot(ls, np.array(lam) / thr, color='C0', lw=0.6, label=r'tracked $\lambda_{max}(\hat H)$')
+            row[2].plot(ls, np.array(lam) / thr, color='C0', lw=0.6,
+                        label=r'tracked $\rho$' if muon else r'tracked $\lambda_{max}(\hat H)$')
             ck = [(x['step'], x['check']) for x in rec if 'check' in x]
             if ck:
                 row[2].plot(*zip(*[(s, v / thr) for s, v in ck]), 'o', color='C3', ms=3, label='Lanczos check')
@@ -271,11 +278,13 @@ def page_trace(pdf, title, d, plt, per_page=4):
                 key = 'precond_lambda_max' if r['optimizer'] == 'adamw' else 'lambda_max'
                 pts = [(x['step'], x[key] * x['lr'] / thr) for x in b['measure'] if x.get(key) and x.get('lr')]
                 if pts:
-                    row[2].plot(*zip(*pts), color='0.6', lw=0.8, label='baseline (same data order)')
+                    row[2].plot(*zip(*pts), color='0.6', lw=0.8,
+                                label=r'baseline $\eta\lambda_{max}(H)$, not $\rho$' if muon
+                                else 'baseline (same data order)')
             if r['cfg']['balance']['variant'] == 'B':
                 row[2].axhline(r['cfg']['balance']['target'], color='C2', ls='--', lw=1, label='target')
             row[2].axhline(1, color='k', lw=0.6)
-            row[2].set(yscale='log', ylabel=r'$\lambda_{max}(\hat H)$ / threshold')
+            row[2].set(yscale='log', ylabel=r'stability ratio $\rho$' if muon else r'$\lambda_{max}(\hat H)$ / threshold')
             gs = [x['g'] for x in rec if 'g' in x]
             if r['cfg']['balance']['variant'] == 'B' and gs:
                 tw = row[0].twinx()

@@ -49,7 +49,8 @@ def plot(panels, path):
             b = np.array([[r['barriers'][g] for g in groups] for r in rows if kind(r) == k])
             ax.bar(np.arange(len(groups)) + i * width, b.mean(0), width, yerr=b.std(0) if len(b) > 1 else None,
                    error_kw=dict(lw=0.6), label=f'{k} ({len(b)})')
-        ax.set_xticks(np.arange(len(groups)) + 0.4 - width / 2, groups, fontsize=7)
+        labels = [f'block {int(g.split()[1]) + 1}' if g.startswith('block ') else g for g in groups]  # from 1
+        ax.set_xticks(np.arange(len(groups)) + 0.4 - width / 2, labels, fontsize=7)
         ax.set(ylabel='loss barrier (nats)', title=title)
     axes[0, 0].legend(fontsize=6, ncol=2)
     path.parent.mkdir(parents=True, exist_ok=True)

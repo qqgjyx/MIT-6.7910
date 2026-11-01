@@ -75,7 +75,8 @@ def plot(panels, path):
             opt, op, ph = k.split(' | ')
             label = f"{opt}, {'precond. ' if op != 'H' else ''}{ph if ph != 'no threshold' else 'all steps'}"
             ax.bar(np.arange(len(names)) + i * w, m, w, yerr=sd, label=f"{label} ({s[k]['steps']})", color=f'C{i}')
-        ax.set_xticks(np.arange(len(names)) + 0.4 - w / 2, names)
+        ax.set_xticks(np.arange(len(names)) + 0.4 - w / 2,
+                      [f'L{int(n[1:]) + 1}' if n[1:].isdigit() else n for n in names])  # blocks from 1
         ax.set(ylabel='share of the direction', ylim=(0, 1))
         ax.set_title(title, fontsize=9)
         ax.legend(fontsize=6)
