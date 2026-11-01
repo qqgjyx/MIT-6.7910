@@ -17,6 +17,7 @@ Jastrzebski et al. (2020) as a check of the pipeline. Interfaces and file format
 | `optsplit/measure/` | in-training: Lanczos sharpness, AdamW-preconditioned sharpness, batch sharpness, eigenvector anatomy, gradient covariance K |
 | `optsplit/metrics/` | offline, on checkpoints: input-derivative metrics (1st to 3rd order), weight norms, robustness |
 | `optsplit/analysis/` | function distance, split location, LMC, swaps, figures, break-even replication |
+| `optsplit/layerlr/` | dropped line, separate from the core: curvature-balanced per-layer rates and per-layer curvature (its `README.md`) |
 | `configs/` | `defaults.yaml`, model/data configs in `base/`, run suites in `suites/` |
 | `data/` | dataset preparation scripts |
 | `scripts/launch.py`, `slurm/` | submit suites as Slurm arrays on ORCD (`mit_normal_gpu` or `mit_preemptable`) |
