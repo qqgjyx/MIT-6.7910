@@ -1,0 +1,14 @@
+# Re-tuning check of SGD on TinyStories-30M: ts30m_main's rate 0.1 blew up on data order 1 (training loss up by 9.9
+# nats at step 3170, final validation loss 1.61 against 1.37-1.39 for the other orders). Plain SGD as in ts30m_main
+# at half and twice that rate on data orders 0-2, losses only (no Hessian, no checkpoints, validation every 500 steps).
+# 0.1 on orders 0-2 is ts30m_main/sgd_d*.
+suite: ts30m_sgdtune
+base: ../base/tinystories_30m.yaml
+overrides:
+  measure.hessian: false
+  measure.delta_loss: false
+  log.eval_steps: {every: 500, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+name: "sgd_lr{optim.sgd.lr}_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.05, 0.2], train.data_seed: [0, 1, 2]}

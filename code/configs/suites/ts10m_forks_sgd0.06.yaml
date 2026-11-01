@@ -1,0 +1,12 @@
+# The swaps of ts10m_forks that involve SGD, with SGD at its re-tuned rate 0.06: forks of the SGD parent at 0.06
+# (ts10m_parent_sgd0.06/sgd_d0) into AdamW, Muon and SGD with data order 1, and forks of the AdamW and Muon d0 runs of
+# ts10m_main into SGD at 0.06. SGD's momentum buffer does not depend on its rate, so the shadow state in the AdamW and
+# Muon fork checkpoints serves for any SGD rate. The AdamW <-> Muon forks of ts10m_forks are unchanged.
+suite: ts10m_forks_sgd0.06
+base: ../base/tinystories_10m.yaml
+overrides: {shadow: [], log.fork_steps: []}
+runs:
+  - {fork.parent: ts10m_parent_sgd0.06/sgd_d0, optimizer: [adamw, muon], fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "sgd_to_{optimizer}_at{fork.step}"}
+  - {fork.parent: ts10m_parent_sgd0.06/sgd_d0, optimizer: sgd, train.data_seed: 1, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "sgd_to_sgd_d1_at{fork.step}"}
+  - {fork.parent: ts10m_main/adamw_d0, optimizer: sgd, optim.sgd.lr: 0.06, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "adamw_to_sgd_at{fork.step}"}
+  - {fork.parent: ts10m_main/muon_d0, optimizer: sgd, optim.sgd.lr: 0.06, fork.step: [50, 100, 200, 400, 700, 1000, 1500, 2500, 4000], name: "muon_to_sgd_at{fork.step}"}
