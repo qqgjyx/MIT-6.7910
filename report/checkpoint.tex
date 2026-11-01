@@ -36,8 +36,9 @@
 \paragraph{Summary.} We train one transformer from one initialization on one sequence of mini-batches with AdamW
 and with Muon \citep{jordan2024muon}. (1)~At equal training loss their predictions are as close as those of two data
 orders of one optimizer; the loss barrier between their endpoints exceeds the data-order ones on one of three
-datasets. (2)~Along the way they differ in geometry, not in predictions: Muon's updates and weights have flat
-spectra, AdamW's a few dominant directions, fewer active units and a flatter loss. (3)~Swapping the two mid-training
+datasets. (2)~Along the way, metrics of their weights and updates differ far beyond the data-order spread, metrics
+of their predictions do not: Muon's updates and weights have flat spectra, AdamW's a few dominant directions, fewer
+active units and a flatter loss. (3)~Swapping the two mid-training
 leaves the function within the floor of both, while the weights keep part of the parent's geometry.
 
 \paragraph{Setup.} The main setting is TinyStories \citep{eldan2023tinystories} with a 14M-parameter nanoGPT
@@ -91,13 +92,15 @@ endpoints, at 34 checkpoints per run, grouped as weights, one-step updates, curv
 optimizers on the same data order against the gap between two data orders of one optimizer, three data orders each
 (\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for reference).
 
-AdamW and Muon end up with clearly different geometry (weight-spectrum scores 74 to 263 in absolute value), even
-though no prediction metric tells them apart (scores within $\pm1.1$) and they move equally far (2.18 and
-2.155$\|\theta_0\|$ from the initialization; values at loss 1.81, scores in brackets).
+Of the metrics we track, those of the weight spectra (spectral norm, stable and effective rank, singular-value
+spread) separate AdamW from Muon far beyond the data-order spread ($|\text{score}|$ 74--263), while those of the
+predictions (entropy, confidence, calibration, accuracy, loss on frequent and rare targets) do not ($|\text{score}|\leq
+1.1$), nor does the distance moved (2.18 and 2.155$\|\theta_0\|$ from the initialization; values at loss 1.81, scores
+in brackets).
 Muon's weights have the flatter spectra: stable rank 86 against 33 ($-147$), $\sigma_1/\sigma_{\rm median}$ 2.7
 against 8.0 (105). AdamW's model is sparser and louder, on a flatter loss: 12\% of MLP units active against 22\%
 ($-62$), residual RMS 4.7 against 3.4 (28), attention entropy 2.5 against 2.8 nats ($-18$), $\operatorname{tr}H$ 1400
-against 2770 ($-23$), $\lambda_{\max}$ 6.2 against 14 ($-10$). The high rank of Muon's updates (220 against 17,
+against 2770 ($-23$). The high rank of Muon's updates (220 against 17,
 $-328$) holds by construction, as Muon orthogonalizes them. SGD is the outlier in how it moves: 0.49$\|\theta_0\|$ from
 the initialization (50 and 58 against AdamW and Muon), steps of 0.06\% of $\|\theta\|$ against 0.66\% (67, 132), better
 aligned with their batch gradient (cosine 0.45 against 0.24 and 0.22; $-17$, $-18$), on a sharper loss
@@ -127,7 +130,7 @@ as a fraction of the way from the parent's value (0) to the new optimizer's (1).
 \paragraph{Step 3: swaps (\cref{fig:swap}).} We switch between AdamW and Muon at nine fork steps from 50 to 4000,
 with a warm optimizer state and the parent's batches (\cref{app:forks}). Every fork ends within the data-order floor
 of the new optimizer's pure run (0.86--0.95 floors) and, increasingly with the fork step, of the parent's (0.92--0.98
-at step 50, 0.20--0.21 at step 4000): the function cannot tell which optimizer decided it. The weights can. A fork
+at step 50, 0.20--0.21 at step 4000). The weights do not. A fork
 stays linearly connected to its parent (barrier below 0.05 nats) only from a later fork step than a change of data
 order: from AdamW at step 2500 (0.03) against 1000 (0.035), from Muon not even at step 4000 (0.055) against 1000
 (0.046), and none ends in the basin of the new optimizer's run (third panel). Switching at step 4000 moves the stable rank only 0.27
