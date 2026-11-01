@@ -125,9 +125,8 @@ the swap).}
 
 \emph{Weights $W$ and internal activations.} The spectral norm of $W$ ends near or beyond the own run's value
 (0.94--1.56 of the way; b, g). For the stable rank of $W$ (a, f) and the fraction of active MLP units (e, j), the
-final value depends on the fork step: the earlier the swap, the closer it ends to the new optimizer's own run. A swap
-at step 4000 moves the stable rank only 0.25--0.46 of the way, and the active fraction 0.07--0.13. Even a swap at step
-200 leaves a clear trace: from AdamW to Muon, the stable rank ends 0.90 of the way and the active fraction 0.67. This
+final value depends on the fork step: the earlier the swap, the closer it ends to the new optimizer's own run. Even a
+swap at step 200 leaves a clear trace: from AdamW to Muon, the stable rank ends 0.90 of the way and the active fraction 0.67. This
 points to the importance of the early steps.
 
 \emph{One-step updates $\Delta W$.} The cosine between consecutive updates moves to the new optimizer's level right
