@@ -25,7 +25,7 @@
 \renewcommand\maketitle{\begin{center}{\large\bfseries\@title\par}\vspace{3pt}\@author\quad\textperiodcentered\quad\@date\end{center}}
 \makeatother
 
-\title{Together First, Apart Later? When Optimizers Start to Learn Different Functions\\[1pt]
+\title{Similar Predictions, Different Weights:\\How AdamW and Muon Train a Small Language Model\\[1pt]
 \normalfont Initial checkpoint, MIT 6.7910, Fall 2026}
 \author{Juntang Wang and V\'ictor Conchello}
 \date{November 1, 2026}
@@ -34,121 +34,124 @@
 \maketitle
 \vspace{-0.8em}
 
-\paragraph{Summary.} We train one transformer from one initialization with AdamW and with Muon
-\citep{jordan2024muon}, on the same mini-batches. (1)~At equal training loss, AdamW and Muon
-predict as similarly as two runs of one optimizer on different data orders; the loss barrier between their final
-weights exceeds data-order barriers in only one of three settings. (2)~The singular values of
-their weight and update matrices differ beyond data-order variation (Muon's more evenly sized, AdamW's dominated by a few
-large ones), while their prediction statistics do not. (3)~A run switched to the other optimizer
-mid-training ends, in its predictions, no further from either optimizer's own run than two data orders are; its
-updates take the new optimizer's form, but its weights and activations keep part of the old one's.
+\paragraph{Summary.} We train a small language model with AdamW and with Muon, from one initialization and on the
+same mini-batches. (1)~Muon trains faster and on a different path. At equal training
+loss, their predictions differ about as much as two runs on different data orders; their final weights differ
+more. (2)~Muon's weight and update matrices have more evenly sized singular values
+than AdamW's, beyond data-order variation; no prediction statistic differs. (3)~A run switched to the other optimizer
+mid-training ends up predicting no further from either optimizer's own run than two data orders do. Its updates
+take the new optimizer's form; its weights and activations keep part of the old one's.
 
-\paragraph{Setup.} The main setting, TinyStories-10M, trains a 14M-parameter nanoGPT
-\citep{karpathy2022nanogpt} (10.6M without embeddings and head) on TinyStories
-\citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences $\times$ 256 tokens with a cosine learning-rate
-decay; two more settings, a 30M model on TinyStories (TinyStories-30M) and a character-level model on Shakespeare,
-serve as checks (\cref{app:hparams}). Muon orthogonalizes the update of each weight matrix in the blocks
-(sets its singular values to about 1); a separate AdamW trains the embeddings, output head and LayerNorm gains;
-each optimizer uses the best of five learning rates tried. All runs start from the same initial weights. A
-\emph{data order} is a fixed choice of mini-batch for every step; each optimizer is run on five. The distance between
-two runs is the mean Jensen--Shannon divergence (JS, in bits) of their next-token predictions on 2{,}048 fixed
-held-out positions. We compare two runs at the checkpoints where they reach the same \emph{training loss} (on 64
-fixed training sequences), so that a faster optimizer is not counted as different, and divide their distance by a
-\emph{floor}: the mean distance between two data orders of one optimizer (for two optimizers, the larger of their
-floors). A distance of about one floor thus means ``as different as two data orders''. For any other metric, we compare
-two optimizers by the \emph{ratio} of their values at equal training loss, with a margin over data orders: if the
-first optimizer's values range over $[a_{\min},a_{\max}]$ and the second's over $[b_{\min},b_{\max}]$, the ratio lies
-in $[a_{\min}/b_{\max},\,a_{\max}/b_{\min}]$, written as midpoint $\pm$ half-width; an interval that excludes 1 means
-the optimizers differ by more than data orders do. The \emph{loss
-barrier} between two weight vectors is the largest amount, over 11 evenly spaced points on the straight line between
-them, by which the training loss exceeds the straight line joining its two end values \citep{frankle2020lmc}; with a
-near-zero barrier they are \emph{linearly connected}. Losses and barriers are in nats. In a \emph{swap}, a run of one
-optimizer (the \emph{parent}, data order 0) is switched to the other at a \emph{fork step} and trained to step
-10{,}000 on the parent's batches; the new optimizer starts from a \emph{warm state}, its momentum statistics gathered
-alongside the parent at learning rate 0. Its \emph{own run} is the run trained with it from the start. In total we
-trained 141 runs using 33 GPU-hours (\cref{app:compute}).
+\paragraph{Setup.} \emph{Model.} We train a 14M-parameter nanoGPT \citep{karpathy2022nanogpt} on TinyStories
+\citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences of 256 tokens, with a cosine learning-rate decay
+(\cref{app:hparams}).
+
+\emph{Optimizers.} Muon \citep{jordan2024muon} orthogonalizes the update of each weight matrix in the transformer blocks: it sets the
+update's singular values to about 1. AdamW trains Muon's other parameters. Each optimizer uses the best of five
+learning rates. All runs start from the same weights. A \emph{data order} fixes the mini-batch of every step; each
+optimizer runs on five.
+
+\emph{Comparing runs.} The distance between two runs is the mean Jensen--Shannon divergence (JS, in bits) of their
+next-token predictions on held-out text. We compare runs at equal training loss, so that speed does not count as a
+difference. The \emph{floor} is the mean distance between two data orders of one optimizer (for two optimizers, the
+larger floor). A distance of one floor means ``as different as two data orders''.
+
+\emph{Ratios.} For any other metric, we compare two optimizers by the ratio of their values at equal training loss.
+If their values range over $[a_{\min},a_{\max}]$ and $[b_{\min},b_{\max}]$ across data orders, the ratio lies in
+$[a_{\min}/b_{\max},\,a_{\max}/b_{\min}]$. We write it as midpoint $\pm$ half-width, the \emph{margin}. If the interval
+excludes 1, the optimizers differ by more than data orders do.
+
+\emph{Swaps.} A swap switches a run of one optimizer (the \emph{parent}, on data order 0) to the other at a \emph{fork
+step}, then trains it to step 10{,}000 on the parent's batches (\cref{app:forks}). An optimizer's \emph{own run} is
+its run from the start.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap_adamw_muon.pdf}
-\caption{TinyStories-10M; AdamW blue, Muon orange. (a) Checkpoints from step 250 on
-(data orders d0--d2), placed in 2-D by densMAP from $\sqrt{\mathrm{JS}}$; numbers:
-training loss at steps 250, 1000, 2000. The map shows which checkpoints are nearest, not how far apart they are: the
-six endpoints, drawn nearly overlapping, are JS 0.056--0.063 apart, about as far as each run moves between
-steps 5000 and 10{,}000. (b) JS at the same step between AdamW and Muon on the same data order (red) and
-between two data orders of AdamW (blue) or of Muon (orange); dotted: step 250. (c) The same at equal training loss.}
+\caption{AdamW and Muon. (a) Checkpoints from step 250 on, mapped to 2-D by densMAP (shows neighbours, not
+distances); labels: training loss and data order. (b) JS between runs at equal step. (c) The same at equal training loss. (d)
+Validation loss.}
 \label{fig:div}
 \end{figure}
 
 \paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} After the learning-rate warmup, AdamW and Muon
-runs on the same data order stay close: each such pair are nearest neighbours in the densMAP plot (\cref{fig:div},
-left), and at every step their JS is smaller than between two data orders of one optimizer (second panel). Muon learns
-faster (third panel): by step 7500 it reaches AdamW's final validation loss, 1.344. Compared at equal training loss, the AdamW--Muon distance is about
-equal to the floor: at training losses below 4.85 it is 0.95--1.38 times the floor (median 1.02), and 0.99 times at
-the lowest loss all runs reach (1.02 on each of TinyStories-30M and Shakespeare). So, judged by their predictions,
-AdamW and Muon end as similar as two runs of one optimizer on different data orders.
+runs on the same data order stay close: they are nearest neighbours in the densMAP plot (a). Muon learns faster: it
+reaches AdamW's final validation loss, 1.344, by step 7500 (d).
 
-Their final weights, however, are further apart than two data orders' are, at least on TinyStories-10M
-(\cref{fig:div}, right): the loss barrier is 3.5--4.1 between AdamW and Muon, against 1.2--1.9 between two data orders of AdamW and 1.6--1.8 between two
-of Muon. On TinyStories-30M and Shakespeare, the mean AdamW--Muon barrier lies between the two optimizers' mean
-data-order barriers (4.64 between 1.78 and 5.05; 2.42 between 0.14 and 4.34).
+Muon does not just follow AdamW's path faster. The two share the initialization and the batches. If Muon only moved
+faster along AdamW's path, their distance at equal training loss would be far below the floor. Instead it sits at the
+floor (c): 0.95--1.38 floors below training loss 4.85 (median 1.02), and 0.99 at the lowest loss all runs reach. So
+switching the optimizer moves the predictions about as much as changing the data order.
 
-\paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points, from the first
-steps to the final model (\cref{app:metrics}). They form five groups: the weights, the
-change made by one update step, the loss curvature, internal activations, and the
-predictions. We compare optimizers by each metric's ratio at training loss 1.81, with three
-data orders each (\cref{fig:rank}; AdamW and Muon in \cref{tab:app-am}; SGD with momentum as a reference
-in \cref{tab:app-sgd}).
+If Muon were only faster, comparing at equal loss would also bring the two closer than comparing at equal step. The
+opposite happens: their JS is 0.102 and 0.079 at steps 1000 and 3000 (b), but 0.131 and 0.106 at AdamW's training losses at those steps (c). At
+equal step they are even closer than two data orders of AdamW (0.127 and 0.103), likely because both models have just
+trained on the same batches.
 
-Compared with AdamW's, Muon's weight matrices use their directions more evenly (\cref{tab:app-am}): their stable
-rank $\|W\|_F^2/\|W\|_2^2$ is 86 against 33 ($2.61\pm0.04$ times), their effective rank 325 against 272, and their
+Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
+how far the training loss rises, on the straight path between them, above the line joining its end values
+\citep{frankle2020lmc}. It is 3.5--4.1 nats between AdamW and Muon, against 1.2--1.9 between two AdamW data orders
+and 1.6--1.8 between two Muon ones.
+
+\paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points of training, in
+five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $H$), internal activations and
+predictions (\cref{app:metrics}). We compare optimizers by each metric's ratio at training loss 1.81, with three data
+orders each (\cref{fig:rank}, \cref{tab:app-am}). SGD with momentum, our reference, differs from both in most metrics
+(\cref{tab:app-sgd}).
+\begin{itemize}
+\item \emph{Weight spectrum.} Muon's weight matrices use their directions more evenly. Their stable rank
+$\|W\|_F^2/\|W\|_2^2$ is 86 against AdamW's 33 ($2.61\pm0.04$ times), and their effective rank 325 against 272. Their
 spectral norm (2.9 against 5.4) and largest-to-median singular-value ratio $\sigma_1/\sigma_{\rm median}$ (2.7 against
-8.0) are lower. Consecutive Muon steps are less alike (cosine 0.74 against 0.88); their much higher stable rank (220
-against 17) holds by construction, since Muon orthogonalizes every update. Muon also sits about twice as sharp: the
-top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2, and the trace $\operatorname{tr}H$ 2770 against 1400. But
-the two tuned learning rates differ, and across a learning-rate sweep $\lambda_{\max}$ falls about as one over the rate
-(log-log slopes $-0.86$ for AdamW and $-0.84$ for Muon, at the peak of the schedule), so part of this gap reflects the
-rates rather than the optimizer. AdamW's MLP is sparser: 12\% of its units are active, against 22\%. No prediction
-metric separates the two (every AdamW/Muon interval contains 1), and both move equally far from the initialization
-(ratio $1.01\pm0.02$): they differ in the shape of the weights, not in how far they travel. SGD differs from both in
-most metrics (\cref{tab:app-sgd}).
+8.0) are lower.
+\item \emph{Updates.} Consecutive Muon steps are less alike (cosine 0.74 against 0.88). Their stable rank is much
+higher (220 against 17), but by construction: Muon orthogonalizes every update.
+\item \emph{Sharpness.} Muon is about twice as sharp: the top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2,
+the trace $\operatorname{tr}H$ 2770 against 1400. But the tuned learning rates differ, and $\lambda_{\max}$ scales
+roughly as one over the learning rate (log-log slopes $-0.86$ and $-0.84$ across a sweep). So part of this gap
+reflects the rates, not the optimizer.
+\item \emph{MLP sparsity.} AdamW's MLP is sparser: 12\% of its units are active, against 22\% for Muon.
+\item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon interval contains 1.
+\item \emph{Distance.} Both move equally far from the initialization (ratio $1.01\pm0.02$): they differ in the shape
+of their weights, not in how far they travel.
+\end{itemize}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/ranking.pdf}
-\caption{TinyStories-10M, three data orders per optimizer. (a) Ratio of two optimizers' values at training loss 1.81
-for selected metrics (log scale; bars: margins; all 30 metrics in \cref{tab:app-am,tab:app-sgd}).
-$\Delta$: change over one step; $H$: Hessian on 32 training sequences.
-(b), (c) Stable rank of $W$ and $\|\theta-\theta_0\|/\|\theta_0\|$ against training loss; colour: optimizer, line style: data order.}
+\caption{Three data orders per optimizer. (a) Ratio of two optimizers' values at training loss 1.81, for selected
+metrics; bars: margins. (b), (c) Stable rank of $W$ and distance from initialization against training loss.}
 \label{fig:rank}
 \end{figure}
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/forks_adamw_muon.pdf}
-\caption{Swaps on TinyStories-10M, data order 0, against the fork step; each panel shows a property of the swapped
-run's final model. (a) JS from the swapped run to the new optimizer's own run and to the parent, each divided by
-the floor of that run's optimizer. (b) Loss barrier to the parent, for the swapped run and, as a control, for the
-parent's own optimizer continued from the same step on data order 1. (c) Loss barrier to the new optimizer's own
-run; bands: barriers between two data orders of that optimizer. (d) Stable rank of $W$ and of $\Delta W$ and fraction of
-active MLP units, rescaled so that 0 is the parent's final value and 1 the final value of the new optimizer's own run.}
+\caption{Swaps: the swapped run's final model against the fork step. (a) JS to the new optimizer's own run and to the
+parent, in floors. (b) Loss barrier to the parent. (c) Loss barrier to the new optimizer's own run; band: between two
+of its data orders. (d) Three metrics on a scale from the parent's value (0) to the own run's (1).}
 \label{fig:swap}
 \end{figure}
 
 \paragraph{Step 3: swaps (\cref{fig:swap}).} We swap at nine fork steps from 50 to 4000, in both directions
-(\cref{app:forks}). Every swapped run ends closer than two data orders are to both the new optimizer's own run
-(0.86--0.95 of the floor) and the parent (0.92--0.98 at fork step 50, 0.20--0.21 at 4000): in its predictions it is
-as similar to either run as two data orders are. Its weights are not. It is linearly connected to its parent (barrier below
-0.05) only from fork step 2500 when leaving AdamW and never when leaving Muon, against
-1000 for a switch to data order 1, and never as close to the new optimizer's own run as that optimizer's data orders
-are to each other (third panel). In the final model (right), the one-step updates take the new optimizer's form at
-every fork step (stable rank of $\Delta W$ 0.99--1.04 of the way from the parent's value to the new optimizer's),
-while the weights and activations keep part of the parent's, the more the later the swap: at fork step 4000, the
-stable rank of $W$ moves 0.25 (AdamW to Muon) and 0.46 (Muon to AdamW) of the way, and the fraction of active MLP
-units 0.07 and 0.13.
+(\cref{app:forks}). In its predictions, every swapped run ends as similar to both its parent and the new optimizer's
+own run as two data orders are: 0.86--0.95 floors from the own run, and 0.92--0.98 floors from the parent at fork
+step 50 (0.20--0.21 at 4000).
 
-\paragraph{Next.} (i) Steps 2 and 3 on TinyStories-30M and Shakespeare; (ii) do the weight spectra explain the
-AdamW--Muon barriers? (iii) talk (Dec 1--4); paper, code, Colab (Dec 5--11). \url{https://github.com/qqgjyx/MIT-6.7910}
+Its weights are not. It is \emph{linearly connected} to its parent (barrier below 0.05) only from fork step 2500 when
+leaving AdamW, and never when leaving Muon. Keeping the optimizer and switching only the data order gives this from
+fork step 1000. The swapped run also stays further from the new optimizer's own run than that optimizer's data orders
+are from each other (c).
+
+In the final model (d), the updates take the new optimizer's form at every fork step: the stable rank of $\Delta W$
+moves 0.99--1.04 of the way from the parent's value to the new optimizer's. The weights and activations keep part of
+the parent's, more so the later the swap. At fork step 4000, the stable rank of $W$ moves 0.25 (AdamW to Muon) and
+0.46 (Muon to AdamW) of the way, and the fraction of active MLP units 0.07 and 0.13.
+
+\paragraph{Next steps.} (i)~Repeat Steps 1--3 on a larger model (TinyStories-30M) and on character-level Shakespeare.
+(ii)~For each property that differs in Step 2: does it follow directly from Muon's orthogonalized updates, or does it
+emerge during training? Does the sharpness gap come from the different tuned learning rates? (iii)~Do these
+differences explain Step 1, Muon's faster training and different path? Is any of them a reason Muon does better?
+(iv)~Talk (Dec 1--4); paper, code, Colab (Dec 5--11). \url{https://github.com/qqgjyx/MIT-6.7910}
 
 \clearpage
 \printbibliography

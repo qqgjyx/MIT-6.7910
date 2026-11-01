@@ -5,8 +5,7 @@
 
 \begin{center}\small
 \captionsetup{type=table}
-\caption{Settings shared by the AdamW and Muon runs on TinyStories-10M. Values from the repository's configuration
-files and code.}
+\caption{Hyperparameters shared by the AdamW and Muon runs.}
 \label{tab:app-shared}
 \begin{tabular}{@{}lp{0.74\linewidth}@{}}
 \hline
@@ -52,8 +51,7 @@ Loss barrier & 64 fixed training sequences, 11 evenly spaced points of the segme
 
 \begin{center}\small
 \captionsetup{type=table}
-\caption{Optimizer-specific settings of the TinyStories-10M
-runs. $n_{\rm out}$, $n_{\rm in}$: output and input size of the matrix.}
+\caption{Optimizer-specific hyperparameters. $n_{\rm out}$, $n_{\rm in}$: output and input size of the matrix.}
 \label{tab:app-optim}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}p{0.2\linewidth}p{0.36\linewidth}p{0.4\linewidth}@{}}
@@ -76,41 +74,6 @@ Aux.\ weight decay & -- & none \tabularnewline
 \end{tabular}
 \end{center}
 
-\begin{center}\footnotesize
-\begin{minipage}{\linewidth}
-\captionsetup{type=table}
-\caption{Shakespeare-char and TinyStories-30M: rows that differ from TinyStories-10M; all else as in
-\cref{tab:app-shared,tab:app-optim}. ``Aux.'': Muon's auxiliary AdamW.}
-\label{tab:app-settings}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}p{0.2\linewidth}p{0.38\linewidth}p{0.38\linewidth}@{}}
-\hline
- & Shakespeare-char & TinyStories-30M \tabularnewline
-\hline
-Runs & AdamW, Muon $\times$ d0--d4 (10) & AdamW, Muon $\times$ d0--d4 (10) \tabularnewline
-Data & Shakespeare, nanoGPT's 90/10 split & TinyStories \tabularnewline
-Vocabulary & 65 characters & 4096 (BPE) \tabularnewline
-Layers, heads, width & 6, 6, 384 & 8, 8, 512 \tabularnewline
-\raggedright Parameters (without embeddings, head) & 10.8M (10.6M) & 29.5M (25.2M) \tabularnewline
-Batch & $64\times256$ & $128\times256$ \tabularnewline
-Steps & 1{,}500 & 20{,}000 \tabularnewline
-Tokens & 24.6M (about 24 passes over the 1M training characters) & 655M (about 1.2 epochs) \tabularnewline
-Warmup steps & 100 & 400 \tabularnewline
-Cosine decay to step & 1{,}500 & 20{,}000 \tabularnewline
-\hline
-$\eta_{\rm AdamW}$ & $3\cdot10^{-4}$ & $2\cdot10^{-3}$ \tabularnewline
-$\eta_{\rm Muon}$ (aux.) & 0.04 ($10^{-3}$) & 0.01 ($1.5\cdot10^{-3}$) \tabularnewline
-$\eta$ chosen by & minimum validation loss over training (runs overfit) & best final validation loss \tabularnewline
-AdamW $\beta$ & $(0.9,0.99)$, as nanoGPT & $(0.9,0.95)$ \tabularnewline
-\hline
-Predictions & all 256 positions of 64 validation sequences (16{,}384) & 16 positions of 128 sequences
-  (2{,}048) \tabularnewline
-Predictions at & every 50th $+$ 40 log-spaced & every 500th $+$ 30 log-spaced \tabularnewline
-\hline
-\end{tabular}
-\end{minipage}
-\end{center}
-
 \section{Metrics}
 \label{app:metrics}
 
@@ -125,21 +88,24 @@ $\Delta\theta_{t+1}$ and with the negative gradient $-g_t$ on step $t$'s batch, 
 its block matrices $\Delta W$. \emph{Curvature} of the training loss on 32 fixed training sequences, with Hessian $H$:
 $\lambda_{\max}(H)$ (20 Lanczos iterations, logged during training), $\operatorname{tr}H$ (10 Rademacher probes),
 $\operatorname{tr}H/\lambda_{\max}$, and the batch sharpness $\mathbb{E}_B[g_B^\top H_Bg_B]/\mathbb{E}_B\|g_B\|^2$,
-where $g_B$ and $H_B$ are the gradient and Hessian on a mini-batch $B$. \emph{Predictions}, on the 2{,}048 held-out
+where $g_B$ and $H_B$ are the gradient and Hessian on a mini-batch $B$. The log-log slopes of $\lambda_{\max}$
+against the learning rate in Step 2 are fitted across a learning-rate sweep, against the peak rate of the schedule.
+\emph{Predictions}, on the 2{,}048 held-out
 positions: entropy, mean top-1 probability, calibration error (15 bins), top-1 accuracy, loss on the targets in the top
 and the bottom third of training-set frequency and their difference, and JS to the unigram and to the bigram model
 of the training split. \emph{Activations}, on 32 held-out sequences: attention entropy
 and attention on the first token (means over layers, heads and positions), fraction of MLP pre-activations above 0,
 RMS of the residual stream after the last block, and effective rank of the centred final features.
 
+SGD, the reference in \cref{tab:app-sgd}, uses heavy-ball momentum 0.9 and learning rate 0.06, the only rate tried
+between 0.03 and 0.12 that did not diverge on any of the three data orders; everything else is as in
+\cref{tab:app-shared}.
+
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
-\caption{AdamW and Muon at training loss 1.81 on TinyStories-10M (settings in \cref{tab:app-shared,tab:app-optim}): all metrics of Step 2 (\cref{fig:rank}). Columns
-AdamW and Muon: mean $\pm$ half the range over data orders 0--2, in units of $10^k$ in rows marked ($\times10^k$).
-Column A/M: AdamW's value divided by Muon's; with $a_{\min},a_{\max}$ and $b_{\min},b_{\max}$ their extremes over
-data orders, the ratio lies in $[a_{\min}/b_{\max},\,a_{\max}/b_{\min}]$, given as midpoint $\pm$ half-width, and an
-interval that excludes 1 means a difference beyond data-order variation. Bold: the five ratios farthest from 1 (on a
-log scale) among those whose interval excludes 1.}
+\caption{All metrics of Step 2 at training loss 1.81: mean $\pm$ half-range over data orders 0--2, and the
+ratio AdamW/Muon with its margin. Rows marked ($\times10^k$) are in units of $10^k$. Bold: the five ratios farthest
+from 1 whose interval excludes 1.}
 \label{tab:app-am}
 \footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \renewcommand{\arraystretch}{1.15}%
@@ -186,12 +152,8 @@ JS to bigram model & $0.469 \pm 0.001$ & $0.471 \pm 0.001$ & $0.996 \pm 0.004$ \
 
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
-\caption{The metrics of \cref{tab:app-am} with SGD as a reference. SGD uses heavy-ball momentum 0.9 and learning rate
-0.06, the only rate tried between 0.03 and 0.12 that did not diverge on any of the three data orders; everything else
-is as in \cref{tab:app-shared}. Columns AdamW, Muon and SGD: mean $\pm$ half the range over data orders 0--2, in units
-of $10^k$ in rows marked ($\times10^k$). Columns A/S and M/S: AdamW's and Muon's value divided by SGD's, with the
-margin over data orders given as in \cref{tab:app-am}. Bold: in each ratio column, the five ratios farthest from 1 (on
-a log scale) among those whose interval excludes 1.}
+\caption{The metrics of \cref{tab:app-am} with SGD as a reference: ratios AdamW/SGD and Muon/SGD. Bold: in each
+ratio column, the five ratios farthest from 1 whose interval excludes 1.}
 \label{tab:app-sgd}
 \footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \renewcommand{\arraystretch}{1.15}%
@@ -241,51 +203,23 @@ JS to bigram model & $0.469 \pm 0.001$ & $0.471 \pm 0.001$ & $0.462 \pm 0.001$ &
 
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
-\caption{Swap forks on TinyStories-10M. $A$: parent's optimizer; $B$: optimizer after the swap; $s$: fork step.}
+\caption{Swaps. $A$: parent's optimizer; $B$: optimizer after the swap; $s$: fork step.}
 \label{tab:app-forks}
 \begin{tabular}{@{}lp{0.74\linewidth}@{}}
 \hline
 Parents & the d0 runs of AdamW and Muon (\cref{tab:app-shared}) \\
-Shadow state & the other optimizer, stepped on the same mini-batch gradients with learning rate 0: momenta, second
+Warm state & the other optimizer, stepped on the same mini-batch gradients with learning rate 0: momenta, second
   moments and step counts evolve as if training; parameters follow $A$ alone \\
 Fork steps $s$ & 50, 100, 200, 400, 700, 1000, 1500, 2500, 4000 \\
 Saved at $s$ & parameters; states of both optimizers \\
 \hline
-Swap $A\to B$ loads & parameters at $s$; $B$'s shadow state \\
+Swap $A\to B$ loads & parameters at $s$; $B$'s warm state \\
 Hyperparameters & $B$'s (\cref{tab:app-optim}) \\
 Steps & $s$ to 10{,}000, on the parent's schedule and batches (data order 0) \\
 Swap forks & 2 directions $\times$ 9 steps $=$ 18 \\
 \hline
 Same-batch control & the parent itself ($A$ continued with the same batches) \\
 Data-order control & $A$ continued from $s$ with its own state, data order 1: 18 forks \\
-\hline
-\end{tabular}\end{minipage}
-\end{center}
-
-\section{Compute}
-\label{app:compute}
-
-All runs used one NVIDIA GPU each on the MIT ORCD cluster. GPU-hours are those Slurm allocated to each suite (a
-group of runs launched together); where runs from several suites shared a GPU, its hours were split among them in
-proportion to training time. We did not count the measurements made after training (Muon's spectral-norm sharpness,
-loss barriers, distances and the metrics of \cref{app:metrics}), which took a few GPU-hours.
-
-\begin{center}\small\begin{minipage}{\linewidth}\centering
-\captionsetup{type=table}
-\caption{Runs described in the checkpoint and their compute.}
-\label{tab:app-compute}
-\begin{tabular}{@{}lrr@{}}
-\hline
- & Runs & GPU-hours \\
-\hline
-Learning-rate sweeps, AdamW and Muon (3 settings) & 30 & 7.1 \\
-Runs from the initialization, AdamW and Muon (3 settings, 5 data orders) & 30 & 11.6 \\
-Swaps and data-order forks (\cref{tab:app-forks}) & 36 & 7.1 \\
-Step 2: SGD learning-rate search, SGD runs at the chosen rate & $15+3$ & 3.3 \\
-Step 2: runs with consecutive checkpoints (3 optimizers $\times$ 3 data orders) & 9 & 1.9 \\
-Step 3: swaps again, with checkpoints at steps 9998--10{,}000 & 18 & 2.1 \\
-\hline
-Total & 141 & 33.0 \\
 \hline
 \end{tabular}\end{minipage}
 \end{center}
