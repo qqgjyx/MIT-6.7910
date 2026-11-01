@@ -204,8 +204,10 @@ def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1
         return lambda k: tuple(zip(*[(d['step'], d[k]) for d in ds if k in d and d['step'] >= 10])) or ((), ())
 
     small = {'font.size': 6, 'axes.titlesize': 6, 'axes.labelsize': 6, 'legend.fontsize': 5.5, 'xtick.labelsize': 5,
-             'ytick.labelsize': 5, 'xtick.major.pad': 2, 'ytick.major.pad': 2, 'axes.labelpad': 2,
-             'axes.titlepad': 3}  # small text, so that the panels get the room
+             'ytick.labelsize': 5, 'xtick.major.pad': 1.5, 'ytick.major.pad': 1.5, 'axes.labelpad': 2,
+             'axes.titlepad': 3, **{f'{a}tick.{m}.{k}': v for a in 'xy' for m, size, width in
+                                    (('major', 2, 0.6), ('minor', 1, 0.4)) for k, v in
+                                    (('size', size), ('width', width))}}  # small text and ticks: room for the panels
     with plt.rc_context(small):
         cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(50, 4000)
         fig, axes = plt.subplots(2, len(keys), figsize=size, sharex=True, layout='constrained')
