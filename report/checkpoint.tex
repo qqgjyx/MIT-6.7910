@@ -96,7 +96,7 @@ and 1.6--1.8 between two Muon ones.
 \paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points of training, in
 five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $H$), internal activations and
 predictions (\cref{app:metrics}). We compare optimizers by each metric's ratio at training loss 1.81, with three data
-orders each (\cref{fig:rank}, \cref{tab:app-am}). SGD with momentum, our reference, differs from both in most metrics
+orders each (\cref{fig:rank} for selected metrics, \cref{tab:app-am} for all). SGD with momentum, our reference, differs from both in most metrics
 (\cref{tab:app-sgd}).
 \begin{itemize}
 \item \emph{Weights $W$.} Muon's weight matrices use their directions more evenly. Their stable rank
@@ -105,20 +105,20 @@ spectral norm (2.9 against 5.4) and largest-to-median singular-value ratio $\sig
 8.0) are lower. Both move equally far from the initialization (ratio $1.01\pm0.02$): they differ in the shape of
 their weights, not in how far they travel.
 \item \emph{One-step updates $\Delta W$.} Consecutive Muon steps are less alike (cosine 0.74 against 0.88). Their stable rank is much
-higher (220 against 17), but by construction: Muon orthogonalizes every update.
+higher (220 against 17; \cref{tab:app-am}), but by construction: Muon orthogonalizes every update.
 \item \emph{Loss curvature (Hessian $H$).} Muon is about twice as sharp: the top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2,
 the trace $\operatorname{tr}H$ 2770 against 1400. But the tuned learning rates differ, and $\lambda_{\max}$ scales
 roughly as one over the learning rate (log-log slopes $-0.86$ and $-0.84$ across a sweep). So part of this gap
 reflects the rates, not the optimizer.
 \item \emph{Internal activations.} AdamW's MLP is sparser: 12\% of its units are active, against 22\% for Muon.
-\item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon interval contains 1.
+\item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon interval contains 1 (\cref{tab:app-am}).
 \end{itemize}
 
 \begin{figure}[h]
 \centering
 \includegraphics{figures/ts10m/ranking.pdf}
-\caption{Three data orders per optimizer. (a) Ratio of two optimizers' values at training loss 1.81, for selected
-metrics; bars: margins. (b), (c) Stable rank of $W$ and distance from initialization against training loss.}
+\caption{AdamW's value divided by Muon's at training loss 1.81, for selected metrics; three data orders each; bars:
+margins.}
 \label{fig:rank}
 \end{figure}
 
