@@ -2,7 +2,7 @@
 the metric ranking and the metrics under swaps (from rank_metrics.py's metrics.json).
 
     python -m optsplit.analysis.ckpt_figs barriers --lmc ts10m=<lmc_layers.json> ts30m=... shakespeare=... --out f.pdf
-    python -m optsplit.analysis.ckpt_figs forks --dir report/figures/ts10m --out f.pdf
+    python -m optsplit.analysis.ckpt_figs forks --dir checkpoint/figures/ts10m --out f.pdf
     python -m optsplit.analysis.ckpt_figs ranking --metrics metrics.json --keys k1 k2 ... [--pairs adamw/muon ...] --out f.pdf
     python -m optsplit.analysis.ckpt_figs swaps --metrics metrics.json --swap-json swap.json --keys k1 ... --out f.pdf
     python -m optsplit.analysis.ckpt_figs swap-traj --keys k1 ... --out f.pdf
