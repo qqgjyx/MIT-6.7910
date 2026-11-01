@@ -123,20 +123,20 @@ the swap).}
 \label{fig:swap}
 \end{figure}
 
-\emph{Weights $W$.} The spectral norm ends near or beyond the own run's (0.94--1.56 of the way; b, g). The stable
-rank moves less the later the swap: from fork step 4000, 0.25 (AdamW to Muon) and 0.46 (Muon to AdamW) of the way
-(a, f).
+\emph{Weights $W$ and internal activations.} The spectral norm of $W$ ends near or beyond the own run's value
+(0.94--1.56 of the way; b, g). For the stable rank of $W$ (a, f) and the fraction of active MLP units (e, j), the
+final value depends on the fork step: the earlier the swap, the closer it ends to the new optimizer's own run. A swap
+at step 4000 moves the stable rank only 0.25--0.46 of the way, and the active fraction 0.07--0.13. Even a swap at step
+200 leaves a clear trace: from AdamW to Muon, the stable rank ends 0.90 of the way and the active fraction 0.67. This
+points to the importance of the early steps.
 
 \emph{One-step updates $\Delta W$.} The cosine between consecutive updates moves to the new optimizer's level right
 after the swap (c, h). This is expected: it reflects the optimizer's own dynamics more than the model's weights.
 
-\emph{Loss curvature (Hessian $H$).} $\lambda_{\max}$ differs by direction (d, i): after a switch to AdamW, it
-falls to AdamW's level (1.00--1.18 of the way), often after a brief spike; after a switch to Muon, it reaches Muon's
-level only for swaps up to step 100, and from step 700 on at most 0.30 of the way. Part of this may reflect the swap's
-change of learning rate.
-
-\emph{Internal activations.} The fraction of active MLP units moves less the later the swap: from fork step
-4000, only 0.07 (AdamW to Muon) and 0.13 (Muon to AdamW) of the way (e, j).
+\emph{Loss curvature (Hessian $H$).} $\lambda_{\max}$ differs by direction (d, i). After a switch to AdamW, it
+falls to AdamW's level (1.00--1.18 of the way), often after a brief spike. After a switch to Muon, it behaves like the
+stable rank and active units above: the earlier the swap, the closer it ends to Muon's own run, and late swaps keep
+much of AdamW's value.
 
 \paragraph{Next steps.} (i)~Repeat Steps 1--3 on a larger model (TinyStories-30M) and on character-level Shakespeare.
 (ii)~For each property that differs in Step 2: does it follow directly from Muon's orthogonalized updates, or does it
