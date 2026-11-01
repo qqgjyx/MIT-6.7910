@@ -203,38 +203,43 @@ def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1
         ds = sorted((json.load(open(f)) for f in (runs / run / 'traj_metrics').glob('*.json')), key=lambda d: d['step'])
         return lambda k: tuple(zip(*[(d['step'], d[k]) for d in ds if k in d and d['step'] >= 10])) or ((), ())
 
-    cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(50, 4000)
-    fig, axes = plt.subplots(2, len(keys), figsize=size, sharex=True, layout='constrained')
-    for row, (a, b) in zip(axes, (('adamw', 'muon'), ('muon', 'adamw'))):
-        swaps = sorted((int(p.name.rsplit('_at', 1)[1]), load(p.relative_to(runs)))
-                       for p in (runs / suite).glob(f'{a}_to_{b}_at*'))
-        parent, own = load(f'{pure}/{a}_d0'), load(f'{pure}/{b}_d0')
-        for ax, k in zip(row, keys):
-            for f, run in swaps:
-                x, y = run(k)
-                if x:
-                    ax.plot(x, y, color=cmap(norm(f)), lw=0.8)
-                    ax.plot(x[0], y[0], 'o', ms=2.5, color=cmap(norm(f)), zorder=3)
-            ax.plot(*own(k), color='0.55', ls='--', lw=0.9)
-            ax.plot(*parent(k), color='k', lw=0.9)
-            ax.set_xscale('log')
-            if k == 'lambda_max':
-                ax.set_yscale('log')
-        row[0].set_ylabel(f'{NAMES[a]} → {NAMES[b]}')
-    for ax, k in zip(axes[0], keys):
-        ax.set_title(METRICS[k][1])
-    for ax in axes[1]:
-        ax.set_xlabel('step')
-    forks = [s for s, _ in swaps]
-    cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm, cmap), ax=axes, label='fork step', aspect=30, pad=0.01)
-    cb.set_ticks(forks, labels=[str(s) for s in forks])
-    cb.minorticks_off()
-    fig.legend([plt.Line2D([], [], color='k', lw=0.9), plt.Line2D([], [], color='0.55', ls='--', lw=0.9),
-                plt.Line2D([], [], color=cmap(0.5), lw=0.8, marker='o', ms=2.5)],
-               ["parent's optimizer, no swap", 'new optimizer, no swap', 'swapped run (marker: swap)'],
-               loc='outside lower center', ncol=3, frameon=False)
-    panel_labels(axes.flat)
-    fig.savefig(out)
+    small = {'font.size': 6, 'axes.titlesize': 6, 'axes.labelsize': 6, 'legend.fontsize': 5.5, 'xtick.labelsize': 5,
+             'ytick.labelsize': 5, 'xtick.major.pad': 2, 'ytick.major.pad': 2, 'axes.labelpad': 2,
+             'axes.titlepad': 3}  # small text, so that the panels get the room
+    with plt.rc_context(small):
+        cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(50, 4000)
+        fig, axes = plt.subplots(2, len(keys), figsize=size, sharex=True, layout='constrained')
+        fig.get_layout_engine().set(w_pad=1 / 72, h_pad=1 / 72, wspace=0.01, hspace=0.01)
+        for row, (a, b) in zip(axes, (('adamw', 'muon'), ('muon', 'adamw'))):
+            swaps = sorted((int(p.name.rsplit('_at', 1)[1]), load(p.relative_to(runs)))
+                           for p in (runs / suite).glob(f'{a}_to_{b}_at*'))
+            parent, own = load(f'{pure}/{a}_d0'), load(f'{pure}/{b}_d0')
+            for ax, k in zip(row, keys):
+                for f, run in swaps:
+                    x, y = run(k)
+                    if x:
+                        ax.plot(x, y, color=cmap(norm(f)), lw=0.8)
+                        ax.plot(x[0], y[0], 'o', ms=2.5, color=cmap(norm(f)), zorder=3)
+                ax.plot(*own(k), color='0.55', ls='--', lw=0.9)
+                ax.plot(*parent(k), color='k', lw=0.9)
+                ax.set_xscale('log')
+                if k == 'lambda_max':
+                    ax.set_yscale('log')
+            row[0].set_ylabel(f'{NAMES[a]} → {NAMES[b]}')
+        for ax, k in zip(axes[0], keys):
+            ax.set_title(METRICS[k][1])
+        for ax in axes[1]:
+            ax.set_xlabel('step')
+        forks = [s for s, _ in swaps]
+        cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm, cmap), ax=axes, label='fork step', aspect=30, pad=0.01)
+        cb.set_ticks(forks, labels=[str(s) for s in forks])
+        cb.minorticks_off()
+        fig.legend([plt.Line2D([], [], color='k', lw=0.9), plt.Line2D([], [], color='0.55', ls='--', lw=0.9),
+                    plt.Line2D([], [], color=cmap(0.5), lw=0.8, marker='o', ms=2.5)],
+                   ["parent's optimizer, no swap", 'new optimizer, no swap', 'swapped run (marker: swap)'],
+                   loc='outside lower center', ncol=3, frameon=False)
+        panel_labels(axes.flat)
+        fig.savefig(out)
     print(f'wrote {out}')
 
 
