@@ -76,8 +76,8 @@ data orders (c), but Muon ends at a lower validation loss: 1.309 against 1.344 (
 
 \paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points of training, in
 five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $H$), internal activations and
-predictions (\cref{app:metrics}). SGD with momentum, our reference, differs from both optimizers in most of them
-(\cref{tab:app-sgd}).
+predictions (\cref{app:metrics} defines each metric and compares all of them in \cref{tab:app-am,tab:app-sgd}).
+\Cref{tab:app-sgd} also gives the values for SGD with momentum.
 
 We compare AdamW and Muon by the ratio of their values of each metric at training loss 1.81, with three data orders
 each (\cref{fig:rank} for selected metrics, \cref{tab:app-am} for all). If their values range over
