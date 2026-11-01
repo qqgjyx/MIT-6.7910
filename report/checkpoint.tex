@@ -43,7 +43,7 @@ once, but the stable rank of its weights and its MLP sparsity keep much of their
 
 \paragraph{Setup.} \emph{Model.} We train a 14M-parameter nanoGPT \citep{karpathy2022nanogpt} on TinyStories
 \citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences of 256 tokens, with a cosine learning-rate decay
-(\cref{app:hparams}).
+(\cref{app:hparams} lists the model, data, training and optimizer settings).
 
 \emph{Optimizers.} Muon \citep{jordan2024muon} orthogonalizes the update of each weight matrix in the transformer blocks: it sets the
 update's singular values to about 1. AdamW trains Muon's other parameters. Each optimizer uses the best of five
@@ -116,7 +116,7 @@ the swap).}
 
 \paragraph{Step 3: swaps (\cref{fig:swap}).} A \emph{swap} switches a run of one optimizer (the \emph{parent}, on
 data order 0) to the other optimizer at a \emph{fork step}, then trains it to step 10{,}000 on the parent's batches
-(\cref{app:forks}). An optimizer's \emph{own run} is its run from the start.
+(\cref{app:forks} gives the fork steps, the optimizer state at the swap and the measurement steps). An optimizer's \emph{own run} is its run from the start.
 
 We swap at nine fork steps from 50 to 4000, in both directions. \Cref{fig:swap} follows five metrics of each swapped
 run from the swap to step 10{,}000. We give each metric's value at step 10{,}000 as a fraction of the way from the
