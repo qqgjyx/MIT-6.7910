@@ -91,8 +91,9 @@ their weights, not in how far they travel.
 \item \emph{One-step updates $\Delta W$.} Consecutive Muon steps are less alike (cosine 0.74 against 0.88). Their stable rank is much
 higher (220 against 17; \cref{tab:app-am}), but by construction: Muon orthogonalizes every update.
 \item \emph{Loss curvature (Hessian $H$).} Muon is about twice as sharp: the top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2,
-the trace $\operatorname{tr}H$ 2770 against 1400. But the tuned learning rates differ (AdamW
-$2\cdot10^{-3}$, Muon $10^{-2}$ for the block matrices), so part of this gap may reflect the rates.
+the trace $\operatorname{tr}H$ 2770 against 1400. This holds even though both take steps
+of similar relative size ($\|\Delta\theta\|/\|\theta\|$ is $6.53\cdot10^{-3}$ for Muon, $6.56\cdot10^{-3}$ for AdamW), so it is not
+an artifact of their different learning rates.
 \item \emph{Internal activations.} AdamW's MLP is sparser: 12\% of its units are active, against 22\% for Muon.
 \item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon range contains 1 (\cref{tab:app-am}).
 \end{itemize}
