@@ -1,7 +1,9 @@
 """Equal-loss values of the Step-2 metrics (from rank_metrics.py's metrics.json) and the ratio of two optimizers' values,
 with its margin over data orders: [min A / max B, max A / min B]. Pure Python, so the table can be made anywhere.
 
-    python metric_ratios.py metrics.json [training loss, default 1.81] > rows.tex   (rows of the appendix table)
+    python metric_ratios.py metrics.json A|B [training loss, default 1.81] > rows.tex   (rows of an appendix table)
+
+Table A: AdamW, Muon and their ratio; table B: AdamW, Muon, SGD and the ratios to SGD.
 """
 import json
 import math
@@ -9,7 +11,6 @@ import sys
 
 OPTS = ('adamw', 'muon', 'sgd')
 PAIRS = (('adamw', 'muon'), ('adamw', 'sgd'), ('muon', 'sgd'))
-NO_RATIO = {'gen_gap'}  # near zero and changes sign during training: a ratio is meaningless
 NAMES = {
     'l2': r'weight norm $\|\theta\|_2$', 'dist_init_rel': r'distance from init.\ $/\|\theta_0\|$',
     'linf_over_l2': r'largest entry $/\|\theta\|_2$', 'stable_rank': 'stable rank of $W$',
@@ -25,7 +26,6 @@ NAMES = {
     'entropy': 'prediction entropy (nats)', 'confidence': 'mean top-1 probability', 'ece': 'calibration error',
     'acc': 'top-1 accuracy', 'loss_freq': 'loss on frequent targets', 'loss_rare': 'loss on rare targets',
     'rare_minus_freq': 'rare minus frequent loss', 'js_unigram': 'JS to unigram model', 'js_bigram': 'JS to bigram model',
-    'gen_gap': 'validation minus training loss',
 }
 GROUPS = [('weights', 'Weights'), ('updates', 'Updates (one step)'), ('curvature', 'Curvature'),
           ('internals', 'Activations'), ('function', 'Predictions')]
@@ -90,28 +90,28 @@ def row_exp(xs):
 
 def main():
     m = json.load(open(sys.argv[1]))
-    L, v = values(m, float(sys.argv[2]) if len(sys.argv) > 2 else 1.81)
-    rat = {k: [None if k in NO_RATIO else ratio(v[k][a], v[k][b]) for a, b in PAIRS] for k in v}
+    opts, pairs = (OPTS[:2], PAIRS[:1]) if sys.argv[2] == 'A' else (OPTS, PAIRS[1:])
+    L, v = values(m, float(sys.argv[3]) if len(sys.argv) > 3 else 1.81)
+    rat = {k: [ratio(v[k][a], v[k][b]) for a, b in pairs] for k in v}
     bold = []
-    for j in range(len(PAIRS)):
+    for j in range(len(pairs)):
         far = sorted((abs(math.log(r[j][0])), k) for k, r in rat.items() if r[j] and not r[j][2] <= 1 <= r[j][3])
         bold.append({k for _, k in far[-5:]})
     out = []
     for g, name in GROUPS:
-        out.append(r'\emph{' + name + r'} & & & & & & \\')
+        out.append(r'\emph{' + name + '}' + ' &' * (len(opts) + len(pairs)) + r' \\')
         for k in NAMES:
             if k in v and m['metrics'][k]['group'] == g:
-                mh = [(sum(x) / len(x), (max(x) - min(x)) / 2) for x in (v[k][o] for o in OPTS)]
+                mh = [(sum(x) / len(x), (max(x) - min(x)) / 2) for x in (v[k][o] for o in opts)]
                 es = row_exp([mu for mu, _ in mh])
                 row = len(set(es)) == 1 and es[0]  # one exponent for the row: written once, after the name
                 cells = [fmt(mu, hr, e, not row) for (mu, hr), e in zip(mh, es)]
                 for j, r in enumerate(rat[k]):
-                    c = '---$^\\dagger$' if r is None else fmt(r[0], r[1], row_exp([r[0]])[0])
+                    c = fmt(r[0], r[1], row_exp([r[0]])[0])
                     cells.append(f'{{\\boldmath\\textbf{{{c}}}}}' if k in bold[j] else c)
                 unit = f' ($\\times10^{{{row}}}$)' if row else ''
                 out.append(f'{NAMES[k]}{unit} & ' + ' & '.join(cells) + r' \\')
-    print(f'training loss {L:.3f}, {len(v)} metrics, no ratio: {sorted(k for k in rat if None in rat[k])}',
-          file=sys.stderr)
+    print(f'training loss {L:.3f}, {len(v)} metrics', file=sys.stderr)
     print('\n'.join(out))
 
 

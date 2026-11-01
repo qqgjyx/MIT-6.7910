@@ -77,9 +77,9 @@ trained 141 runs using 33 GPU-hours (\cref{app:compute}).
 training loss at steps 250, 1000, 2000. The map shows which checkpoints are nearest, not how far apart they are: the
 six endpoints, drawn nearly overlapping, are JS 0.056--0.063 apart, about as far as each run moves between
 steps 5000 and 10{,}000. Second: JS between AdamW and Muon on the same data order at the same step (blue) and between two data orders of one optimizer (grey); dotted: step 250. Third: validation loss (mean, range over
-five data orders). Right: loss barrier between two final weight vectors (how far the training loss rises along the
-straight path between them above the straight line joining the two end losses), one point per pair: AdamW and Muon on
-the same data order (red, 5 pairs), two data orders of AdamW (blue) or of Muon (orange; 10 pairs each).}
+data orders). Right: loss barrier between two final weight vectors (how far the training loss rises along the
+straight path between them above the line joining the two end losses), one point per pair: AdamW and Muon on
+the same data order (red, 5 pairs), two data orders of AdamW (blue) or Muon (orange; 10 pairs each).}
 \label{fig:div}
 \end{figure}
 
@@ -96,34 +96,34 @@ Their final weights, however, are further apart than two data orders' are, at le
 of Muon. On TinyStories-30M and Shakespeare, the mean AdamW--Muon barrier lies between the two optimizers' mean
 data-order barriers (4.64 between 1.78 and 5.05; 2.42 between 0.14 and 4.34).
 
-\paragraph{Step 2: what differs along the way.} We measure 31 properties of each model at 34 points, from the first
+\paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points, from the first
 steps to the final model (\cref{app:metrics}). They form five groups: the weights, the
-change made by one update step, the curvature of the loss, internal activations, and the
-predictions. We compare the optimizers by each metric's ratio at training loss 1.81, with three
-data orders each (\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for
-reference).
+change made by one update step, the loss curvature, internal activations, and the
+predictions. We compare optimizers by each metric's ratio at training loss 1.81, with three
+data orders each (\cref{fig:rank}; AdamW and Muon in \cref{tab:app-am}; SGD with momentum as a reference
+in \cref{tab:app-sgd}).
 
 All four metrics of the weight matrices' singular values (spectral norm, stable and effective rank,
-singular-value spread) differ between AdamW and Muon beyond data-order variation, while the prediction metrics
+singular-value spread) differ between AdamW and Muon beyond data-order variation (\cref{tab:app-am}), while the prediction metrics
 (entropy, confidence, calibration, accuracy, losses on frequent and rare targets, JS to $n$-gram models) all have
 AdamW/Muon intervals containing 1, all but calibration error's within $1\pm0.03$, as does how far the weights move
-($1.01\pm0.02$). Muon's weight matrices have more evenly
-sized singular values: their stable rank $\|W\|_F^2/\|W\|_2^2$ is $2.61\pm0.04$ times AdamW's (86 against 33), and
+($1.01\pm0.02$). Muon's weight matrices have more even
+singular values: their stable rank $\|W\|_F^2/\|W\|_2^2$ is $2.61\pm0.04$ times AdamW's (86 against 33), and
 AdamW's largest-to-median singular-value ratio $\sigma_1/\sigma_{\rm median}$ is $2.98\pm0.03$ times Muon's (8.0
 against 2.7). AdamW's model uses fewer MLP units, has larger activations and sharper attention, and sits where the
 loss is less curved; relative to Muon's, its fraction of active MLP units is $0.539\pm0.007$ times as large (12\%
 against 22\%), its residual-stream RMS $1.40\pm0.03$ times, its attention entropy $0.899\pm0.014$ times, and its
 Hessian trace $\operatorname{tr}H$ $0.510\pm0.019$ times (top eigenvalue $0.433\pm0.013$ times). Muon's one-step updates have a stable rank $13.1\pm0.2$ times AdamW's (220
-against 17), by construction. SGD differs from both: AdamW and Muon end $4.47\pm0.11$ and $4.42\pm0.07$
-times as far from the initialization, take steps $10.9\pm1.0$ and $10.8\pm0.9$ times as
-large relative to the weights, less aligned with the batch gradient (cosine
-0.24 and 0.22 against 0.45), and SGD's $\operatorname{tr}H$ is $18.0\pm0.8$ and $9.18\pm0.20$ times theirs.
+against 17), by construction. SGD differs from both (\cref{tab:app-sgd}): AdamW and Muon end $4.47\pm0.11$ and $4.42\pm0.07$
+times as far from the initialization, take relative steps $10.9\pm1.0$ and $10.8\pm0.9$
+times as large, less aligned with the batch gradient (cosine
+0.24, 0.22 against 0.45), and SGD's $\operatorname{tr}H$ is $18.0\pm0.8$ and $9.18\pm0.20$ times theirs.
 
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.8\linewidth]{figures/ts10m/ranking.pdf}
 \caption{TinyStories-10M, three data orders per optimizer. Left: ratio of two optimizers' values at training loss 1.81
-for selected metrics (log scale; bars: margins; all metrics in \cref{tab:app-metrics}).
+for selected metrics (log scale; bars: margins; all metrics in \cref{tab:app-am,tab:app-sgd}).
 $\Delta$: change over one step; $g_t$: gradient on the step's batch; $H$: Hessian on 32 training sequences.
 Middle, right: stable rank of $W$ and $\|\theta-\theta_0\|/\|\theta_0\|$ against training loss; colour: optimizer, line style: data order.}
 \label{fig:rank}
