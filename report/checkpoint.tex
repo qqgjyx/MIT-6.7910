@@ -37,9 +37,9 @@
 \paragraph{Summary.} We train a small language model with AdamW and with Muon, from one initialization and on the
 same mini-batches. (1)~Muon trains faster, on a path that differs from AdamW's less than
 a change of data order does; only at equal training loss do their predictions differ as much. (2)~Muon's weight and update matrices have more evenly sized singular values
-than AdamW's, beyond data-order variation; no prediction statistic differs. (3)~A run switched to the other optimizer
-mid-training ends up predicting no further from either optimizer's runs than two data orders do. Its updates
-take the new optimizer's form; its weights and activations keep part of the old one's.
+than AdamW's, beyond data-order variation; no prediction statistic differs. (3)~A run that switches optimizer
+mid-training ends with predictions as close to the new optimizer's run as two data orders are. Its updates change at
+once, but its weights and MLP sparsity keep much of their old values, more so the later the switch.
 
 \paragraph{Setup.} \emph{Model.} We train a 14M-parameter nanoGPT \citep{karpathy2022nanogpt} on TinyStories
 \citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences of 256 tokens, with a cosine learning-rate decay
