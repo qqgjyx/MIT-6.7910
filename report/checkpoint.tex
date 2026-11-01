@@ -37,10 +37,11 @@
 
 \paragraph{Summary.} We train a small language model with AdamW and Muon from one initialization, on the same
 mini-batches. (1)~Muon trains faster, and on a slightly different path. The
-final models are about as far apart as two data orders, but Muon's loss is lower. (2)~The optimizers differ in metrics
-that look at the model's internals (weight spectra, how alike consecutive updates are, curvature even at similar step
-sizes, MLP sparsity), not directly in its predictions. (3)~When a run switches optimizer mid-training, its updates change at once. Its weight spectra, MLP
-sparsity and, after a switch to Muon, sharpness end closer to the new optimizer's run the earlier the switch. Even a
+final models are about as far apart as two data orders, but Muon's loss is lower. (2)~The optimizers differ in various metrics
+that look at the model's internals: weight spectra, how alike consecutive updates are, curvature even at similar step
+sizes, and MLP sparsity. (3)~When a run switches optimizer mid-training, its updates change at once. For its weight spectra and MLP
+sparsity, the earlier the switch, the closer they end to the second optimizer's own run; the same holds for sharpness
+after a switch to Muon. Even a
 switch at step 200 leaves a trace.
 
 \paragraph{Setup.} \emph{Model.} We train a 14M-parameter nanoGPT \citep{karpathy2022nanogpt} on TinyStories
@@ -88,8 +89,8 @@ differ more than data orders do.
 \begin{figure}[H]
 \centering
 \includegraphics{figures/ts10m/ranking.pdf}
-\caption{AdamW's value divided by Muon's at training loss 1.81, for selected metrics; three data orders each; bars:
-range across data orders.}
+\caption{Ratio AdamW/Muon at training loss 1.81, for selected metrics; three data orders each; bars: range across
+data orders.}
 \label{fig:rank}
 \end{figure}
 
