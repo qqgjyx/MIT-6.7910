@@ -146,7 +146,6 @@ between 0.03 and 0.12 that did not diverge on any of the three data orders; ever
 \footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \renewcommand{\arraystretch}{1.15}%
 \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.5cm}|ccc|ccc@{}}
-\toprule
  & AdamW & Muon & SGD & A/M & A/S & M/S \\
 \midrule
 \emph{Weights} & & & & & & \\
@@ -185,7 +184,6 @@ rare minus frequent loss & $2.21 \pm 0.02$ & $2.21 \pm 0.01$ & $2.26 \pm 0.03$ &
 JS to unigram model & $0.800 \pm 0.001$ & $0.802 \pm 0.001$ & $0.804 \pm 0.001$ & $0.998 \pm 0.002$ & $0.995 \pm 0.002$ & $0.997 \pm 0.003$ \\
 JS to bigram model & $0.469 \pm 0.001$ & $0.471 \pm 0.001$ & $0.462 \pm 0.001$ & $0.996 \pm 0.004$ & $1.02 \pm 0.00$ & $1.02 \pm 0.00$ \\
 validation minus training loss ($\times10^{-2}$) & $-2.17 \pm 0.92$ & $-1.97 \pm 0.62$ & $-2.24 \pm 0.74$ & ---$^\dagger$ & ---$^\dagger$ & ---$^\dagger$ \\
-\bottomrule
 \end{tabular}\\[2pt]
 \raggedright\footnotesize $^\dagger$Near zero and changes sign during training, so a ratio is meaningless.
 \end{minipage}
