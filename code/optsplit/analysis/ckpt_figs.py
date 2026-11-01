@@ -26,7 +26,8 @@ PAIRS = {('adamw', 'muon'): ('AdamW–Muon, same data', 'C3'), ('adamw', 'adamw'
 
 
 def barriers(lmc, out):
-    fig, ax = plt.subplots(figsize=(2.6, 1.75))
+    fig, ax = plt.subplots(figsize=(3.9, 1.75))
+    fig.subplots_adjust(left=0.15, right=0.6, bottom=0.15, top=0.97)
     for i, (name, path) in enumerate(lmc):
         rows = json.load(open(path))
         for j, (pair, (label, c)) in enumerate(PAIRS.items()):
@@ -38,8 +39,7 @@ def barriers(lmc, out):
     ax.set_xticklabels([TITLES.get(n, n).replace('TinyStories', 'TS') for n, _ in lmc])
     ax.set_ylabel('loss barrier (nats)')
     ax.set_ylim(bottom=0)
-    ax.legend(frameon=False, loc='upper left', handletextpad=0.1)
-    fig.tight_layout(pad=0.2)
+    ax.legend(frameon=False, loc='center left', bbox_to_anchor=(1.02, 0.5), handletextpad=0.1, markerscale=2)
     fig.savefig(out, bbox_inches='tight')
     print(f'wrote {out}')
 
