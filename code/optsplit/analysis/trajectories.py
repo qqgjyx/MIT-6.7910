@@ -21,6 +21,7 @@ from matplotlib import patheffects
 from matplotlib.transforms import Bbox, ScaledTranslation
 
 from optsplit.analysis.distance import loss_points
+from optsplit.analysis.rank_metrics import NAMES
 from optsplit.analysis.io import load_runs
 
 MARKERS = 'osD^v'
@@ -128,7 +129,7 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
         turns = np.arctan2(v[1], v[0]) + np.radians([0, 45, -45, 90, -90, 135, -135, 180])
         for a in [*turns, turns[0]]:  # the preferred direction again if no turn is clear
             dx, dy = 5 * np.cos(a), 5 * np.sin(a)
-            t = ax.annotate(s, xy, xytext=(dx, dy), textcoords='offset points', fontsize=5, color=c,
+            t = ax.annotate(s, xy, xytext=(dx, dy), textcoords='offset points', fontsize=7, color=c,
                             path_effects=HALO, ha=side(dx, 'right', 'left'), va=side(dy, 'top', 'bottom'))
             b = t.get_window_extent(ren)
             if box.contains(b.x0, b.y0) and box.contains(b.x1, b.y1) and not any(b.overlaps(o) for o in taken):
@@ -136,7 +137,7 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
             t.remove()
         taken.append(b)
     for o in opts:
-        ax.plot([], [], '-', color=f'C{opts.index(o)}', label=o)
+        ax.plot([], [], '-', color=f'C{opts.index(o)}', label=NAMES.get(o, o))
     if first['steps'][0] or steps:
         ax.plot([], [], ' ', label='step')  # a group heading
     if first['steps'][0]:

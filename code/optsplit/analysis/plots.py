@@ -15,6 +15,7 @@ import numpy as np
 from optsplit.analysis import eos, trajectories
 from optsplit.analysis.distance import loss_curve, step_curve
 from optsplit.analysis.io import flatten, load_runs
+from optsplit.analysis.rank_metrics import NAMES
 from optsplit.analysis.split import by_seed, locate_split
 from optsplit.config import load_yaml, root_dir
 
@@ -46,11 +47,12 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there; `log_offset`
     draws the loss-matched panel's loss axis as in `loss_pairs`. With `val_runs`, their validation loss by optimizer
     (mean over data orders, band from min to max, up to `max_loss`) comes in a last panel; `mark_step` draws a dotted
-    line at that step instead of t* (and leaves the episodes and t* out of the loss-matched panel). With `pairs`,
-    the step- and loss-matched panels share their y axis. `labels`: (a), (b), ... at the top left of the panels."""
+    line at that step instead of t*. With `pairs`, the step- and loss-matched panels share their y axis and have no
+    t*, episodes or split. `labels`: (a), (b), ... at the top left of the panels."""
     metric = split['metric']
+    ylabel = {'js': 'JS (bits)'}.get(metric, metric)
     A, B = by_seed(runs_a), by_seed(runs_b)
-    name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
+    name = lambda r: (lambda n: NAMES.get(n, n))(r.id.split('/')[-1].rsplit('_d', 1)[0])  # without the data order
 
     def lines(ax, curve, x):
         for i, s in enumerate(sorted(A.keys() & B.keys())):
@@ -66,6 +68,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     fig, axes = plt.subplots(1, n, figsize=(13 * n / 3, 3.4))  # panels of the same size as with three
     if traj:
         trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step)
+        axes[0].get_legend().set_loc('upper right')  # clear of the paths; 'best' also avoids the point labels
         a1, a2, a3 = *axes[1:3], None
     else:
         a1, a2, a3 = axes[:3]
@@ -74,9 +77,9 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     steps = [s for s in steps if s is not None]
     if mark_step is not None:  # e.g. where the trajectories of the first panel start, instead of t*
         a1.axvline(mark_step, color='0.5', ls=':', lw=0.8)
-    elif steps:
+    elif steps and not pairs:
         a1.axvline(np.median(steps), color='r', ls='--', label='t*')
-    a1.set(xlabel='step', ylabel=metric, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
+    a1.set(xlabel='step', ylabel=ylabel, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
     a1.legend(fontsize=7)
     grid = np.array(split['grid'])
     if val_runs:  # validation loss per optimizer: mean over the data orders, band from min to max
@@ -86,7 +89,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
             s, v = zip(*(r.series('eval', 'val_loss') for r in val_runs if r.optimizer == o))
             v = np.array(v)
             av.fill_between(s[0], v.min(0), v.max(0), color=f'C{c}', alpha=0.2, lw=0)
-            av.plot(s[0], v.mean(0), color=f'C{c}', label=o)
+            av.plot(s[0], v.mean(0), color=f'C{c}', label=NAMES.get(o, o))
             lowest = min(lowest, v.min())
         av.set(xlabel='step', ylabel='validation loss', xscale=a1.get_xscale(), xlim=(0, None),
                ylim=(lowest - 0.05, max_loss))
@@ -99,7 +102,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
         a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
         a2.plot(grid, split['cross'], color='C0')
     top = max_loss or np.inf  # lines above it would be off the panel but still in the legend
-    if mark_step is None:
+    if not pairs:
         for lo, hi in split.get('episodes', []):
             a2.axvspan(lo, hi, color='C0', alpha=0.08)
         if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
@@ -107,9 +110,9 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
         if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
             a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
             a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
-    a2.set(ylabel=metric)
+    a2.set(ylabel=ylabel)
     _loss_axis(a2, max_loss, log_offset)
-    if not pairs or mark_step is None:  # with pairs, the lines are those of the step panel
+    if not pairs:  # with pairs, the lines are those of the step panel
         a2.legend(fontsize=7)
     if a3 is not None:
         with np.errstate(all='ignore'):
@@ -120,6 +123,8 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
         a3.invert_xaxis()
     if labels:
         panel_labels(axes)
+        if val_runs:  # its top tick label (max_loss) reaches above the panel: the label goes left of it
+            axes[-1].texts[-1].xyann = (-22, 3)
     _save(fig, path)
 
 
