@@ -53,7 +53,7 @@ of one optimizer (the larger of the two means). In all, 123 runs and 31 GPU-hour
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.85\linewidth]{figures/ts10m/divergence_umap_adamw_muon.pdf}
+\includegraphics[width=0.9\linewidth]{figures/ts10m/divergence_umap_adamw_muon.pdf}
 \caption{TinyStories-10M, AdamW (blue) and Muon (orange). Left: data orders d0--d2 from step 250 on, embedded with
 densMAP from the distances $\sqrt{\mathrm{JS}}$ between all logged steps (points at least 0.28 apart); numbers:
 training loss at steps 250, 1000, 2000. Middle: JS between AdamW and Muon on the same data order at equal steps (blue,
@@ -62,29 +62,19 @@ orders.}
 \label{fig:div}
 \end{figure}
 
-\paragraph{Step 1: how the trajectories differ (\cref{fig:div,fig:equal}).} After warmup, AdamW and Muon on the same
-data order stay close: each such pair are nearest neighbours in the embedding, and closer than two data orders of one
-optimizer at equal steps. Muon is ahead (validation loss 1.75 against 1.92 at step 1000, means of five data orders; it
-reaches AdamW's final 1.344 by step 7500). At equal training loss (\cref{fig:equal}, left) their distance follows the
-data-order floors: below loss 4.85 it is 0.95--1.38 floors (median 1.02), and 0.99 at the lowest loss all runs reach
-(TinyStories-30M and Shakespeare: 1.02). In function space both reach the same endpoint, up to the data-order noise.
-
-\begin{figure}[h]
-\centering
-\includegraphics[height=1.3in]{figures/ts10m/divergence_pairs_adamw_muon.pdf}\hspace{0.25in}%
-\includegraphics[height=1.3in]{figures/barriers_adamw_muon.pdf}
-\caption{Left: TinyStories-10M, JS between AdamW and Muon at equal training loss $L$ (blue, one line per data order)
-and between two data orders of AdamW (black) or Muon (grey); log scale in $L-1$. Right: loss barrier between the
-final weights of AdamW and Muon on one data order (5 pairs) and of two data orders of one optimizer (10 pairs each).}
-\label{fig:equal}
-\end{figure}
+\paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} After warmup, AdamW and Muon on the same data order
+stay close: each such pair are nearest neighbours in the embedding, and at equal steps their distance is below that
+between two data orders of one optimizer. Muon is ahead (validation loss 1.75 against 1.92 at step 1000, means of five
+data orders; it reaches AdamW's final 1.344 by step 7500). Compared at equal training loss instead, the distance
+between AdamW and Muon on the same data order stays at the data-order floor after warmup: 0.95--1.38 floors below
+loss 4.85 (median 1.02), and 0.99 at the lowest loss all runs reach (TinyStories-30M and Shakespeare: 1.02). In
+function space both reach the same endpoint, up to the data-order noise.
 
 In weight space they do not. The training loss on the segment between two final weights rises above the line between
 its end values by a \emph{barrier} (maximum over 11 points; \citealp{frankle2020lmc}): 3.5--4.1 nats between AdamW
-and Muon on TinyStories-10M, against 1.2--1.9 between two data orders of AdamW and 1.6--1.8 of Muon
-(\cref{fig:equal}, right). Only there is the change of optimizer clearly the larger: on TinyStories-30M its mean (4.64)
-lies between Muon's data-order mean (1.78) and AdamW's (5.05), and on Shakespeare (2.42) between AdamW's (0.14) and
-Muon's (4.34).
+and Muon on TinyStories-10M, against 1.2--1.9 between two data orders of AdamW and 1.6--1.8 of Muon. Only there is the
+change of optimizer clearly the larger: on TinyStories-30M its mean (4.64) lies between Muon's data-order mean (1.78)
+and AdamW's (5.05), and on Shakespeare (2.42) between AdamW's (0.14) and Muon's (4.34).
 
 \paragraph{Step 2: what differs along the way.} We measure 31 metrics of the models along training up to their
 endpoints, at 34 checkpoints per run, grouped as weights, one-step updates, curvature, activations and predictions
@@ -100,7 +90,7 @@ in brackets).
 Muon's weights have the flatter spectra: stable rank 86 against 33 ($-147$), $\sigma_1/\sigma_{\rm median}$ 2.7
 against 8.0 (105). AdamW's model is sparser and louder, on a flatter loss: 12\% of MLP units active against 22\%
 ($-62$), residual RMS 4.7 against 3.4 (28), attention entropy 2.5 against 2.8 nats ($-18$), $\operatorname{tr}H$ 1400
-against 2770 ($-23$). The high rank of Muon's updates (220 against 17,
+against 2770 ($-23$), $\lambda_{\max}$ 6.2 against 14 ($-10$). The high rank of Muon's updates (220 against 17,
 $-328$) holds by construction, as Muon orthogonalizes them. SGD is the outlier in how it moves: 0.49$\|\theta_0\|$ from
 the initialization (50 and 58 against AdamW and Muon), steps of 0.06\% of $\|\theta\|$ against 0.66\% (67, 132), better
 aligned with their batch gradient (cosine 0.45 against 0.24 and 0.22; $-17$, $-18$), on a sharper loss
@@ -108,7 +98,7 @@ aligned with their batch gradient (cosine 0.45 against 0.24 and 0.22; $-17$, $-1
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.94\linewidth]{figures/ts10m/ranking.pdf}
+\includegraphics[width=\linewidth]{figures/ts10m/ranking.pdf}
 \caption{TinyStories-10M, three data orders per optimizer. Left: per metric and pair of optimizers, the mean gap on
 the same data order over the larger mean gap between two data orders of one optimizer, at equal training loss, median
 over losses 1.66--3 (selection; all in \cref{tab:app-metrics}). $\Delta$: change over one step; $g_t$: gradient on the
@@ -118,7 +108,7 @@ step's batch; $H$: Hessian on 32 fixed training sequences. Middle, right: two me
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.88\linewidth]{figures/ts10m/forks_adamw_muon.pdf}
+\includegraphics[width=0.94\linewidth]{figures/ts10m/forks_adamw_muon.pdf}
 \caption{Swaps between AdamW and Muon on TinyStories-10M (data order 0), final weights of each fork against the fork
 step. Left: JS to the new optimizer's pure run and to the parent, each over that run's data-order floor. Second:
 barrier to the parent, for the swap and for the parent's optimizer continued on data order 1. Third: barrier to the
@@ -130,7 +120,7 @@ as a fraction of the way from the parent's value (0) to the new optimizer's (1).
 \paragraph{Step 3: swaps (\cref{fig:swap}).} We switch between AdamW and Muon at nine fork steps from 50 to 4000,
 with a warm optimizer state and the parent's batches (\cref{app:forks}). Every fork ends within the data-order floor
 of the new optimizer's pure run (0.86--0.95 floors) and, increasingly with the fork step, of the parent's (0.92--0.98
-at step 50, 0.20--0.21 at step 4000). The weights do not. A fork
+at step 50, 0.20--0.21 at step 4000): the function cannot tell which optimizer decided it. The weights can. A fork
 stays linearly connected to its parent (barrier below 0.05 nats) only from a later fork step than a change of data
 order: from AdamW at step 2500 (0.03) against 1000 (0.035), from Muon not even at step 4000 (0.055) against 1000
 (0.046), and none ends in the basin of the new optimizer's run (third panel). Switching at step 4000 moves the stable rank only 0.27
