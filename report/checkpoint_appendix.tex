@@ -89,8 +89,7 @@ $\Delta\theta_{t+1}$ and with the negative gradient $-g_t$ on step $t$'s batch, 
 its block matrices $\Delta W$. \emph{Curvature} of the training loss on 32 fixed training sequences, with Hessian $H$:
 $\lambda_{\max}(H)$ (20 Lanczos iterations, logged during training), $\operatorname{tr}H$ (10 Rademacher probes),
 $\operatorname{tr}H/\lambda_{\max}$, and the batch sharpness $\mathbb{E}_B[g_B^\top H_Bg_B]/\mathbb{E}_B\|g_B\|^2$,
-where $g_B$ and $H_B$ are the gradient and Hessian on a mini-batch $B$. The log-log slopes of $\lambda_{\max}$
-against the learning rate in Step 2 are fitted across a learning-rate sweep, against the peak rate of the schedule.
+where $g_B$ and $H_B$ are the gradient and Hessian on a mini-batch $B$.
 \emph{Predictions}, on the 2{,}048 held-out
 positions: entropy, mean top-1 probability, calibration error (15 bins), top-1 accuracy, loss on the targets in the top
 and the bottom third of training-set frequency and their difference, and JS to the unigram and to the bigram model
