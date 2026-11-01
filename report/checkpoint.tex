@@ -38,7 +38,7 @@
 \paragraph{Summary.} We train a small language model with AdamW and Muon from one initialization, on the same
 mini-batches. (1)~Muon trains faster, and on a slightly different path. The
 final models are about as far apart as two data orders, but Muon's loss is lower. (2)~The optimizers differ in various metrics
-that look at the model's internals: weight spectra, how alike consecutive updates are, curvature,
+that look at the model's internals: weight spectra, similarity of consecutive updates, curvature,
 and MLP sparsity. (3)~When a run switches optimizer mid-training, its updates change at once. For its weight spectra and MLP
 sparsity, the earlier the switch, the closer they end to the second optimizer's own run; the same holds for sharpness
 after a switch to Muon. Even a
