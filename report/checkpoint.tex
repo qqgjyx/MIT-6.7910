@@ -85,23 +85,22 @@ and Muon on TinyStories-10M, against 1.2--1.9 between two data orders of AdamW a
 lies between Muon's data-order mean (1.78) and AdamW's (5.05), and on Shakespeare (2.42) between AdamW's (0.14) and
 Muon's (4.34).
 
-\paragraph{Step 2: what differs along the way.} With three data orders per optimizer we measure 31 whole-model
-metrics at 34 checkpoints (weights, one-step updates, Hessian, predictions, activations) and score each pair of
-optimizers as the functions: their gap at equal training loss on one data order over the gap between two data orders
-(\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for reference; values below at
-losses 2.96--1.81).
-No prediction metric separates AdamW from Muon (scores 0.6--1.2), but their geometry does. Muon's updates have stable
-rank 190--220 against 7--17 for AdamW, by construction (it orthogonalizes them); less trivially, its weights keep the
-flatter spectra (stable rank 86--104 against 28--33, $\sigma_1/\sigma_{\rm median}$ 2.5--2.7 against 6--8; scores 147
-and 105). AdamW concentrates the model: fewer active MLP units (12--28\% against 22--43\%; score 62), a larger
-residual stream (RMS 1.3--4.7 against 0.66--3.4; 28), lower attention entropy (2.5--3.1 against 2.8--4.2 nats; 18) and
-a flatter loss ($\operatorname{tr}H$ 1.4--3.8k against 2.8--7.9k; 23). Yet both move equally far from the
-initialization (2.2$\|\theta_0\|$ at loss 1.81; score 3.4). SGD is the outlier there: it moves 3--4.5 times less, in
-steps about 10 times smaller and 2--3 times better aligned with their batch gradient (cosine 0.45--0.48 against
-0.15--0.24), on a far sharper loss ($\operatorname{tr}H$ 21--25k). The stability thresholds differ too: AdamW's
-preconditioned sharpness is at least 0.9 of $38/\eta_t$ \citep{cohen2022adaptive} at 50--65\% of the measured steps,
-SGD's $\lambda_{\max}$ of $3.8/\eta_t$ at 6--10\%, Muon's spectral-norm sharpness of its bound
-\citep{islamov2026noneuclidean} once, at step 50.
+\paragraph{Step 2: what differs along the way.} We measure 31 metrics of the models along training up to their
+endpoints, at 34 checkpoints per run, grouped as weights, one-step updates, curvature, activations and predictions
+(\cref{app:metrics}). As for the functions, we compare them at equal training loss and score each gap between two
+optimizers on the same data order against the gap between two data orders of one optimizer, three data orders each
+(\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for reference).
+
+AdamW and Muon differ in spectral geometry, but not in their predictions (all prediction scores within $\pm1.1$) nor
+in how far they move (2.18 and 2.155$\|\theta_0\|$ from the initialization; values at loss 1.81, scores in brackets).
+Muon's weights have the flatter spectra: stable rank 86 against 33 ($-147$), $\sigma_1/\sigma_{\rm median}$ 2.7
+against 8.0 (105). AdamW's model is sparser and louder, on a flatter loss: 12\% of MLP units active against 22\%
+($-62$), residual RMS 4.7 against 3.4 (28), attention entropy 2.5 against 2.8 nats ($-18$), $\operatorname{tr}H$ 1400
+against 2770 ($-23$), $\lambda_{\max}$ 6.2 against 14 ($-10$). The high rank of Muon's updates (220 against 17,
+$-328$) holds by construction, as Muon orthogonalizes them. SGD is the outlier in how it moves: 0.49$\|\theta_0\|$ from
+the initialization (50 and 58 against AdamW and Muon), steps of 0.06\% of $\|\theta\|$ against 0.66\% (67, 132), better
+aligned with their batch gradient (cosine 0.45 against 0.24 and 0.22; $-17$, $-18$), on a sharper loss
+($\operatorname{tr}H$ 25{,}500; $-22$, $-20$).
 
 \begin{figure}[h]
 \centering
