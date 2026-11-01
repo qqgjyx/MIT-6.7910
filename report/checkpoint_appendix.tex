@@ -80,7 +80,7 @@ Aux.\ weight decay & -- & none \tabularnewline
 
 The Step-2 runs save checkpoints every 1000 steps, at 12 log-spaced steps, and at three consecutive steps $t,t+1,t+2$
 for 24 values of $t$ from 25 to 9998 (to measure one-step updates); we measure the metrics at 34 of these per run, and
-the Step-3 swaps only at their final weights. \emph{Weights}: for all parameters together, $\|\theta\|_2$,
+the Step-3 swaps at the steps in \cref{tab:app-forks}. \emph{Weights}: for all parameters together, $\|\theta\|_2$,
 $\|\theta-\theta_0\|/\|\theta_0\|$ and $\|\theta\|_\infty/\|\theta\|_2$; and, averaged over the 36 weight matrices
 $W$ of the blocks, the stable rank $\|W\|_F^2/\|W\|_2^2$, the effective rank $\exp H(\sigma/\textstyle\sum\sigma)$
 with $H$ the entropy of the normalized singular values $\sigma$, the spectral norm, and $\sigma_1/\sigma_{\rm median}$.
@@ -105,8 +105,9 @@ between 0.03 and 0.12 that did not diverge on any of the three data orders; ever
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
 \caption{All metrics of Step 2 at training loss 1.81: mean $\pm$ half-range over data orders 0--2, and the
-ratio AdamW/Muon with its margin. Rows marked ($\times10^k$) are in units of $10^k$. Bold: the five ratios farthest
-from 1 whose interval excludes 1.}
+ratio AdamW/Muon. If AdamW's values range over $[a_{\min},a_{\max}]$ and Muon's over $[b_{\min},b_{\max}]$, the ratio
+ranges over $[a_{\min}/b_{\max},\,a_{\max}/b_{\min}]$, given as midpoint $\pm$ half-width. Rows marked ($\times10^k$)
+are in units of $10^k$. Bold: the five ratios farthest from 1 whose range excludes 1.}
 \label{tab:app-am}
 \footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \renewcommand{\arraystretch}{1.15}%
@@ -154,7 +155,7 @@ JS to bigram model & $0.469 \pm 0.001$ & $0.471 \pm 0.001$ & $0.996 \pm 0.004$ \
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
 \caption{The metrics of \cref{tab:app-am} with SGD as a reference: ratios AdamW/SGD and Muon/SGD. Bold: in each
-ratio column, the five ratios farthest from 1 whose interval excludes 1.}
+ratio column, the five ratios farthest from 1 whose range excludes 1.}
 \label{tab:app-sgd}
 \footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
 \renewcommand{\arraystretch}{1.15}%
