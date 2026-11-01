@@ -66,8 +66,9 @@ def internals(model, x):
         active.append((pre > 0).float().mean().item())
         h = h + blk.mlp.c_proj(F.gelu(pre))
     z = tr.ln_f(h)
-    err = (model.lm_head(z) - model(x)).abs().max().item()
-    assert err < 1e-2, f'internals forward differs from the model by {err}'
+    ref = model(x)
+    err = ((model.lm_head(z) - ref).abs().max() / ref.abs().max()).item()  # TF32 on GPU: about 1e-3
+    assert err < 1e-2, f'internals forward differs from the model by {err:.2g} of the largest logit'
     z = z.reshape(-1, z.size(-1))
     return dict(attn_entropy=sum(ent) / len(ent), attn_sink=sum(sink) / len(sink),
                 mlp_active=sum(active) / len(active), resid_rms=h.pow(2).mean(-1).sqrt().mean().item(),

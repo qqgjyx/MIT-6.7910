@@ -48,11 +48,11 @@ def ranking(metrics, keys, curves, out):
     m = json.load(open(metrics))
     levels = np.array(m['levels'])
     ncurves = len(curves)
-    fig = plt.figure(figsize=(7.1, 1.85))
+    fig = plt.figure(figsize=(7.1, 1.65))
     gs = fig.add_gridspec(1, 1 + ncurves, width_ratios=[1.5] + [1] * ncurves, wspace=0.35)
     ax = fig.add_subplot(gs[0])
     y = np.arange(len(keys))
-    for i, (p, c) in enumerate((('adamw-muon', 'C3'), ('adamw-sgd', 'C0'), ('muon-sgd', 'C1'))):
+    for i, (p, c) in enumerate((('adamw-muon', 'k'), ('adamw-sgd', '0.55'), ('muon-sgd', '0.8'))):
         ax.barh(y + (i - 1) * 0.27, [m['summary'][k]['ratio'][p] or np.nan for k in keys], height=0.27, color=c,
                 label=' – '.join(NAMES[o] for o in p.split('-')))
     ax.set_yticks(y)
@@ -61,14 +61,14 @@ def ranking(metrics, keys, curves, out):
     ax.set_xscale('log')
     ax.axvline(1, color='k', lw=0.6)
     ax.set_xlabel('optimizer gap / data-order gap')
-    ax.legend(frameon=False, loc='lower right')
+    ax.legend(frameon=False, loc='lower left', bbox_to_anchor=(0, 1), ncol=3, handlelength=1, columnspacing=0.8)
     for j, k in enumerate(curves):
         a = fig.add_subplot(gs[1 + j])
         for rid, pts in m['metrics'][k]['points'].items():
             opt, seed = rid.split('/')[1].split('_d')
             p = np.array(pts)
             loss = np.minimum.accumulate(p[:, 0])
-            keep = (loss <= levels[0]) & np.r_[True, np.diff(loss) < 0]
+            keep = (loss <= levels[0]) & (loss >= levels[-1]) & np.r_[True, np.diff(loss) < 0]
             a.plot(loss[keep], p[keep, 1], color=COLORS[opt], lw=0.8, ls=['-', '--', ':'][int(seed) % 3],
                    label=NAMES[opt] if seed == '0' else None)
         loss_axis(a)
@@ -117,11 +117,14 @@ def swaps(metrics, swap_json, keys, out):
     print(f'wrote {out}')
 
 
-def forks(d, out):
+def forks(d, out, metrics=None, keys=()):
     """AdamW<->Muon swaps from the existing analyses in directory d (swap.json, lmc_{adamw,muon}.json,
     lmc_into_{adamw,muon}.json, lmc_layers.json): function, barrier to the parent, barrier to the pure run of the new
-    optimizer, and the final weight metrics as a fraction of the way from the parent's to the new optimizer's."""
+    optimizer, and the final weight metrics as a fraction of the way from the parent's to the new optimizer's (from
+    swap.json, or the given keys of rank_metrics.py's metrics.json)."""
     load = lambda n: json.load(open(f'{d}/{n}.json'))
+    rows = json.load(open(metrics))['swaps']['rows'] if metrics else []
+    styles = ['-', '--', ':', '-.']
     swap = [r for r in load('swap') if {r['opt_a'], r['opt_b']} == {'adamw', 'muon'}]
     dirs = (('adamw', 'muon', 'C1'), ('muon', 'adamw', 'C0'))
     fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.6))
@@ -144,8 +147,13 @@ def forks(d, out):
         own = [r['barriers']['all'] for r in load('lmc_layers')
                if all(x.split('/')[1].startswith(f'{b}_') for x in (r['a'], r['b']))]
         axes[2].axhspan(min(own), max(own), color=COLORS[b], alpha=0.2, lw=0)
-        line(axes[3], [(r['fork_step'], r['fm.stable_rank_hidden_mean']) for r in rr], c, '-')
-        line(axes[3], [(r['fork_step'], r['fm.weights.dist_init_rel']) for r in rr], c, '--')
+        if rows:
+            for k, ls in zip(keys, styles):
+                line(axes[3], [(r['fork_step'], r['metrics'][k]['shift']) for r in rows
+                               if (r['opt_a'], r['opt_b']) == (a, b)], c, ls)
+        else:
+            line(axes[3], [(r['fork_step'], r['fm.stable_rank_hidden_mean']) for r in rr], c, '-')
+            line(axes[3], [(r['fork_step'], r['fm.weights.dist_init_rel']) for r in rr], c, '--')
     style = lambda ax, labels, loc: ax.legend(
         [plt.Line2D([], [], color='k', lw=0.9, ls=ls) for ls, _ in labels], [t for _, t in labels], frameon=False,
         loc=loc, handlelength=1.6)
@@ -159,7 +167,8 @@ def forks(d, out):
     axes[2].legend(frameon=False, loc='upper right')
     axes[3].axhline(1, color='k', lw=0.5)
     axes[3].set(title='weights: 0 = parent, 1 = new', ylim=(0, 1.15))
-    style(axes[3], [('-', 'stable rank'), ('--', 'distance from init')], 'lower left')
+    style(axes[3], list(zip(styles, [METRICS[k][1] for k in keys])) if rows else
+          [('-', 'stable rank'), ('--', 'distance from init')], 'lower left')
     for ax in axes:
         ax.set_xscale('log')
         ax.set_xlabel('fork step')
@@ -173,6 +182,8 @@ def main():
     sub = p.add_subparsers(dest='fig', required=True)
     s = sub.add_parser('forks')
     s.add_argument('--dir', required=True, help='directory with swap.json, lmc_*.json and lmc_layers.json')
+    s.add_argument('--metrics', help="rank_metrics.py's metrics.json with swaps, for the last panel")
+    s.add_argument('--keys', nargs='*', default=[])
     s.add_argument('--out', required=True)
     s = sub.add_parser('barriers')
     s.add_argument('--lmc', nargs='+', required=True, help='name=path of lmc_layers.json')
@@ -189,7 +200,7 @@ def main():
     s.add_argument('--out', required=True)
     args = p.parse_args()
     if args.fig == 'forks':
-        forks(args.dir, args.out)
+        forks(args.dir, args.out, args.metrics, args.keys)
     elif args.fig == 'barriers':
         barriers([tuple(x.split('=', 1)) for x in args.lmc], args.out)
     elif args.fig == 'ranking':

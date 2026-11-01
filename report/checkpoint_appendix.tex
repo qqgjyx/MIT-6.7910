@@ -109,6 +109,78 @@ Predictions at & every 50th $+$ 40 log-spaced & every 500th $+$ 30 log-spaced \t
 \end{minipage}
 \end{center}
 
+\section{Metrics}
+\label{app:metrics}
+
+The runs of Step 2 save checkpoints every 1000 steps, at 12 log-spaced steps, and at three consecutive steps
+$t,t+1,t+2$ for 24 values of $t$ from 25 to 9998; the metrics are measured at 34 of them per run, the swaps of Step 3
+at their final weights. \emph{Weights}: over all parameters, $\|\theta\|_2$, $\|\theta-\theta_0\|/\|\theta_0\|$ and
+$\|\theta\|_\infty/\|\theta\|_2$; means over the 36 matrices $W$ of the blocks of the stable rank
+$\|W\|_F^2/\|W\|_2^2$, the effective rank $\exp H(\sigma/\textstyle\sum\sigma)$ of the singular values $\sigma$, the
+spectral norm and $\sigma_1/\sigma_{\rm median}$. \emph{Updates} $\Delta\theta_t=\theta_{t+1}-\theta_t$:
+$\|\Delta\theta_t\|/\|\theta_t\|$, its cosine with $\Delta\theta_{t+1}$ and with the negative gradient $-g_t$ on step
+$t$'s batch, and the stable and effective rank of its block matrices $\Delta W$. \emph{Curvature}, on 32 fixed
+training sequences: $\lambda_{\max}(H)$ (20 Lanczos iterations, logged during training), $\operatorname{tr}H$ (10
+Rademacher probes), $\operatorname{tr}H/\lambda_{\max}$, and the batch sharpness
+$\mathbb{E}_B[g_B^\top H_Bg_B]/\mathbb{E}_B\|g_B\|^2$. \emph{Predictions}, on the 2{,}048 held-out positions: entropy,
+mean top-1 probability, calibration error (15 bins), top-1 accuracy, loss on the targets in the top and the bottom
+third of training-set frequency and their difference, JS to the unigram and to the bigram model of the training split,
+and validation minus training loss. \emph{Activations}, on 32 held-out sequences: attention entropy and attention on
+the first token (means over layers, heads and positions), fraction of MLP pre-activations above 0, RMS of the
+residual stream after the last block, and effective rank of the centred final features.
+
+\begin{center}\footnotesize\begin{minipage}{\linewidth}
+\captionsetup{type=table}
+\caption{All metrics of \cref{fig:rank}, AdamW against Muon on TinyStories-10M. Score: their gap at equal training
+loss on the same data order over the larger gap between two data orders of one optimizer, median over losses 1.66--3.
+Values: means over data orders 0--2. }
+\label{tab:app-metrics}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrcc@{}}
+\hline
+ & Score & \multicolumn{2}{c}{AdamW / Muon at loss} \\
+ & & 2.19 & 1.81 \\
+\hline
+\multicolumn{4}{@{}l}{\emph{Weights}} \\
+effective rank of W & 263 & 280 / 325 & 272 / 325 \\
+stable rank of W & 147 & 28.3 / 94.8 & 33.0 / 86.2 \\
+$\sigma_1/\sigma_{\rm median}$ of W & 105 & 7.98 / 2.62 & 8.01 / 2.68 \\
+spectral norm of W & 74 & 3.67 / 1.73 & 5.39 / 2.95 \\
+$\|\theta\|_\infty/\|\theta\|_2$ & 9.1 & 0.0092 / 0.0088 & 0.0070 / 0.0064 \\
+$\|\theta\|_2$ & 3.6 & 156 / 153 & 224 / 224 \\
+$\|\theta-\theta_0\|/\|\theta_0\|$ & 3.4 & 1.31 / 1.27 & 2.18 / 2.15 \\
+\multicolumn{4}{@{}l}{\emph{Updates}} \\
+stable rank of $\Delta W$ & 328 & 11.8 / 215 & 16.7 / 220 \\
+effective rank of $\Delta W$ & 135 & 200 / 367 & 228 / 369 \\
+$\cos(\Delta\theta_t,\Delta\theta_{t+1})$ & 25 & 0.872 / 0.730 & 0.883 / 0.738 \\
+$\|\Delta\theta\|/\|\theta\|$ & 3.1 & 0.0093 / 0.0096 & 0.0066 / 0.0065 \\
+$\cos(\Delta\theta_t,-g_t)$ & 2.8 & 0.220 / 0.215 & 0.244 / 0.217 \\
+\multicolumn{4}{@{}l}{\emph{Curvature}} \\
+tr $H$ & 23 & 2.5k / 4.9k & 1.4k / 2.8k \\
+$\lambda_{\max}(H)$ & 10 & 9.59 / 16.7 & 6.18 / 14.3 \\
+batch sharpness & 2.7 & 2.21 / 4.88 & 0.974 / 3.13 \\
+tr $H/\lambda_{\max}$ & 2.5 & 263 / 310 & 224 / 196 \\
+\multicolumn{4}{@{}l}{\emph{Predictions}} \\
+loss rare - frequent & 1.2 & 2.66 / 2.73 & 2.21 / 2.21 \\
+JS to unigram & 1.1 & 0.767 / 0.762 & 0.800 / 0.802 \\
+top-1 accuracy & 1.1 & 0.485 / 0.494 & 0.546 / 0.544 \\
+loss, rare targets & 1.0 & 3.69 / 3.76 & 3.10 / 3.10 \\
+JS to bigram & 0.9 & 0.415 / 0.416 & 0.469 / 0.471 \\
+loss, frequent targets & 0.8 & 1.04 / 1.04 & 0.896 / 0.892 \\
+calibration error (ECE) & 0.8 & 0.024 / 0.025 & 0.033 / 0.031 \\
+mean top-1 probability & 0.6 & 0.497 / 0.497 & 0.561 / 0.563 \\
+prediction entropy & 0.6 & 2.25 / 2.29 & 1.89 / 1.88 \\
+val - train loss & 0.6 & -0.028 / -0.029 & -0.022 / -0.020 \\
+\multicolumn{4}{@{}l}{\emph{Activations}} \\
+active MLP units & 62 & 0.144 / 0.294 & 0.120 / 0.222 \\
+residual RMS & 28 & 2.72 / 1.45 & 4.73 / 3.38 \\
+attention entropy & 18 & 2.47 / 3.17 & 2.51 / 2.79 \\
+eff. rank of features & 13 & 264 / 288 & 312 / 320 \\
+attention on token 1 & 2.2 & 0.014 / 0.019 & 0.018 / 0.020 \\
+\hline
+\end{tabular}\end{minipage}
+\end{center}
+
 \section{Swaps}
 \label{app:forks}
 
@@ -140,9 +212,10 @@ Data-order control & $A$ continued from $s$ with its own state, data order 1: 18
 
 All runs used one NVIDIA GPU each on the MIT ORCD cluster. GPU-hours are those Slurm allocated to
 each suite, shared out over the runs of the suite by their training time where runs of several suites shared a GPU.
-Not counted: the offline measurements (Muon's spectral-norm sharpness, loss barriers, distances), a few GPU-hours.
+Not counted: the offline measurements (Muon's spectral-norm sharpness, loss barriers, distances, the metrics of
+\cref{app:metrics}), a few GPU-hours.
 
-\begin{center}\small
+\begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
 \caption{Runs described in the checkpoint and their compute.}
 \label{tab:app-compute}
@@ -153,12 +226,12 @@ Not counted: the offline measurements (Muon's spectral-norm sharpness, loss barr
 Learning-rate sweeps, AdamW and Muon (3 settings) & 30 & 7.1 \\
 Runs from the initialization, AdamW and Muon (3 settings, 5 data orders) & 30 & 11.6 \\
 Swaps and data-order forks (\cref{tab:app-forks}) & 36 & 7.1 \\
-Step 2 (\cref{tab:step2}): rate search, runs at the chosen rate, runs at a constant rate & $15+3+16$ & 8.2 \\
+Step 2: rate search for the added optimizer, runs at the chosen rate & $15+3$ & 3.3 \\
+Step 2: runs with consecutive checkpoints (3 optimizers $\times$ 3 data orders) & 9 & 1.9 \\
 \hline
-Total & 130 & 34.0 \\
+Total & 123 & 30.9 \\
 \hline
-Running: Step 2 runs with consecutive checkpoints (3 optimizers $\times$ 3 data orders) & 9 & -- \\
 Running: swaps again, with checkpoints at steps 9998--10{,}000 & 18 & -- \\
 \hline
-\end{tabular}
+\end{tabular}\end{minipage}
 \end{center}
