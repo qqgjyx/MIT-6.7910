@@ -85,11 +85,11 @@ and Muon on TinyStories-10M, against 1.2--1.9 between two data orders of AdamW a
 lies between Muon's data-order mean (1.78) and AdamW's (5.05), and on Shakespeare (2.42) between AdamW's (0.14) and
 Muon's (4.34).
 
-\paragraph{Step 2: what differs along the way (\cref{fig:rank}).} To see what is specific to each geometry we add, in this step only, SGD with
-heavy-ball momentum 0.9 at rate 0.06 (the only rate of 0.03--0.12 that never blew up on three data orders). With
-three data orders per optimizer we measure 31 whole-model metrics at 34 checkpoints (weights, one-step updates,
-Hessian, predictions, activations; \cref{app:metrics}) and score each pair of optimizers as the functions: their gap
-at equal training loss on one data order over the gap between two data orders (values below at losses 2.96--1.81).
+\paragraph{Step 2: what differs along the way.} With three data orders per optimizer we measure 31 whole-model
+metrics at 34 checkpoints (weights, one-step updates, Hessian, predictions, activations) and score each pair of
+optimizers as the functions: their gap at equal training loss on one data order over the gap between two data orders
+(\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for reference; values below at
+losses 2.96--1.81).
 No prediction metric separates AdamW from Muon (scores 0.6--1.2), but their geometry does. Muon's updates have stable
 rank 190--220 against 7--17 for AdamW, by construction (it orthogonalizes them); less trivially, its weights keep the
 flatter spectra (stable rank 86--104 against 28--33, $\sigma_1/\sigma_{\rm median}$ 2.5--2.7 against 6--8; scores 147
@@ -108,7 +108,7 @@ SGD's $\lambda_{\max}$ of $3.8/\eta_t$ at 6--10\%, Muon's spectral-norm sharpnes
 \includegraphics[width=0.94\linewidth]{figures/ts10m/ranking.pdf}
 \caption{TinyStories-10M, three data orders per optimizer. Left: per metric and pair of optimizers, the mean gap on
 the same data order over the larger mean gap between two data orders of one optimizer, at equal training loss, median
-over losses 1.66--3 (selection; all in \cref{app:metrics}). $\Delta$: change over one step; $g_t$: gradient on the
+over losses 1.66--3 (selection; all in \cref{tab:app-metrics}). $\Delta$: change over one step; $g_t$: gradient on the
 step's batch; $H$: Hessian on 32 fixed training sequences. Middle, right: two metrics (line style: data order).}
 \label{fig:rank}
 \end{figure}

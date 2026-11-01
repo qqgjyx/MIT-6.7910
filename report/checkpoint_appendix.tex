@@ -129,55 +129,57 @@ and validation minus training loss. \emph{Activations}, on 32 held-out sequences
 the first token (means over layers, heads and positions), fraction of MLP pre-activations above 0, RMS of the
 residual stream after the last block, and effective rank of the centred final features.
 
-\begin{center}\footnotesize\begin{minipage}{\linewidth}
+\begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
-\caption{All metrics of \cref{fig:rank}, AdamW against Muon on TinyStories-10M. Score: their gap at equal training
-loss on the same data order over the larger gap between two data orders of one optimizer, median over losses 1.66--3.
-Values: means over data orders 0--2. }
+\caption{All metrics of Step 2 on TinyStories-10M (\cref{fig:rank}). AdamW, Muon, SGD: mean $\pm$ half the range
+over data orders 0--2, at training loss 1.81. A--M, A--S, M--S: gap between two optimizers on the same data order
+(mean over data orders) over the larger mean gap between two data orders of one optimizer, median over training losses
+1.66--3; positive when the first optimizer is higher. Bold: the five largest in absolute value per column. SGD:
+heavy-ball momentum 0.9, rate 0.06 (the only rate of 0.03--0.12 that never blew up on three data orders), otherwise as
+in \cref{tab:app-shared}.}
 \label{tab:app-metrics}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrcc@{}}
-\hline
- & Score & \multicolumn{2}{c}{AdamW / Muon at loss} \\
- & & 2.19 & 1.81 \\
-\hline
-\multicolumn{4}{@{}l}{\emph{Weights}} \\
-effective rank of W & 263 & 280 / 325 & 272 / 325 \\
-stable rank of W & 147 & 28.3 / 94.8 & 33.0 / 86.2 \\
-$\sigma_1/\sigma_{\rm median}$ of W & 105 & 7.98 / 2.62 & 8.01 / 2.68 \\
-spectral norm of W & 74 & 3.67 / 1.73 & 5.39 / 2.95 \\
-$\|\theta\|_\infty/\|\theta\|_2$ & 9.1 & 0.0092 / 0.0088 & 0.0070 / 0.0064 \\
-$\|\theta\|_2$ & 3.6 & 156 / 153 & 224 / 224 \\
-$\|\theta-\theta_0\|/\|\theta_0\|$ & 3.4 & 1.31 / 1.27 & 2.18 / 2.15 \\
-\multicolumn{4}{@{}l}{\emph{Updates}} \\
-stable rank of $\Delta W$ & 328 & 11.8 / 215 & 16.7 / 220 \\
-effective rank of $\Delta W$ & 135 & 200 / 367 & 228 / 369 \\
-$\cos(\Delta\theta_t,\Delta\theta_{t+1})$ & 25 & 0.872 / 0.730 & 0.883 / 0.738 \\
-$\|\Delta\theta\|/\|\theta\|$ & 3.1 & 0.0093 / 0.0096 & 0.0066 / 0.0065 \\
-$\cos(\Delta\theta_t,-g_t)$ & 2.8 & 0.220 / 0.215 & 0.244 / 0.217 \\
-\multicolumn{4}{@{}l}{\emph{Curvature}} \\
-tr $H$ & 23 & 2.5k / 4.9k & 1.4k / 2.8k \\
-$\lambda_{\max}(H)$ & 10 & 9.59 / 16.7 & 6.18 / 14.3 \\
-batch sharpness & 2.7 & 2.21 / 4.88 & 0.974 / 3.13 \\
-tr $H/\lambda_{\max}$ & 2.5 & 263 / 310 & 224 / 196 \\
-\multicolumn{4}{@{}l}{\emph{Predictions}} \\
-loss rare - frequent & 1.2 & 2.66 / 2.73 & 2.21 / 2.21 \\
-JS to unigram & 1.1 & 0.767 / 0.762 & 0.800 / 0.802 \\
-top-1 accuracy & 1.1 & 0.485 / 0.494 & 0.546 / 0.544 \\
-loss, rare targets & 1.0 & 3.69 / 3.76 & 3.10 / 3.10 \\
-JS to bigram & 0.9 & 0.415 / 0.416 & 0.469 / 0.471 \\
-loss, frequent targets & 0.8 & 1.04 / 1.04 & 0.896 / 0.892 \\
-calibration error (ECE) & 0.8 & 0.024 / 0.025 & 0.033 / 0.031 \\
-mean top-1 probability & 0.6 & 0.497 / 0.497 & 0.561 / 0.563 \\
-prediction entropy & 0.6 & 2.25 / 2.29 & 1.89 / 1.88 \\
-val - train loss & 0.6 & -0.028 / -0.029 & -0.022 / -0.020 \\
-\multicolumn{4}{@{}l}{\emph{Activations}} \\
-active MLP units & 62 & 0.144 / 0.294 & 0.120 / 0.222 \\
-residual RMS & 28 & 2.72 / 1.45 & 4.73 / 3.38 \\
-attention entropy & 18 & 2.47 / 3.17 & 2.51 / 2.79 \\
-eff. rank of features & 13 & 264 / 288 & 312 / 320 \\
-attention on token 1 & 2.2 & 0.014 / 0.019 & 0.018 / 0.020 \\
-\hline
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lcccrrr@{}}
+\toprule
+ & AdamW & Muon & SGD & A--M & A--S & M--S \\
+\midrule
+\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Weights}} \\
+weight norm $\|\theta\|_2$ & 224 $\pm$ 2 & 224.3 $\pm$ 0.5 & 109.5 $\pm$ 0.1 & $-$0.3 & {\boldmath\textbf{51}} & {\boldmath\textbf{63}} \\
+distance from init.\ $/\|\theta_0\|$ & 2.18 $\pm$ 0.03 & 2.155 $\pm$ 0.006 & 0.486 $\pm$ 0.006 & $-$1.3 & {\boldmath\textbf{50}} & {\boldmath\textbf{58}} \\
+largest entry $/\|\theta\|_2$ & 0.00704 $\pm$ 0.00006 & 0.00645 $\pm$ 0.00002 & 0.0395 $\pm$ 0.0010 & 9.1 & $-$23 & $-$23 \\
+stable rank of $W$ & 33.0 $\pm$ 0.3 & 86.2 $\pm$ 0.3 & 56.2 $\pm$ 5.6 & {\boldmath\textbf{$-$147}} & $-$4.4 & 4.1 \\
+effective rank of $W$ & 272.2 $\pm$ 0.1 & 324.5 $\pm$ 0.1 & 321.0 $\pm$ 0.9 & {\boldmath\textbf{$-$263}} & $-$25 & 2.2 \\
+spectral norm of $W$ & 5.39 $\pm$ 0.07 & 2.949 $\pm$ 0.009 & 1.47 $\pm$ 0.11 & 74 & 15 & 3.0 \\
+$\sigma_1/\sigma_{\rm median}$ of $W$ & 8.01 $\pm$ 0.05 & 2.685 $\pm$ 0.005 & 4.37 $\pm$ 0.55 & {\boldmath\textbf{105}} & 3.7 & $-$1.7 \\
+\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Updates (one step)}} \\
+step size $\|\Delta\theta\|/\|\theta\|$ & 0.00656 $\pm$ 0.00008 & 0.00653 $\pm$ 0.00003 & 0.000624 $\pm$ 0.000047 & $-$3.1 & {\boldmath\textbf{67}} & {\boldmath\textbf{132}} \\
+stable rank of $\Delta W$ & 16.7 $\pm$ 0.3 & 219.6 $\pm$ 0.3 & 8.37 $\pm$ 0.48 & {\boldmath\textbf{$-$328}} & 5.3 & {\boldmath\textbf{292}} \\
+effective rank of $\Delta W$ & 228 $\pm$ 1 & 369.4 $\pm$ 0.2 & 205 $\pm$ 2 & {\boldmath\textbf{$-$135}} & 3.7 & 46 \\
+cosine of consecutive steps & 0.883 $\pm$ 0.002 & 0.738 $\pm$ 0.003 & 0.857 $\pm$ 0.004 & 25 & 3.6 & $-$8.8 \\
+cosine of step and $-g$ & 0.244 $\pm$ 0.004 & 0.217 $\pm$ 0.007 & 0.447 $\pm$ 0.010 & 2.8 & $-$17 & $-$18 \\
+\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Curvature}} \\
+top Hessian eigenvalue & 6.18 $\pm$ 0.10 & 14.3 $\pm$ 0.2 & 50.2 $\pm$ 0.6 & $-$10 & $-$11 & $-$18 \\
+batch sharpness & 0.974 $\pm$ 0.254 & 3.13 $\pm$ 0.37 & 6.38 $\pm$ 0.50 & $-$2.7 & $-$5.6 & $-$2.8 \\
+Hessian trace & 1400 $\pm$ 40 & 2770 $\pm$ 20 & 25500 $\pm$ 400 & $-$23 & $-$22 & $-$20 \\
+trace / top eigenvalue & 224 $\pm$ 6 & 196 $\pm$ 7 & 507 $\pm$ 9 & $-$0.5 & $-$7.4 & $-$8.7 \\
+\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Activations}} \\
+attention entropy (nats) & 2.51 $\pm$ 0.03 & 2.79 $\pm$ 0.02 & 3.84 $\pm$ 0.01 & $-$18 & $-$26 & $-$17 \\
+attention on first token & 0.0175 $\pm$ 0.0011 & 0.0198 $\pm$ 0.0005 & 0.0182 $\pm$ 0.0007 & $-$1.3 & $-$1.0 & 1.2 \\
+active MLP units & 0.1199 $\pm$ 0.0009 & 0.222 $\pm$ 0.001 & 0.262 $\pm$ 0.002 & $-$62 & {\boldmath\textbf{$-$56}} & $-$5.5 \\
+residual-stream RMS & 4.73 $\pm$ 0.05 & 3.38 $\pm$ 0.02 & 0.244 $\pm$ 0.003 & 28 & {\boldmath\textbf{78}} & {\boldmath\textbf{81}} \\
+effective rank of features & 312 $\pm$ 2 & 319.6 $\pm$ 0.2 & 297 $\pm$ 2 & $-$13 & $-$2.7 & 4.4 \\
+\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Predictions}} \\
+prediction entropy (nats) & 1.887 $\pm$ 0.008 & 1.878 $\pm$ 0.010 & 1.943 $\pm$ 0.005 & $-$0.2 & $-$3.0 & $-$2.5 \\
+mean top-1 probability & 0.561 $\pm$ 0.003 & 0.563 $\pm$ 0.001 & 0.5581 $\pm$ 0.0008 & $-$0.4 & $-$0.3 & 0.3 \\
+calibration error & 0.0325 $\pm$ 0.0017 & 0.0305 $\pm$ 0.0046 & 0.0297 $\pm$ 0.0028 & 0.1 & 0.5 & 0.4 \\
+top-1 accuracy & 0.546 $\pm$ 0.005 & 0.544 $\pm$ 0.005 & 0.554 $\pm$ 0.003 & $-$1.0 & $-$2.2 & $-$1.2 \\
+loss on frequent targets & 0.896 $\pm$ 0.004 & 0.892 $\pm$ 0.008 & 0.851 $\pm$ 0.012 & 0.5 & 2.5 & 1.9 \\
+loss on rare targets & 3.10 $\pm$ 0.02 & 3.102 $\pm$ 0.009 & 3.11 $\pm$ 0.04 & $-$0.8 & $-$2.7 & $-$2.1 \\
+rare minus frequent loss & 2.21 $\pm$ 0.02 & 2.21 $\pm$ 0.01 & 2.26 $\pm$ 0.03 & $-$1.1 & $-$3.3 & $-$2.7 \\
+JS to unigram model & 0.8004 $\pm$ 0.0007 & 0.802 $\pm$ 0.001 & 0.804 $\pm$ 0.001 & 0.8 & 0.4 & $-$0.7 \\
+JS to bigram model & 0.4691 $\pm$ 0.0010 & 0.4708 $\pm$ 0.0008 & 0.4622 $\pm$ 0.0009 & $-$0.1 & 2.4 & 2.3 \\
+validation minus training loss & $-$0.0217 $\pm$ 0.0092 & $-$0.0197 $\pm$ 0.0062 & $-$0.0224 $\pm$ 0.0074 & $-$0.2 & 0.1 & 0.3 \\
+\bottomrule
 \end{tabular}\end{minipage}
 \end{center}
 
