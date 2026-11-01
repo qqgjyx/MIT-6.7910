@@ -35,8 +35,8 @@
 \vspace{-0.8em}
 
 \paragraph{Summary.} We train a small language model with AdamW and with Muon, from one initialization and on the
-same mini-batches. (1)~Muon trains faster and on a different path. At equal training
-loss, their predictions differ about as much as two runs on different data orders. (2)~Muon's weight and update matrices have more evenly sized singular values
+same mini-batches. (1)~Muon trains faster, on a path that differs from AdamW's less than
+a change of data order does; only at equal training loss do their predictions differ as much. (2)~Muon's weight and update matrices have more evenly sized singular values
 than AdamW's, beyond data-order variation; no prediction statistic differs. (3)~A run switched to the other optimizer
 mid-training ends up predicting no further from either optimizer's runs than two data orders do. Its updates
 take the new optimizer's form; its weights and activations keep part of the old one's.
@@ -64,12 +64,12 @@ training loss, so that speed does not count as a difference. The \emph{floor} is
 orders of one optimizer. A distance of one floor means ``as different as two
 data orders''.
 
-\emph{Faster, and on a different path.} After warmup, AdamW and Muon on the same data order stay close (a), and
-Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). The two share the
-initialization and the batches, so if Muon just followed AdamW's path faster, comparing them at equal loss (c) would
-bring them closer than comparing them at equal step (b). The opposite happens: from step 250 on, their distance is
-larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, and by about as much
-as a new data order: at equal loss the distance sits at the floor (median 1.02$\times$).
+\emph{Faster, and on a different path.} Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). Since the two share the
+initialization and the batches, if Muon just followed AdamW's path faster, they would be closer at equal loss (c) than
+at equal step (b). The opposite happens: from step 250 on, their distance is
+larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, but less than a change of
+data order does: from step 500 on, at equal step, AdamW and Muon on the same data order are closer than two data
+orders of one optimizer (a, b). Only at equal loss, with Muon ahead, are they as far apart as two data orders (c).
 
 \emph{Endpoints.} At the lowest training loss both reach, the AdamW--Muon distance is 0.99 floors (c). The final
 models of AdamW and Muon on the same data order are JS 0.056--0.060 apart, and those of two data orders of one
