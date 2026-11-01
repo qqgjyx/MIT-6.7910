@@ -1,10 +1,10 @@
-"""Curvature-balanced runs (optsplit/optim/balance.py) against their baseline: losses, steps to reach the baseline's
+"""Curvature-balanced runs (optsplit/layerlr/balance.py) against their baseline: losses, steps to reach the baseline's
 final validation loss, Jensen-Shannon divergence at equal training loss to the baseline run on the same data order
 (against the baseline's data-order floor), and the balancer's trace (per-layer rates, shares, tracked lambda_max of
 the balanced operator against its target, Lanczos checks). `summarize` reads the runs (on the cluster), `plot` writes
 one multi-page PDF from several summaries, one section each, after a header page.
-python -m optsplit.analysis.balanced summarize 'ts10m_balanced/sgd_*' --base 'ts10m_main/sgd_*' --out analysis/balanced/ts10m_sgd.json
-python -m optsplit.analysis.balanced plot 'SGD, TinyStories-10M=ts10m_sgd.json' ... --out balanced.pdf"""
+python -m optsplit.layerlr.balanced summarize 'ts10m_balanced/sgd_*' --base 'ts10m_main/sgd_*' --out analysis/balanced/ts10m_sgd.json
+python -m optsplit.layerlr.balanced plot 'SGD, TinyStories-10M=ts10m_sgd.json' ... --out balanced.pdf"""
 
 import argparse
 import json

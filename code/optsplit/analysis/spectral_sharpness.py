@@ -15,11 +15,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from optsplit.analysis.curvature_layers import layer
 from optsplit.analysis.io import load_runs
 from optsplit.data import build_data
 from optsplit.measure.hessian import HVP, flat, lanczos, split
-from optsplit.models import build_model, double_backward_ok, muon_params
+from optsplit.models import build_model, double_backward_ok, layer, muon_params
 from optsplit.optim import lr_mult
 
 

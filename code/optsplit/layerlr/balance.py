@@ -26,7 +26,7 @@ import torch
 
 from ..measure.hessian import _grad, adam_preconditioner, flat, lanczos, split
 from ..models import double_backward_ok, layer
-from .muon import zeropower_via_newtonschulz5
+from ..optim.muon import zeropower_via_newtonschulz5
 
 
 def threshold(cfg):

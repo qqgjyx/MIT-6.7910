@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from torch.func import functional_call
 
-from optsplit.analysis.layer_curvature import block_lanczos, index, top_eigs
+from optsplit.layerlr.layer_lanczos import block_lanczos, index, top_eigs
 from optsplit.config import load_config
 from optsplit.measure.hessian import flat, split
 from optsplit.models import build_model, double_backward_ok

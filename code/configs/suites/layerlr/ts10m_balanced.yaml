@@ -1,8 +1,8 @@
-# Curvature-balanced per-layer learning rates (optsplit/optim/balance.py) on TinyStories-10M, from the rates,
+# Curvature-balanced per-layer learning rates (optsplit/layerlr/balance.py) on TinyStories-10M, from the rates,
 # initialization and data orders of ts10m_main. Variant A only redistributes the rate across layers; B also scales
 # it so that lambda_max of the balanced operator sits at `balance.target` times its stability threshold.
 suite: ts10m_balanced
-base: ../base/tinystories_10m.yaml
+base: ../../base/tinystories_10m.yaml
 overrides:
   optim.sgd.lr: 0.03
   optim.adamw.lr: 2.0e-3

@@ -7,7 +7,7 @@ from optsplit.config import load_config
 from optsplit.measure.hessian import HVP, flat
 from optsplit.models import build_model, double_backward_ok, layer, muon_params
 from optsplit.optim import build_optimizer, set_lr
-from optsplit.optim.balance import Balancer, StepBalancer
+from optsplit.layerlr.balance import Balancer, StepBalancer
 
 GPT = ['task=gpt', 'model.n_layer=2', 'model.n_embd=8', 'model.n_head=2', 'model.block_size=6']
 

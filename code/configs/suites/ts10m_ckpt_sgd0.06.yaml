@@ -1,6 +1,6 @@
 # ts10m_main_sgd0.06 again, with checkpoints also at the measurement steps up to 2500, where SGD at 0.06 is at its
-# threshold (steps 45-788): the curvature heatmaps (curvature_layers) need the weights at those steps, which the
-# checkpoint grid of ts10m_main_sgd0.06 misses.
+# threshold (steps 45-788): the curvature heatmaps (layerlr/curvature_layers.py) need the weights at those steps,
+# which the checkpoint grid of ts10m_main_sgd0.06 misses.
 suite: ts10m_ckpt_sgd0.06
 base: ../base/tinystories_10m.yaml
 overrides:

@@ -1,7 +1,7 @@
-# Curvature-balanced per-layer learning rates (optsplit/optim/balance.py) on TinyStories-30M, with the settings that
+# Curvature-balanced per-layer learning rates (optsplit/layerlr/balance.py) on TinyStories-30M, with the settings that
 # did best on TinyStories-10M (ts10m_balanced), from the rates, initialization and data orders of ts30m_main.
 suite: ts30m_balanced
-base: ../base/tinystories_30m.yaml
+base: ../../base/tinystories_30m.yaml
 overrides:
   optim.sgd.lr: 0.1
   optim.adamw.lr: 2.0e-3

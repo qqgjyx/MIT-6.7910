@@ -1,8 +1,8 @@
-# Curvature-balanced per-layer learning rates (optsplit/optim/balance.py) on Shakespeare (characters), with the
+# Curvature-balanced per-layer learning rates (optsplit/layerlr/balance.py) on Shakespeare (characters), with the
 # settings that did best on TinyStories-10M (ts10m_balanced), from the rates, initialization and data orders of
 # shakespeare_main. Plain SGD stalls near the bigram loss (~2.5) at every rate there.
 suite: shakespeare_balanced
-base: ../base/shakespeare_char.yaml
+base: ../../base/shakespeare_char.yaml
 overrides:
   optim.sgd.lr: 0.05
   optim.adamw.lr: 3.0e-4

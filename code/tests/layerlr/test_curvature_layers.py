@@ -1,11 +1,11 @@
 import pytest
 import torch
 
-from optsplit.analysis.curvature_layers import rate_vector
+from optsplit.layerlr.curvature_layers import rate_vector
 from optsplit.config import load_config
 from optsplit.models import build_model, muon_params
 from optsplit.optim import build_optimizer
-from optsplit.optim.balance import Balancer
+from optsplit.layerlr.balance import Balancer
 
 GPT = ['task=gpt', 'model.n_layer=2', 'model.n_embd=8', 'model.n_head=2', 'model.block_size=6']
 

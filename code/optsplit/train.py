@@ -21,7 +21,7 @@ from .measure.hessian import HVP
 from .measure.step_sharpness import StepSharpness
 from .models import build_model, muon_params
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
-from .optim.balance import Balancer, StepBalancer
+from .layerlr.balance import Balancer, StepBalancer
 from .probe import Probe
 
 INTERRUPTED = 3

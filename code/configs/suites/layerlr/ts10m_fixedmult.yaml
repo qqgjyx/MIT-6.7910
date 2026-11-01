@@ -5,7 +5,7 @@
 # are scaled, its auxiliary AdamW (embedding, head, norms) keeps the schedule's rate, as in muon_A. Rates,
 # initialization and schedule of ts10m_main, data orders 0-2.
 suite: ts10m_fixedmult
-base: ../base/tinystories_10m.yaml
+base: ../../base/tinystories_10m.yaml
 overrides:
   optim.sgd.lr: 0.03
   optim.adamw.lr: 2.0e-3

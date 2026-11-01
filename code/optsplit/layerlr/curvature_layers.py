@@ -5,13 +5,13 @@ lambda (diagonal: curvature within a layer, off-diagonal: between layers). Recom
 of the steps `anatomy_layers` averages (at the edge of stability; all steps for Muon). AdamW needs its
 optimizer state, so only fork checkpoints count for it. `--split sublayer` splits each block into attnN and mlpN,
 each with the LayerNorm that feeds it (ln_1 with attention, ln_2 with the MLP).
-Curvature-balanced runs (optsplit/optim/balance.py) use the checkpoints of the second half of training instead (the
+Curvature-balanced runs (optsplit/layerlr/balance.py) use the checkpoints of the second half of training instead (the
 threshold of the plain operator does not apply to them), and record each layer's rate multiplier m_l logged by the
 balancer nearest each checkpoint; `--multipliers` splits the top eigenvector of M^1/2 A M^1/2 instead, M = diag(m_l)
 (the operator whose shares ||v_l||^2 SGD's and AdamW's balancer equalizes; for Muon, M covers only the matrices
 Muon updates, whose balancer works on the spectral-norm sharpness instead).
-python -m optsplit.analysis.curvature_layers 'ts10m_main/*' --out analysis/ts10m/curvature_layers.json
-python -m optsplit.analysis.curvature_layers --plot analysis/ts10m/curvature_{layers,sublayers}.json \
+python -m optsplit.layerlr.curvature_layers 'ts10m_main/*' --out analysis/ts10m/curvature_layers.json
+python -m optsplit.layerlr.curvature_layers --plot analysis/ts10m/curvature_{layers,sublayers}.json \
     --out curvature.pdf  # one page per JSON"""
 
 import argparse

@@ -7,8 +7,8 @@ the 32 fixed ones cover few vocabulary rows, so they underestimate the embedding
 AdamW also gets the blocks of P^-1/2 H P^-1/2 (op 'P'), whose threshold is (2 + 2 beta1) / ((1 - beta1) eta), at the
 steps with optimizer state (fork checkpoints); SGD's threshold on H is (2 + 2 mu) / eta. Muon has none on H.
 One JSON per run in --out (resumed from: rows already there are skipped).
-python -m optsplit.analysis.layer_curvature ts10m_main/adamw_d0 --fresh 256 --out analysis/ts10m/layer_curvature
-python -m optsplit.analysis.layer_curvature --plot analysis/ts10m/layer_curvature/*.json --out layer_curvature.pdf"""
+python -m optsplit.layerlr.layer_lanczos ts10m_main/adamw_d0 --fresh 256 --out analysis/ts10m/layer_curvature
+python -m optsplit.layerlr.layer_lanczos --plot analysis/ts10m/layer_curvature/*.json --out layer_curvature.pdf"""
 
 import argparse
 import json
@@ -24,7 +24,7 @@ from optsplit.data import build_data
 from optsplit.measure.hessian import HVP, adam_preconditioner
 from optsplit.models import build_model, double_backward_ok, layer
 from optsplit.optim import build_optimizer, load_optimizer_state, lr_mult
-from optsplit.optim.balance import threshold
+from optsplit.layerlr.balance import threshold
 
 STEPS = [12, 28, 45, 66, 85, 152, 221, 351, 500, 811, 1000, 1874, 3000, 4000, 5000, 6000, 8000, 10000]
 FRESH_SEED = 7 * 10**6
