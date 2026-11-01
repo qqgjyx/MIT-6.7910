@@ -134,63 +134,67 @@ RMS of the residual stream after the last block, and effective rank of the centr
 
 \begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
-\caption{All metrics of Step 2 on TinyStories-10M (\cref{fig:rank}). Columns AdamW, Muon and SGD give each metric's
-value at training loss 1.81, as the mean $\pm$ half the range over data orders 0--2. Columns A--M, A--S and M--S give
-each pair's score: their gap on the same data order (mean over data orders) divided by the larger of the two
-optimizers' mean gaps between data orders, median over training losses 1.66--3; it is positive when the first
-optimizer's value is higher. Bold: the five largest in absolute value per column. SGD uses heavy-ball momentum 0.9 and
-learning rate 0.06, the only rate tried between 0.03 and 0.12 that did not diverge on any of the three data orders;
-everything else is as in \cref{tab:app-shared}.}
+\caption{All metrics of Step 2 on TinyStories-10M (\cref{fig:rank}), at training loss 1.81. Columns AdamW, Muon and
+SGD: mean $\pm$ half the range over data orders 0--2, in units of $10^k$ in rows marked ($\times10^k$). Columns A/M, A/S and M/S: the first optimizer's value divided
+by the second's; with $a_{\min},a_{\max}$ and $b_{\min},b_{\max}$ their extremes over data orders, the ratio lies in
+$[a_{\min}/b_{\max},\,a_{\max}/b_{\min}]$, given as midpoint $\pm$ half-width, and an interval that excludes 1 means a
+difference beyond data-order variation. Bold: in each ratio column, the five ratios farthest from 1 (on a log scale)
+among those whose interval excludes 1. SGD uses heavy-ball momentum 0.9 and learning rate 0.06, the only rate tried
+between 0.03 and 0.12 that did not diverge on any of the three data orders; everything else is as in
+\cref{tab:app-shared}.}
 \label{tab:app-metrics}
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{@{}lcccrrr@{}}
+\footnotesize\setlength{\tabcolsep}{2.5pt}\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}%
+\renewcommand{\arraystretch}{1.15}%
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.5cm}|ccc|ccc@{}}
 \toprule
- & AdamW & Muon & SGD & A--M & A--S & M--S \\
+ & AdamW & Muon & SGD & A/M & A/S & M/S \\
 \midrule
-\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Weights}} \\
-weight norm $\|\theta\|_2$ & 224 $\pm$ 2 & 224.3 $\pm$ 0.5 & 109.5 $\pm$ 0.1 & $-$0.3 & {\boldmath\textbf{51}} & {\boldmath\textbf{63}} \\
-distance from init.\ $/\|\theta_0\|$ & 2.18 $\pm$ 0.03 & 2.155 $\pm$ 0.006 & 0.486 $\pm$ 0.006 & $-$1.3 & {\boldmath\textbf{50}} & {\boldmath\textbf{58}} \\
-largest entry $/\|\theta\|_2$ & 0.00704 $\pm$ 0.00006 & 0.00645 $\pm$ 0.00002 & 0.0395 $\pm$ 0.0010 & 9.1 & $-$23 & $-$23 \\
-stable rank of $W$ & 33.0 $\pm$ 0.3 & 86.2 $\pm$ 0.3 & 56.2 $\pm$ 5.6 & {\boldmath\textbf{$-$147}} & $-$4.4 & 4.1 \\
-effective rank of $W$ & 272.2 $\pm$ 0.1 & 324.5 $\pm$ 0.1 & 321.0 $\pm$ 0.9 & {\boldmath\textbf{$-$263}} & $-$25 & 2.2 \\
-spectral norm of $W$ & 5.39 $\pm$ 0.07 & 2.949 $\pm$ 0.009 & 1.47 $\pm$ 0.11 & 74 & 15 & 3.0 \\
-$\sigma_1/\sigma_{\rm median}$ of $W$ & 8.01 $\pm$ 0.05 & 2.685 $\pm$ 0.005 & 4.37 $\pm$ 0.55 & {\boldmath\textbf{105}} & 3.7 & $-$1.7 \\
-\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Updates (one step)}} \\
-step size $\|\Delta\theta\|/\|\theta\|$ & 0.00656 $\pm$ 0.00008 & 0.00653 $\pm$ 0.00003 & 0.000624 $\pm$ 0.000047 & $-$3.1 & {\boldmath\textbf{67}} & {\boldmath\textbf{132}} \\
-stable rank of $\Delta W$ & 16.7 $\pm$ 0.3 & 219.6 $\pm$ 0.3 & 8.37 $\pm$ 0.48 & {\boldmath\textbf{$-$328}} & 5.3 & {\boldmath\textbf{292}} \\
-effective rank of $\Delta W$ & 228 $\pm$ 1 & 369.4 $\pm$ 0.2 & 205 $\pm$ 2 & {\boldmath\textbf{$-$135}} & 3.7 & 46 \\
-cosine of consecutive steps & 0.883 $\pm$ 0.002 & 0.738 $\pm$ 0.003 & 0.857 $\pm$ 0.004 & 25 & 3.6 & $-$8.8 \\
-cosine of step and $-g$ & 0.244 $\pm$ 0.004 & 0.217 $\pm$ 0.007 & 0.447 $\pm$ 0.010 & 2.8 & $-$17 & $-$18 \\
-\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Curvature}} \\
-top Hessian eigenvalue & 6.18 $\pm$ 0.10 & 14.3 $\pm$ 0.2 & 50.2 $\pm$ 0.6 & $-$10 & $-$11 & $-$18 \\
-batch sharpness & 0.974 $\pm$ 0.254 & 3.13 $\pm$ 0.37 & 6.38 $\pm$ 0.50 & $-$2.7 & $-$5.6 & $-$2.8 \\
-Hessian trace & 1400 $\pm$ 40 & 2770 $\pm$ 20 & 25500 $\pm$ 400 & $-$23 & $-$22 & $-$20 \\
-trace / top eigenvalue & 224 $\pm$ 6 & 196 $\pm$ 7 & 507 $\pm$ 9 & $-$0.5 & $-$7.4 & $-$8.7 \\
-\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Activations}} \\
-attention entropy (nats) & 2.51 $\pm$ 0.03 & 2.79 $\pm$ 0.02 & 3.84 $\pm$ 0.01 & $-$18 & $-$26 & $-$17 \\
-attention on first token & 0.0175 $\pm$ 0.0011 & 0.0198 $\pm$ 0.0005 & 0.0182 $\pm$ 0.0007 & $-$1.3 & $-$1.0 & 1.2 \\
-active MLP units & 0.1199 $\pm$ 0.0009 & 0.222 $\pm$ 0.001 & 0.262 $\pm$ 0.002 & $-$62 & {\boldmath\textbf{$-$56}} & $-$5.5 \\
-residual-stream RMS & 4.73 $\pm$ 0.05 & 3.38 $\pm$ 0.02 & 0.244 $\pm$ 0.003 & 28 & {\boldmath\textbf{78}} & {\boldmath\textbf{81}} \\
-effective rank of features & 312 $\pm$ 2 & 319.6 $\pm$ 0.2 & 297 $\pm$ 2 & $-$13 & $-$2.7 & 4.4 \\
-\addlinespace[2pt]\multicolumn{7}{@{}l}{\emph{Predictions}} \\
-prediction entropy (nats) & 1.887 $\pm$ 0.008 & 1.878 $\pm$ 0.010 & 1.943 $\pm$ 0.005 & $-$0.2 & $-$3.0 & $-$2.5 \\
-mean top-1 probability & 0.561 $\pm$ 0.003 & 0.563 $\pm$ 0.001 & 0.5581 $\pm$ 0.0008 & $-$0.4 & $-$0.3 & 0.3 \\
-calibration error & 0.0325 $\pm$ 0.0017 & 0.0305 $\pm$ 0.0046 & 0.0297 $\pm$ 0.0028 & 0.1 & 0.5 & 0.4 \\
-top-1 accuracy & 0.546 $\pm$ 0.005 & 0.544 $\pm$ 0.005 & 0.554 $\pm$ 0.003 & $-$1.0 & $-$2.2 & $-$1.2 \\
-loss on frequent targets & 0.896 $\pm$ 0.004 & 0.892 $\pm$ 0.008 & 0.851 $\pm$ 0.012 & 0.5 & 2.5 & 1.9 \\
-loss on rare targets & 3.10 $\pm$ 0.02 & 3.102 $\pm$ 0.009 & 3.11 $\pm$ 0.04 & $-$0.8 & $-$2.7 & $-$2.1 \\
-rare minus frequent loss & 2.21 $\pm$ 0.02 & 2.21 $\pm$ 0.01 & 2.26 $\pm$ 0.03 & $-$1.1 & $-$3.3 & $-$2.7 \\
-JS to unigram model & 0.8004 $\pm$ 0.0007 & 0.802 $\pm$ 0.001 & 0.804 $\pm$ 0.001 & 0.8 & 0.4 & $-$0.7 \\
-JS to bigram model & 0.4691 $\pm$ 0.0010 & 0.4708 $\pm$ 0.0008 & 0.4622 $\pm$ 0.0009 & $-$0.1 & 2.4 & 2.3 \\
-validation minus training loss & $-$0.0217 $\pm$ 0.0092 & $-$0.0197 $\pm$ 0.0062 & $-$0.0224 $\pm$ 0.0074 & $-$0.2 & 0.1 & 0.3 \\
+\emph{Weights} & & & & & & \\
+weight norm $\|\theta\|_2$ & $224 \pm 2$ & $224 \pm 0$ & $110 \pm 0$ & $0.997 \pm 0.013$ & $2.04 \pm 0.02$ & $2.05 \pm 0.01$ \\
+distance from init.\ $/\|\theta_0\|$ & $2.18 \pm 0.03$ & $2.15 \pm 0.01$ & $0.486 \pm 0.006$ & $1.01 \pm 0.02$ & $4.47 \pm 0.11$ & $4.42 \pm 0.07$ \\
+largest entry $/\|\theta\|_2$ ($\times10^{-3}$) & $7.04 \pm 0.06$ & $6.45 \pm 0.02$ & $39.5 \pm 1.0$ & $1.09 \pm 0.01$ & $0.180 \pm 0.006$ & {\boldmath\textbf{$0.165 \pm 0.005$}} \\
+stable rank of $W$ & $33.0 \pm 0.3$ & $86.2 \pm 0.3$ & $56.2 \pm 5.6$ & {\boldmath\textbf{$0.383 \pm 0.005$}} & $0.614 \pm 0.069$ & $1.60 \pm 0.17$ \\
+effective rank of $W$ & $272 \pm 0$ & $325 \pm 0$ & $321 \pm 1$ & $0.839 \pm 0.000$ & $0.849 \pm 0.003$ & $1.01 \pm 0.00$ \\
+spectral norm of $W$ & $5.39 \pm 0.07$ & $2.95 \pm 0.01$ & $1.47 \pm 0.11$ & $1.82 \pm 0.03$ & $3.61 \pm 0.31$ & $1.98 \pm 0.15$ \\
+$\sigma_1/\sigma_{\rm median}$ of $W$ & $8.01 \pm 0.05$ & $2.68 \pm 0.00$ & $4.37 \pm 0.55$ & {\boldmath\textbf{$2.98 \pm 0.03$}} & $1.79 \pm 0.23$ & $0.599 \pm 0.074$ \\
+\emph{Updates (one step)} & & & & & & \\
+step size $\|\Delta\theta\|/\|\theta\|$ ($\times10^{-3}$) & $6.56 \pm 0.08$ & $6.53 \pm 0.03$ & $0.624 \pm 0.047$ & $1.01 \pm 0.02$ & {\boldmath\textbf{$10.9 \pm 1.0$}} & {\boldmath\textbf{$10.8 \pm 0.9$}} \\
+stable rank of $\Delta W$ & $16.7 \pm 0.3$ & $220 \pm 0$ & $8.37 \pm 0.48$ & {\boldmath\textbf{$(7.66 \pm 0.14){\times}10^{-2}$}} & $2.04 \pm 0.15$ & {\boldmath\textbf{$26.6 \pm 1.6$}} \\
+effective rank of $\Delta W$ & $228 \pm 1$ & $369 \pm 0$ & $205 \pm 2$ & $0.618 \pm 0.003$ & $1.12 \pm 0.02$ & $1.81 \pm 0.02$ \\
+cosine of consecutive steps & $0.883 \pm 0.002$ & $0.738 \pm 0.003$ & $0.857 \pm 0.004$ & $1.19 \pm 0.01$ & $1.03 \pm 0.01$ & $0.863 \pm 0.007$ \\
+cosine of step and $-g$ & $0.244 \pm 0.004$ & $0.217 \pm 0.007$ & $0.447 \pm 0.010$ & $1.12 \pm 0.06$ & $0.550 \pm 0.022$ & $0.491 \pm 0.027$ \\
+\emph{Curvature} & & & & & & \\
+top Hessian eigenvalue & $6.18 \pm 0.10$ & $14.3 \pm 0.2$ & $50.2 \pm 0.6$ & {\boldmath\textbf{$0.433 \pm 0.013$}} & {\boldmath\textbf{$0.123 \pm 0.004$}} & $0.284 \pm 0.008$ \\
+batch sharpness & $0.974 \pm 0.254$ & $3.13 \pm 0.37$ & $6.38 \pm 0.50$ & {\boldmath\textbf{$0.332 \pm 0.116$}} & {\boldmath\textbf{$0.162 \pm 0.051$}} & $0.504 \pm 0.095$ \\
+Hessian trace & $1400 \pm 40$ & $2770 \pm 20$ & $(2.55 \pm 0.04){\times}10^{4}$ & $0.510 \pm 0.019$ & {\boldmath\textbf{$(5.55 \pm 0.25){\times}10^{-2}$}} & {\boldmath\textbf{$0.109 \pm 0.002$}} \\
+trace / top eigenvalue & $224 \pm 6$ & $196 \pm 7$ & $507 \pm 9$ & $1.16 \pm 0.08$ & $0.447 \pm 0.020$ & $0.385 \pm 0.021$ \\
+\emph{Activations} & & & & & & \\
+attention entropy (nats) & $2.51 \pm 0.03$ & $2.79 \pm 0.02$ & $3.84 \pm 0.01$ & $0.899 \pm 0.014$ & $0.655 \pm 0.009$ & $0.728 \pm 0.007$ \\
+attention on first token ($\times10^{-2}$) & $1.75 \pm 0.11$ & $1.98 \pm 0.05$ & $1.82 \pm 0.07$ & $0.908 \pm 0.079$ & $0.972 \pm 0.095$ & $1.07 \pm 0.07$ \\
+active MLP units & $0.120 \pm 0.001$ & $0.222 \pm 0.001$ & $0.262 \pm 0.002$ & $0.539 \pm 0.007$ & $0.458 \pm 0.008$ & $0.850 \pm 0.012$ \\
+residual-stream RMS & $4.73 \pm 0.05$ & $3.38 \pm 0.02$ & $0.244 \pm 0.003$ & $1.40 \pm 0.03$ & {\boldmath\textbf{$19.4 \pm 0.5$}} & {\boldmath\textbf{$13.8 \pm 0.3$}} \\
+effective rank of features & $312 \pm 2$ & $320 \pm 0$ & $297 \pm 2$ & $0.977 \pm 0.007$ & $1.05 \pm 0.01$ & $1.07 \pm 0.01$ \\
+\emph{Predictions} & & & & & & \\
+prediction entropy (nats) & $1.89 \pm 0.01$ & $1.88 \pm 0.01$ & $1.94 \pm 0.00$ & $1.01 \pm 0.01$ & $0.971 \pm 0.006$ & $0.966 \pm 0.007$ \\
+mean top-1 probability & $0.561 \pm 0.003$ & $0.563 \pm 0.001$ & $0.558 \pm 0.001$ & $0.994 \pm 0.007$ & $1.00 \pm 0.01$ & $1.01 \pm 0.00$ \\
+calibration error ($\times10^{-2}$) & $3.25 \pm 0.17$ & $3.05 \pm 0.46$ & $2.97 \pm 0.28$ & $1.09 \pm 0.22$ & $1.08 \pm 0.16$ & $1.02 \pm 0.25$ \\
+top-1 accuracy & $0.546 \pm 0.005$ & $0.544 \pm 0.005$ & $0.554 \pm 0.003$ & $1.01 \pm 0.02$ & $0.987 \pm 0.013$ & $0.980 \pm 0.014$ \\
+loss on frequent targets & $0.896 \pm 0.004$ & $0.892 \pm 0.008$ & $0.851 \pm 0.012$ & $1.00 \pm 0.01$ & $1.05 \pm 0.02$ & $1.05 \pm 0.02$ \\
+loss on rare targets & $3.10 \pm 0.02$ & $3.10 \pm 0.01$ & $3.11 \pm 0.04$ & $1.00 \pm 0.01$ & $0.999 \pm 0.018$ & $0.999 \pm 0.015$ \\
+rare minus frequent loss & $2.21 \pm 0.02$ & $2.21 \pm 0.01$ & $2.26 \pm 0.03$ & $0.996 \pm 0.015$ & $0.979 \pm 0.020$ & $0.982 \pm 0.017$ \\
+JS to unigram model & $0.800 \pm 0.001$ & $0.802 \pm 0.001$ & $0.804 \pm 0.001$ & $0.998 \pm 0.002$ & $0.995 \pm 0.002$ & $0.997 \pm 0.003$ \\
+JS to bigram model & $0.469 \pm 0.001$ & $0.471 \pm 0.001$ & $0.462 \pm 0.001$ & $0.996 \pm 0.004$ & $1.02 \pm 0.00$ & $1.02 \pm 0.00$ \\
+validation minus training loss ($\times10^{-2}$) & $-2.17 \pm 0.92$ & $-1.97 \pm 0.62$ & $-2.24 \pm 0.74$ & ---$^\dagger$ & ---$^\dagger$ & ---$^\dagger$ \\
 \bottomrule
-\end{tabular}\end{minipage}
+\end{tabular}\\[2pt]
+\raggedright\footnotesize $^\dagger$Near zero and changes sign during training, so a ratio is meaningless.
+\end{minipage}
 \end{center}
 
 \section{Swaps}
 \label{app:forks}
 
-\begin{center}\small
+\begin{center}\small\begin{minipage}{\linewidth}\centering
 \captionsetup{type=table}
 \caption{Swap forks on TinyStories-10M. $A$: parent's optimizer; $B$: optimizer after the swap; $s$: fork step.}
 \label{tab:app-forks}
@@ -210,7 +214,7 @@ Swap forks & 2 directions $\times$ 9 steps $=$ 18 \\
 Same-batch control & the parent itself ($A$ continued with the same batches) \\
 Data-order control & $A$ continued from $s$ with its own state, data order 1: 18 forks \\
 \hline
-\end{tabular}
+\end{tabular}\end{minipage}
 \end{center}
 
 \section{Compute}

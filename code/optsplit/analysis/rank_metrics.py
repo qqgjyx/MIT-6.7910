@@ -286,7 +286,7 @@ def plot_swaps(pdf, rows, keys):
                     ms=3, label=f'{NAMES[a]} to {NAMES[b]}')
         g = rows[0]['metrics'][k]['gap_over_floor']
         ax.set_title(f'{METRICS[k][1]} (gap {g:.1f} floors)', fontsize=8)
-        ax.set_ylim(-1.1, 2.1)
+        ax.set(xlim=(30, 6000), ylim=(-1.1, 2.1))  # fixed limits: a metric may have no swap values
         ax.axhline(0, color='k', lw=0.5)
         ax.axhline(1, color='k', lw=0.5, ls='--')
         ax.set_xscale('log')

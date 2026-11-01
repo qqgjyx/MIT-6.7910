@@ -16,6 +16,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
+from optsplit.analysis.metric_ratios import PAIRS as RATIO_PAIRS, ratio, values
 from optsplit.analysis.rank_metrics import COLORS, METRICS, NAMES, loss_axis
 
 plt.rcParams.update({'font.size': 7, 'axes.titlesize': 7, 'axes.labelsize': 7, 'legend.fontsize': 6,
@@ -52,19 +53,23 @@ def ranking(metrics, keys, curves, out):
     m = json.load(open(metrics))
     levels = np.array(m['levels'])
     ncurves = len(curves)
-    fig = plt.figure(figsize=(7.1, 1.65))
+    fig = plt.figure(figsize=(7.1, 1.5))
     gs = fig.add_gridspec(1, 1 + ncurves, width_ratios=[1.5] + [1] * ncurves, wspace=0.35)
     ax = fig.add_subplot(gs[0])
+    L, v = values(m)
+    r = {k: [ratio(v[k][a], v[k][b]) for a, b in RATIO_PAIRS] for k in keys}
+    keys = sorted(keys, key=lambda k: -abs(np.log(r[k][0][0])))
     y = np.arange(len(keys))
-    for i, (p, c) in enumerate((('adamw-muon', 'k'), ('adamw-sgd', '0.55'), ('muon-sgd', '0.8'))):
-        ax.barh(y + (i - 1) * 0.27, [m['summary'][k]['ratio'][p] or np.nan for k in keys], height=0.27, color=c,
-                label=' – '.join(NAMES[o] for o in p.split('-')))
+    for i, ((a, b), c, mk) in enumerate(zip(RATIO_PAIRS, ('k', '0.45', '0.7'), 'os^')):
+        mid, _, lo, hi = np.array([r[k][i] for k in keys]).T
+        ax.errorbar(mid, y + (i - 1) * 0.25, xerr=[mid - lo, hi - mid], fmt=mk, ms=2.5, color=c, elinewidth=0.8,
+                    capsize=1.5, label=f'{NAMES[a]} / {NAMES[b]}')
     ax.set_yticks(y)
     ax.set_yticklabels([METRICS[k][1] for k in keys])
     ax.invert_yaxis()
     ax.set_xscale('log')
     ax.axvline(1, color='k', lw=0.6)
-    ax.set_xlabel('optimizer gap / data-order gap')
+    ax.set_xlabel(f'ratio of values at training loss {L:.2f}')
     ax.legend(frameon=False, loc='lower left', bbox_to_anchor=(0, 1), ncol=3, handlelength=1, columnspacing=0.8)
     for j, k in enumerate(curves):
         a = fig.add_subplot(gs[1 + j])
@@ -131,7 +136,7 @@ def forks(d, out, metrics=None, keys=()):
     styles = ['-', '--', ':', '-.']
     swap = [r for r in load('swap') if {r['opt_a'], r['opt_b']} == {'adamw', 'muon'}]
     dirs = (('adamw', 'muon', 'C1'), ('muon', 'adamw', 'C0'))
-    fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.6))
+    fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.45))
 
     def line(ax, pts, c, ls='-', label=None):
         s, v = zip(*sorted(pts))
@@ -160,7 +165,7 @@ def forks(d, out, metrics=None, keys=()):
             line(axes[3], [(r['fork_step'], r['fm.weights.dist_init_rel']) for r in rr], c, '--')
     style = lambda ax, labels, loc: ax.legend(
         [plt.Line2D([], [], color='k', lw=0.9, ls=ls) for ls, _ in labels], [t for _, t in labels], frameon=False,
-        loc=loc, handlelength=1.6)
+        loc=loc, handlelength=1.6, labelspacing=0.3)
     axes[0].axhline(1, color='k', lw=0.5)
     axes[0].set(title='function: distance / floor', ylim=(0, 1.15))
     style(axes[0], [('-', "to the new optimizer's run"), ('--', 'to the parent')], 'lower left')
@@ -170,9 +175,9 @@ def forks(d, out, metrics=None, keys=()):
     axes[2].set(title="barrier to the new optimizer's run", ylim=(0, 7))
     axes[2].legend(frameon=False, loc='upper right')
     axes[3].axhline(1, color='k', lw=0.5)
-    axes[3].set(title='weights: 0 = parent, 1 = new', ylim=(0, 1.15))
+    axes[3].set(title='final value: 0 = parent, 1 = new', ylim=(-0.05, 2.2), yticks=[0, 0.5, 1])
     style(axes[3], list(zip(styles, [METRICS[k][1] for k in keys])) if rows else
-          [('-', 'stable rank'), ('--', 'distance from init')], 'lower left')
+          [('-', 'stable rank'), ('--', 'distance from init')], 'upper left')
     for ax in axes:
         ax.set_xscale('log')
         ax.set_xlabel('fork step')
