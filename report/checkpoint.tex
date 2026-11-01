@@ -99,20 +99,19 @@ predictions (\cref{app:metrics}). We compare optimizers by each metric's ratio a
 orders each (\cref{fig:rank}, \cref{tab:app-am}). SGD with momentum, our reference, differs from both in most metrics
 (\cref{tab:app-sgd}).
 \begin{itemize}
-\item \emph{Weight spectrum.} Muon's weight matrices use their directions more evenly. Their stable rank
+\item \emph{Weights $W$.} Muon's weight matrices use their directions more evenly. Their stable rank
 $\|W\|_F^2/\|W\|_2^2$ is 86 against AdamW's 33 ($2.61\pm0.04$ times), and their effective rank 325 against 272. Their
 spectral norm (2.9 against 5.4) and largest-to-median singular-value ratio $\sigma_1/\sigma_{\rm median}$ (2.7 against
-8.0) are lower.
-\item \emph{Updates.} Consecutive Muon steps are less alike (cosine 0.74 against 0.88). Their stable rank is much
+8.0) are lower. Both move equally far from the initialization (ratio $1.01\pm0.02$): they differ in the shape of
+their weights, not in how far they travel.
+\item \emph{One-step updates $\Delta W$.} Consecutive Muon steps are less alike (cosine 0.74 against 0.88). Their stable rank is much
 higher (220 against 17), but by construction: Muon orthogonalizes every update.
-\item \emph{Sharpness.} Muon is about twice as sharp: the top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2,
+\item \emph{Loss curvature (Hessian $H$).} Muon is about twice as sharp: the top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2,
 the trace $\operatorname{tr}H$ 2770 against 1400. But the tuned learning rates differ, and $\lambda_{\max}$ scales
 roughly as one over the learning rate (log-log slopes $-0.86$ and $-0.84$ across a sweep). So part of this gap
 reflects the rates, not the optimizer.
-\item \emph{MLP sparsity.} AdamW's MLP is sparser: 12\% of its units are active, against 22\% for Muon.
+\item \emph{Internal activations.} AdamW's MLP is sparser: 12\% of its units are active, against 22\% for Muon.
 \item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon interval contains 1.
-\item \emph{Distance.} Both move equally far from the initialization (ratio $1.01\pm0.02$): they differ in the shape
-of their weights, not in how far they travel.
 \end{itemize}
 
 \begin{figure}[h]
