@@ -66,11 +66,11 @@ orders of one optimizer. A distance of one floor means ``as different as two
 data orders''.
 
 \emph{Faster, and on a different path.} After warmup, AdamW and Muon on the same data order stay close (a), and
-Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). But it is not only faster. The
-two share the initialization and the batches, so if Muon just moved faster along AdamW's path, their distance at
-equal loss would be far below the floor. Instead it sits at the floor (c; median 1.02$\times$), while at
-equal step it is below it (b; at step 1000, 0.102 against 0.131 at equal loss). Switching the optimizer changes the
-path about as much as a new data order.
+Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). The two share the
+initialization and the batches, so if Muon just followed AdamW's path faster, comparing them at equal loss (c) would
+bring them closer than comparing them at equal step (b). The opposite happens: from step 250 on, their distance is
+larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, and by about as much
+as a new data order: at equal loss the distance sits at the floor (median 1.02$\times$).
 
 \emph{Final weights.} Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
 how far the training loss rises, on the straight path between them, above the line joining its end values
