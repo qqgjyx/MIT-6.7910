@@ -70,16 +70,13 @@ trained 141 runs using 33 GPU-hours (\cref{app:compute}).
 
 \begin{figure}[h]
 \centering
-\includegraphics[height=1.12in]{figures/ts10m/divergence_umap_adamw_muon.pdf}\hspace{2pt}%
-\includegraphics[height=1.12in]{figures/barriers_adamw_muon.pdf}
-\caption{AdamW (blue) and Muon (orange); first three panels on TinyStories-10M. First: checkpoints from step 250 on
+\includegraphics[width=\linewidth]{figures/ts10m/divergence_umap_adamw_muon.pdf}
+\caption{TinyStories-10M; AdamW blue, Muon orange. (a) Checkpoints from step 250 on
 (data orders d0--d2), placed in 2-D by densMAP from $\sqrt{\mathrm{JS}}$; numbers:
 training loss at steps 250, 1000, 2000. The map shows which checkpoints are nearest, not how far apart they are: the
 six endpoints, drawn nearly overlapping, are JS 0.056--0.063 apart, about as far as each run moves between
-steps 5000 and 10{,}000. Second: JS between AdamW and Muon on the same data order at the same step (blue) and between two data orders of one optimizer (grey); dotted: step 250. Third: validation loss (mean, range over
-data orders). Right: loss barrier between two final weight vectors (how far the training loss rises along the
-straight path between them above the line joining the two end losses), one point per pair: AdamW and Muon on
-the same data order (red, 5 pairs), two data orders of AdamW (blue) or Muon (orange; 10 pairs each).}
+steps 5000 and 10{,}000. (b) JS at the same step between AdamW and Muon on the same data order (red) and
+between two data orders of AdamW (blue) or of Muon (orange); dotted: step 250. (c) The same at equal training loss.}
 \label{fig:div}
 \end{figure}
 
@@ -118,22 +115,22 @@ most metrics (\cref{tab:app-sgd}).
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.88\linewidth]{figures/ts10m/ranking.pdf}
-\caption{TinyStories-10M, three data orders per optimizer. Left: ratio of two optimizers' values at training loss 1.81
+\includegraphics[width=\linewidth]{figures/ts10m/ranking.pdf}
+\caption{TinyStories-10M, three data orders per optimizer. (a) Ratio of two optimizers' values at training loss 1.81
 for selected metrics (log scale; bars: margins; all 30 metrics in \cref{tab:app-am,tab:app-sgd}).
 $\Delta$: change over one step; $H$: Hessian on 32 training sequences.
-Middle, right: stable rank of $W$ and $\|\theta-\theta_0\|/\|\theta_0\|$ against training loss; colour: optimizer, line style: data order.}
+(b), (c) Stable rank of $W$ and $\|\theta-\theta_0\|/\|\theta_0\|$ against training loss; colour: optimizer, line style: data order.}
 \label{fig:rank}
 \end{figure}
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\linewidth]{figures/ts10m/forks_adamw_muon.pdf}
+\includegraphics[width=\linewidth]{figures/ts10m/forks_adamw_muon.pdf}
 \caption{Swaps on TinyStories-10M, data order 0, against the fork step; each panel shows a property of the swapped
-run's final model. Left: JS from the swapped run to the new optimizer's own run and to the parent, each divided by
-the floor of that run's optimizer. Second: loss barrier to the parent, for the swapped run and, as a control, for the
-parent's own optimizer continued from the same step on data order 1. Third: loss barrier to the new optimizer's own
-run; bands: barriers between two data orders of that optimizer. Right: stable rank of $W$ and of $\Delta W$ and fraction of
+run's final model. (a) JS from the swapped run to the new optimizer's own run and to the parent, each divided by
+the floor of that run's optimizer. (b) Loss barrier to the parent, for the swapped run and, as a control, for the
+parent's own optimizer continued from the same step on data order 1. (c) Loss barrier to the new optimizer's own
+run; bands: barriers between two data orders of that optimizer. (d) Stable rank of $W$ and of $\Delta W$ and fraction of
 active MLP units, rescaled so that 0 is the parent's final value and 1 the final value of the new optimizer's own run.}
 \label{fig:swap}
 \end{figure}

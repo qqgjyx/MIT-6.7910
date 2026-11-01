@@ -35,7 +35,8 @@ def _t_star_step(split, run):
 
 
 def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps=False, max_loss=None, traj_steps=(),
-               traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None):
+               traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None, figsize=None,
+               log_offset=None):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
     above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
@@ -44,24 +45,38 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     `traj_label_steps` and the data order at `traj_name_step`), the UMAP of the prediction trajectories comes first instead of the third panel.
     `linear_steps` draws the step axis linear instead of symlog; `max_loss` starts the loss axes there. With
     `val_runs`, their validation loss by optimizer (mean over data orders, band from min to max, up to `max_loss`)
-    replaces the loss-matched panel; `mark_step` draws a dotted line at that step instead of t*."""
+    replaces the loss-matched panel; `mark_step` draws a dotted line at that step instead of t* (and drops the
+    episodes and t* from the loss-matched panel); `log_offset` draws its loss axis as in `loss_pairs`. With `figsize`
+    (inches), the figure is saved at exactly that size, with the fonts of ckpt_figs, panel labels, the colours of its
+    loss barriers (cross pairs red, data orders of A blue, of B orange), the step- and loss-matched distances on one
+    y range and their legend outside the axes."""
     metric = split['metric']
     A, B = by_seed(runs_a), by_seed(runs_b)
     name = lambda r: r.id.split('/')[-1].rsplit('_d', 1)[0]  # the run name without its data order
 
+    colors = ('C3', 'C0', 'C1') if figsize else ('C0', '0.35', '0.7')
+    if figsize:
+        from optsplit.analysis import ckpt_figs  # its fonts, sized for the page
+        name = lambda r, n=name: ckpt_figs.NAMES.get(n(r), n(r))
+
     def lines(ax, curve, x):
         for i, s in enumerate(sorted(A.keys() & B.keys())):
             c = curve(A[s], B[s])
-            ax.plot(c[x], c[metric], color='C0', label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
-        for G, color in ((A, '0.35'), (B, '0.7')):
+            ax.plot(c[x], c[metric], color=colors[0], label=f'{name(A[s])} vs {name(B[s])}' if i == 0 else None)
+        for G, color in ((A, colors[1]), (B, colors[2])):
             for i, (s, t) in enumerate(combinations(sorted(G), 2)):
                 c = curve(G[s], G[t])
                 ax.plot(c[x], c[metric], color=color, lw=0.8,
                         label=f'{name(G[s])}, other data order' if i == 0 else None)
 
-    fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
+    if figsize:
+        fig, axes = plt.subplots(1, 3, figsize=figsize, layout='constrained', width_ratios=[1.2, 1, 1])
+    else:
+        fig, axes = plt.subplots(1, 3, figsize=(13, 3.4))
     if traj:
-        trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step)
+        trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step,
+                          legend=dict(fontsize=5.5, loc='upper right', bbox_to_anchor=(0, 1), frameon=False, borderaxespad=0)
+                          if figsize else {})
         a1, a2, a3 = *axes[1:], None
     else:
         a1, a2, a3 = axes
@@ -72,8 +87,10 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
         a1.axvline(mark_step, color='0.5', ls=':', lw=0.8)
     elif steps:
         a1.axvline(np.median(steps), color='r', ls='--', label='t*')
-    a1.set(xlabel='step', ylabel=metric, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
-    a1.legend(fontsize=7)
+    ylab = {'js': 'JS (bits)'}.get(metric, metric)
+    a1.set(xlabel='step', ylabel=ylab, xscale='linear' if linear_steps else 'symlog', xlim=(0, None))
+    if not figsize:
+        a1.legend(fontsize=7)
     grid = np.array(split['grid'])
     if val_runs:  # validation loss per optimizer: mean over the data orders, band from min to max
         lowest = np.inf
@@ -92,17 +109,24 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
             a2.fill_between(grid, split['floor_lo'], split['floor_hi'], color='0.85', label='noise floor (range)')
             a2.plot(grid, split['floor'], color='0.4', ls='--', lw=0.8)
             a2.plot(grid, split['cross'], color='C0')
-        for lo, hi in split.get('episodes', []):
-            a2.axvspan(lo, hi, color='C0', alpha=0.08)
         top = max_loss or np.inf  # lines above it would be off the panel but still in the legend
-        if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
-            a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
-        if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
-            a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
-            a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
-        a2.set(xlabel='training loss', ylabel=metric, xlim=(None, max_loss))
-        a2.invert_xaxis()
-    a2.legend(fontsize=7)
+        if mark_step is None:
+            for lo, hi in split.get('episodes', []):
+                a2.axvspan(lo, hi, color='C0', alpha=0.08)
+            if np.isfinite(split['t_star_loss']) and split['t_star_loss'] < top:
+                a2.axvline(split['t_star_loss'], color='r', ls=':', label='first exceedance')
+            if np.isfinite(split.get('persist_loss', np.nan)) and split['persist_loss'] < top:
+                a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
+                a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
+        a2.set(ylabel=ylab)
+        _loss_axis(a2, max_loss, log_offset)
+    if figsize:
+        top = max(a.get_ylim()[1] for a in (a1, a2))
+        for a in (a1, a2):
+            a.set_ylim(0, top)
+        a2.legend(frameon=False, loc='upper left', bbox_to_anchor=(1, 1), borderaxespad=0.2)
+    else:
+        a2.legend(fontsize=7)
     if a3 is not None:
         with np.errstate(all='ignore'):
             a3.plot(grid, np.array(split['cross']) / np.array(split['floor']), color='C0')
@@ -110,7 +134,13 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
         a3.axhline(1, color='k', lw=0.5)
         a3.set(xlabel='training loss', ylabel='cross / floor', yscale='log', xlim=(None, max_loss))
         a3.invert_xaxis()
-    _save(fig, path)
+    if figsize:
+        ckpt_figs.panel_labels(axes)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(path)
+        print(f'wrote {path}')
+    else:
+        _save(fig, path)
 
 
 def sharpness(runs, split, path):
@@ -349,19 +379,24 @@ def loss_pairs(runs, path, max_loss=None, log_offset=None):
         for q in (o, p):
             for i, (s, t) in enumerate(combinations(sorted(G[q]), 2)):
                 line(ax, G[q][s], G[q][t], color=GREYS[q], label=f'{q}, two data orders' if i == 0 else None)
-        if log_offset is not None:
-            ax.set_xscale('function', functions=(lambda x: np.log(x - log_offset), lambda y: np.exp(y) + log_offset))
-        ax.set(xlabel='training loss', xlim=(None, max_loss))
-        if log_offset is not None:
-            lo, hi = ax.get_xlim()
-            ticks = [t for t in LOSS_TICKS if lo <= t <= hi]
-            ax.set_xticks(ticks, [f'{t:g}' for t in ticks])
-        ax.invert_xaxis()
+        _loss_axis(ax, max_loss, log_offset)
     axes[0, 0].set_ylabel('Jensen-Shannon divergence')
     h = {l: x for ax in axes[0] for x, l in zip(*ax.get_legend_handles_labels())}
     labels = sorted(h, key=lambda l: 'vs' not in l)  # the pairs of optimizers, then the greys
     fig.legend([h[l] for l in labels], labels, fontsize=7, loc='center left', bbox_to_anchor=(1, 0.5))
     _save(fig, path)
+
+
+def _loss_axis(ax, max_loss=None, log_offset=None):
+    """Training loss, decreasing to the right, up to `max_loss`; on log(L - log_offset) with ticks at loss values."""
+    if log_offset is not None:
+        ax.set_xscale('function', functions=(lambda x: np.log(x - log_offset), lambda y: np.exp(y) + log_offset))
+    ax.set(xlabel='training loss', xlim=(None, max_loss))
+    if log_offset is not None:
+        lo, hi = ax.get_xlim()
+        ticks = [t for t in LOSS_TICKS if lo <= t <= hi]
+        ax.set_xticks(ticks, [f'{t:g}' for t in ticks])
+    ax.invert_xaxis()
 
 
 def _path(out, name):
@@ -373,12 +408,12 @@ def _json(path):
 
 
 def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, linear_steps=False, max_loss=None,
-                   traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None, out=None,
-                   name='divergence'):
+                   traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None, figsize=None,
+                   log_offset=None, out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
                _path(out, name), traj and trajectories.parse(traj), pairs, linear_steps, max_loss, traj_steps,
-               traj_label_steps, val_runs and load_runs(val_runs), mark_step, traj_name_step)
+               traj_label_steps, val_runs and load_runs(val_runs), mark_step, traj_name_step, figsize, log_offset)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -449,6 +484,8 @@ def main():
     s.add_argument('--val-runs', nargs='+', help='runs whose validation loss replaces the loss-matched panel')
     s.add_argument('--mark-step', type=int, help='dotted line at this step on the step axis instead of t*')
     s.add_argument('--traj-name-step', type=int, help='of the --traj-steps, the one to write the data order at')
+    s.add_argument('--figsize', type=float, nargs=2, help='width and height in inches: saved at exactly this size')
+    s.add_argument('--log-offset', type=float, help='loss axis on log(L - offset), as in pairs')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')

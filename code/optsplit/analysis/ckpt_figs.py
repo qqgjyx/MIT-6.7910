@@ -21,9 +21,18 @@ from optsplit.analysis.rank_metrics import COLORS, METRICS, NAMES, loss_axis
 
 plt.rcParams.update({'font.size': 7, 'axes.titlesize': 7, 'axes.labelsize': 7, 'legend.fontsize': 6,
                      'xtick.labelsize': 6, 'ytick.labelsize': 6})
+TEXT_WIDTH = 7.1  # inches: the checkpoint's \\textwidth (8.5 in page, 0.7 in margins)
 TITLES = {'ts10m': 'TinyStories-10M', 'ts30m': 'TinyStories-30M', 'shakespeare': 'Shakespeare'}
 PAIRS = {('adamw', 'muon'): ('AdamW–Muon, same data', 'C3'), ('adamw', 'adamw'): ('AdamW, two data orders', 'C0'),
          ('muon', 'muon'): ('Muon, two data orders', 'C1')}
+
+
+def panel_labels(axes):
+    """(a), (b), ... at the top left of each panel, before its title."""
+    for i, ax in enumerate(axes):
+        t = ax.get_title()
+        ax.set_title('')
+        ax.set_title(f'({chr(97 + i)}) {t}'.rstrip(), loc='left')
 
 
 def barriers(lmc, out):
@@ -53,8 +62,8 @@ def ranking(metrics, keys, curves, out):
     m = json.load(open(metrics))
     levels = np.array(m['levels'])
     ncurves = len(curves)
-    fig = plt.figure(figsize=(7.1, 1.5))
-    gs = fig.add_gridspec(1, 1 + ncurves, width_ratios=[1.5] + [1] * ncurves, wspace=0.35)
+    fig = plt.figure(figsize=(TEXT_WIDTH, 1.6), layout='constrained')
+    gs = fig.add_gridspec(1, 1 + ncurves, width_ratios=[2.1] + [1] * ncurves)
     ax = fig.add_subplot(gs[0])
     L, v = values(m)
     r = {k: [ratio(v[k][a], v[k][b]) for a, b in RATIO_PAIRS] for k in keys}
@@ -64,12 +73,14 @@ def ranking(metrics, keys, curves, out):
         ax.errorbar(mid, y + (i - 1) * 0.25, xerr=[mid - lo, hi - mid], fmt=mk, ms=2.5, color=c, elinewidth=0.8,
                     capsize=1.5, label=f'{NAMES[a]} / {NAMES[b]}')
     ax.set_yticks(y)
+    ax.tick_params(axis='y', labelsize=5.5, pad=1.5)
     ax.set_yticklabels([METRICS[k][1] + (' (by construction)' if k == 'update_stable_rank' else '') for k in keys])
     ax.invert_yaxis()
     ax.set_xscale('log')
     ax.axvline(1, color='k', lw=0.6)
     ax.set_xlabel(f'ratio of values at training loss {L:.2f}')
-    ax.legend(frameon=False, loc='lower left', bbox_to_anchor=(0, 1), ncol=3, handlelength=1, columnspacing=0.8)
+    ax.legend(frameon=False, loc='lower right', bbox_to_anchor=(1, 1), ncol=3, handlelength=0.8, columnspacing=0.6,
+              handletextpad=0.4, borderaxespad=0.1)
     for j, k in enumerate(curves):
         a = fig.add_subplot(gs[1 + j])
         for rid, pts in m['metrics'][k]['points'].items():
@@ -85,9 +96,10 @@ def ranking(metrics, keys, curves, out):
         a.set_xlim(levels[0], levels[-1])
         a.set_title(METRICS[k][1])
         a.set_xlabel('training loss')
-        if j == 0:
-            a.legend(frameon=False)
-    fig.savefig(out, bbox_inches='tight')
+        if j == ncurves - 1:
+            a.legend(frameon=False, loc='upper left')
+    panel_labels(fig.axes)
+    fig.savefig(out)
     print(f'wrote {out}')
 
 
@@ -135,7 +147,7 @@ def forks(d, out, metrics=None, keys=()):
     styles = ['-', '--', ':', '-.']
     swap = [r for r in load('swap') if {r['opt_a'], r['opt_b']} == {'adamw', 'muon'}]
     dirs = (('adamw', 'muon', 'C1'), ('muon', 'adamw', 'C0'))
-    fig, axes = plt.subplots(1, 4, figsize=(7.1, 1.45))
+    fig, axes = plt.subplots(1, 4, figsize=(TEXT_WIDTH, 1.3), layout='constrained')
 
     def line(ax, pts, c, ls='-', label=None):
         s, v = zip(*sorted(pts))
@@ -167,21 +179,21 @@ def forks(d, out, metrics=None, keys=()):
         loc=loc, handlelength=1.6, labelspacing=0.3)
     axes[0].axhline(1, color='k', lw=0.5)
     axes[0].set(title='function: distance / floor', ylim=(0, 1.15))
-    style(axes[0], [('-', "to the new optimizer's run"), ('--', 'to the parent')], 'lower left')
+    style(axes[0], [('-', 'to the own run'), ('--', 'to the parent')], 'lower left')
     axes[1].set_yscale('symlog', linthresh=0.01)
     axes[1].set(title='barrier to the parent (nats)')
     style(axes[1], [('-', 'swap'), (':', 'same optimizer, data order 1')], 'lower left')
-    axes[2].set(title="barrier to the new optimizer's run", ylim=(0, 7))
+    axes[2].set(title='barrier to the own run', ylim=(0, 7))
     axes[2].legend(frameon=False, loc='upper right')
     axes[3].axhline(1, color='k', lw=0.5)
-    axes[3].set(title='final value: 0 = parent, 1 = new', ylim=(-0.05, 2.2), yticks=[0, 0.5, 1])
+    axes[3].set(title='metrics (0 parent, 1 own)', ylim=(-0.05, 2.6), yticks=[0, 0.5, 1])
     style(axes[3], list(zip(styles, [METRICS[k][1] for k in keys])) if rows else
           [('-', 'stable rank'), ('--', 'distance from init')], 'upper left')
     for ax in axes:
         ax.set_xscale('log')
         ax.set_xlabel('fork step')
-    fig.tight_layout(pad=0.2, w_pad=0.5)
-    fig.savefig(out, bbox_inches='tight')
+    panel_labels(axes)
+    fig.savefig(out)
     print(f'wrote {out}')
 
 

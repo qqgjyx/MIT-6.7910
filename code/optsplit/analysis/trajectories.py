@@ -76,13 +76,13 @@ def parse(spec, losses=()):
     return json.loads(Path(f).read_text()), [float(x) for x in ls.split(',')] if ls else list(losses)
 
 
-def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
+def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None, legend={}):
     """One panel; each run's end, or its marker at `name_step` (one of `steps`), is labelled with its data order.
     Markers where each run first reaches `losses` and at its logged step nearest each of `steps`, with the run's
     training loss written next to those (and its first point) at `label_steps`. A star marks the shared
     initialization or, if the runs start later, a dot each run's first point. Each label sits 5 points from its
     point, in its preferred direction or the nearest turn of it inside the axes and clear of the markers and of the
-    labels placed before."""
+    labels placed before. `legend`: keyword arguments of the legend."""
     opts = sorted({r['optimizer'] for r in d.values()})
     marks = {n: [0] + [int(np.abs(np.array(r['steps']) - s).argmin()) for s in steps] for n, r in d.items()}
     at = {n: np.array(d[n]['xy'])[ix] for n, ix in marks.items()}  # each run's first point and step markers
@@ -148,10 +148,12 @@ def draw(ax, d, losses, title=None, steps=(), label_steps=(), name_step=None):
     for m, L in zip(MARKERS, losses):
         ax.plot([], [], m, ms=4, color='w', mec='k', label=f'{L:g}')
     ax.set(xticks=[], yticks=[], title=title)
-    leg = ax.legend(fontsize=7, labelspacing=0.2, handlelength=1.5, handletextpad=0.4, borderpad=0.3)
+    kw = dict(fontsize=7, labelspacing=0.2, handlelength=1.5, handletextpad=0.4, borderpad=0.3) | legend
+    leg = ax.legend(**kw)
+    shift = -(kw['handlelength'] + kw['handletextpad']) * kw['fontsize'] / 72
     for t in leg.get_texts():
         if t.get_text() in ('step', 'loss'):  # the group headings start at the legend's left edge, above the markers
-            t.set_transform(t.get_transform() + ScaledTranslation(-(1.5 + 0.4) * 7 / 72, 0, ax.figure.dpi_scale_trans))
+            t.set_transform(t.get_transform() + ScaledTranslation(shift, 0, ax.figure.dpi_scale_trans))
 
 
 def plot(panels, path):
