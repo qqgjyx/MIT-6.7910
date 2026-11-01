@@ -39,6 +39,8 @@ Prediction, Hessian precision & float32, no autocast (TF32 matrix products allow
 Logged predictions & next-token distributions: 128 fixed validation sequences $\times$ 16 evenly spaced positions
   (2{,}048), as float16 log-probabilities \\
 Training loss & 64 fixed training sequences, all positions; used to match runs at equal loss \\
+Floor & mean JS between two data orders of one optimizer, at equal training loss; for two optimizers, the larger
+  of their floors \\
 Both logged at & every 250th step $+$ 30 log-spaced steps in $[1, 10{,}000]$ \\
 \hline
 Hessian & top eigenvalue, 20 Lanczos iterations, 32 fixed training sequences; AdamW also of

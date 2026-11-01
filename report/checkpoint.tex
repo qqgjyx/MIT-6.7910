@@ -62,7 +62,7 @@ Validation loss.}
 \paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} \emph{Comparing runs.} The distance between two runs is the mean
 Jensen--Shannon divergence (JS, in bits) of their next-token predictions on held-out text. We compare runs at equal
 training loss, so that speed does not count as a difference. The \emph{floor} is the mean distance between two data
-orders of one optimizer (for two optimizers, the larger floor). A distance of one floor means ``as different as two
+orders of one optimizer. A distance of one floor means ``as different as two
 data orders''.
 
 \emph{Faster, and on a different path.} After warmup, AdamW and Muon on the same data order stay close (a), and
@@ -74,8 +74,7 @@ path about as much as a new data order.
 
 \emph{Final weights.} Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
 how far the training loss rises, on the straight path between them, above the line joining its end values
-\citep{frankle2020lmc}. It is 3.5--4.1 nats between AdamW and Muon, against 1.2--1.9 between two AdamW data orders
-and 1.6--1.8 between two Muon ones.
+\citep{frankle2020lmc}. It is 3.5--4.1 nats between AdamW and Muon, against 1.2--1.9 between two data orders.
 
 \paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points of training, in
 five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $H$), internal activations and
