@@ -105,15 +105,7 @@ indistinguishable from it. Hyperparameters in \cref{app:hparams-fig3}.}
 \label{fig:swap}
 \end{figure}
 
-\paragraph{Result 4 (moonshot): the sharp direction at the edge of stability.} At each optimizer's
-threshold, the top eigenvector of the operator that sets it lies at the input end: SGD's in blocks 1--2 (66\%), AdamW's, of $P^{-1/2}HP^{-1/2}$, in the embeddings (68\%), where rare tokens make $P^{-1}$ largest,
-and Muon's, which has no threshold on $H$ \citep{islamov2026noneuclidean}, in blocks 1--3 (84\%). Except in
-AdamW's embeddings, most of the eigenvalue comes from curvature \emph{between} layers (66\% for SGD, 71\% for
-Muon). The layer that holds the direction keeps changing long after the optimizers have re-met (AdamW's between
-the embeddings and block 1 throughout training, Muon's from block 1 to 2 after step 6000), so it does not mark a
-split.
-
-\paragraph{Result 5: why the optimizers meet (proof sketch).} \textbf{Two models whose loss is close to the best
+\paragraph{Result 4: why the optimizers meet (proof sketch).} \textbf{Two models whose loss is close to the best
 achievable loss must make nearly the same predictions, whichever optimizer trained them.} This follows from
 Pinsker's inequality: for predictors that see only the last $s$ tokens, with best element $q_s$, two predictors
 with excess losses $\Delta L_A,\Delta L_B$ over $q_s$ have $\mathbb E\,\mathrm{JS}\le\sqrt2(\sqrt{\Delta
