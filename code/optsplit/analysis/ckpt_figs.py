@@ -26,21 +26,25 @@ PAIRS = {('adamw', 'muon'): ('AdamW–Muon, same data', 'C3'), ('adamw', 'adamw'
 
 
 def barriers(lmc, out):
-    fig, ax = plt.subplots(figsize=(3.9, 1.75))
-    fig.subplots_adjust(left=0.15, right=0.6, bottom=0.15, top=0.97)
-    for i, (name, path) in enumerate(lmc):
-        rows = json.load(open(path))
-        for j, (pair, (label, c)) in enumerate(PAIRS.items()):
-            v = [r['barriers']['all'] for r in rows
-                 if tuple(x.split('/')[1].split('_')[0] for x in (r['a'], r['b'])) == pair]
-            x = i + (j - 1) * 0.25 + np.linspace(-0.06, 0.06, len(v))
-            ax.scatter(x, v, s=6, color=c, label=label if i == 0 else None, lw=0)
-    ax.set_xticks(range(len(lmc)))
-    ax.set_xticklabels([TITLES.get(n, n).replace('TinyStories', 'TS') for n, _ in lmc])
-    ax.set_ylabel('loss barrier (nats)')
-    ax.set_ylim(bottom=0)
-    ax.legend(frameon=False, loc='center left', bbox_to_anchor=(1.02, 0.5), handletextpad=0.1, markerscale=2)
-    fig.savefig(out, bbox_inches='tight')
+    """Whole-model loss barriers between final weights, one point per pair, sized to sit next to the 3.3 in tall
+    panels of trajectories.py's divergence figure (same font sizes)."""
+    with plt.rc_context({'font.size': 10, 'axes.labelsize': 10, 'xtick.labelsize': 9, 'ytick.labelsize': 9,
+                         'legend.fontsize': 9}):
+        fig, ax = plt.subplots(figsize=(3.4, 3.3))
+        for i, (name, path) in enumerate(lmc):
+            rows = json.load(open(path))
+            for j, (pair, (label, c)) in enumerate(PAIRS.items()):
+                v = [r['barriers']['all'] for r in rows
+                     if tuple(x.split('/')[1].split('_')[0] for x in (r['a'], r['b'])) == pair]
+                x = i + (j - 1) * 0.25 + np.linspace(-0.06, 0.06, len(v))
+                ax.scatter(x, v, s=14, color=c, label=label if i == 0 else None, lw=0)
+        ax.set_xticks(range(len(lmc)))
+        ax.set_xticklabels([TITLES.get(n, n).replace('TinyStories', 'TS') for n, _ in lmc])
+        ax.set_ylabel('loss barrier (nats)')
+        ax.set_ylim(0, 9.5)
+        ax.legend(frameon=False, loc='upper left', handletextpad=0.1, markerscale=1.5)
+        fig.tight_layout(pad=0.3)
+        fig.savefig(out, bbox_inches='tight')
     print(f'wrote {out}')
 
 

@@ -281,10 +281,12 @@ def plot_swaps(pdf, rows, keys):
     for ax, k in zip(axes.flat, keys):
         for (a, b), c in ((('adamw', 'muon'), 'C1'), (('muon', 'adamw'), 'C0')):
             rr = [r for r in rows if r['opt_a'] == a and r['opt_b'] == b]
-            ax.plot([r['fork_step'] for r in rr], [r['metrics'][k]['shift'] for r in rr], 'o-', color=c, ms=3,
-                    label=f'{NAMES[a]} to {NAMES[b]}')
+            y = np.array([r['metrics'][k]['shift'] for r in rr], dtype=float)
+            ax.plot([r['fork_step'] for r in rr], np.where(np.isfinite(y), np.clip(y, -1, 2), np.nan), 'o-', color=c,
+                    ms=3, label=f'{NAMES[a]} to {NAMES[b]}')
         g = rows[0]['metrics'][k]['gap_over_floor']
         ax.set_title(f'{METRICS[k][1]} (gap {g:.1f} floors)', fontsize=8)
+        ax.set_ylim(-1.1, 2.1)
         ax.axhline(0, color='k', lw=0.5)
         ax.axhline(1, color='k', lw=0.5, ls='--')
         ax.set_xscale('log')
