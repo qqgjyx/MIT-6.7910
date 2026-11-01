@@ -64,7 +64,7 @@ training loss, so that speed does not count as a difference. The \emph{floor} is
 orders of one optimizer. A distance of one floor means ``as different as two
 data orders''.
 
-\emph{Faster, and on a different path.} Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). Since the two share the
+\emph{Faster, and on a slightly different path.} Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). Since the two share the
 initialization and the batches, if Muon just followed AdamW's path faster, they would be closer at equal loss (c) than
 at equal step (b). The opposite happens: from step 250 on, their distance is
 larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, but less than a change of
