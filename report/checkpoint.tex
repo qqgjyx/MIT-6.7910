@@ -91,8 +91,9 @@ endpoints, at 34 checkpoints per run, grouped as weights, one-step updates, curv
 optimizers on the same data order against the gap between two data orders of one optimizer, three data orders each
 (\cref{fig:rank} and \cref{tab:app-metrics}, which also include SGD with momentum for reference).
 
-AdamW and Muon differ in spectral geometry, but not in their predictions (all prediction scores within $\pm1.1$) nor
-in how far they move (2.18 and 2.155$\|\theta_0\|$ from the initialization; values at loss 1.81, scores in brackets).
+AdamW and Muon end up with clearly different geometry (weight-spectrum scores 74 to 263 in absolute value), even
+though no prediction metric tells them apart (scores within $\pm1.1$) and they move equally far (2.18 and
+2.155$\|\theta_0\|$ from the initialization; values at loss 1.81, scores in brackets).
 Muon's weights have the flatter spectra: stable rank 86 against 33 ($-147$), $\sigma_1/\sigma_{\rm median}$ 2.7
 against 8.0 (105). AdamW's model is sparser and louder, on a flatter loss: 12\% of MLP units active against 22\%
 ($-62$), residual RMS 4.7 against 3.4 (28), attention entropy 2.5 against 2.8 nats ($-18$), $\operatorname{tr}H$ 1400
