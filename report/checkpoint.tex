@@ -7,6 +7,7 @@
 \usepackage{microtype}
 \usepackage{enumitem}
 \usepackage{graphicx}
+\usepackage{float}
 \usepackage{booktabs,array}
 \usepackage[font=small,labelfont=bf,skip=3pt]{caption}
 \captionsetup[figure]{font=footnotesize}
@@ -42,14 +43,20 @@ mid-training ends with predictions as close to the new optimizer's run as two da
 once, but the stable rank of its weights and its MLP sparsity keep much of their old values, more so the later the switch.
 
 \paragraph{Setup.} \emph{Model.} We train a 14M-parameter nanoGPT \citep{karpathy2022nanogpt} on TinyStories
-\citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences of 256 tokens, with a cosine learning-rate decay
+\citep{eldan2023tinystories} for 10{,}000 steps of 128 sequences of 256 tokens
 (\cref{app:hparams} lists the model, data, training and optimizer settings).
 
 \emph{Optimizers.} Muon \citep{jordan2024muon} orthogonalizes the update of each weight matrix in the transformer blocks: it sets the
 update's singular values to about 1. AdamW trains Muon's other parameters. Each optimizer uses the best of five
 learning rates. All runs start from the same weights. Each optimizer runs on the same five \emph{data orders}.
 
-\begin{figure}[h]
+\paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} \emph{Comparing runs.} The distance between two runs is the mean
+Jensen--Shannon divergence (JS, in bits) of their next-token predictions on held-out text. We compare runs at equal
+step and at equal training loss; at equal loss, speed does not count as a difference. The \emph{floor} is the mean distance between two data
+orders of one optimizer. A distance of one floor means ``as different as two
+data orders''.
+
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/divergence_umap_adamw_muon.pdf}
 \caption{AdamW and Muon. (a) Checkpoints from step 250 on, mapped to 2-D by densMAP (shows neighbours, not
@@ -58,14 +65,8 @@ Validation loss.}
 \label{fig:div}
 \end{figure}
 
-\paragraph{Step 1: how the trajectories differ (\cref{fig:div}).} \emph{Comparing runs.} The distance between two runs is the mean
-Jensen--Shannon divergence (JS, in bits) of their next-token predictions on held-out text. We compare runs at equal
-step and at equal training loss; at equal loss, speed does not count as a difference. The \emph{floor} is the mean distance between two data
-orders of one optimizer. A distance of one floor means ``as different as two
-data orders''.
-
-\emph{Faster, and on a slightly different path.} Muon learns faster: it reaches AdamW's final validation loss, 1.344, by step 7500 (d). Since the two share the
-initialization and the batches, if Muon just followed AdamW's path faster, they would be closer at equal loss (c) than
+\emph{Faster, and on a slightly different path.} Muon reaches AdamW's final validation loss, 1.344, by step 7500 (d). Since they share the
+initialization and batches, if Muon just followed AdamW's path faster, they would be closer at equal loss (c) than
 at equal step (b). The opposite happens: from step 250 on, their distance is
 larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, but less than a change of
 data order does: from step 500 on, at equal step, AdamW and Muon on the same data order are closer than two data
@@ -79,9 +80,18 @@ five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $
 predictions (\cref{app:metrics} defines each metric and compares all of them in \cref{tab:app-am,tab:app-sgd}).
 \Cref{tab:app-sgd} also gives the values for SGD with momentum.
 
-We compare AdamW and Muon by the ratio of their values of each metric at training loss 1.81, with three data orders
-each (\cref{fig:rank} for selected metrics, \cref{tab:app-am} for all). The $\pm$ gives the range of this ratio
-across data orders. If the range excludes 1, the optimizers differ by more than data orders do.
+We compare the optimizers by each metric's ratio AdamW/Muon at training loss 1.81, on three data orders each
+(\cref{fig:rank}, \cref{tab:app-am}). The $\pm$ gives its range over data orders; if it excludes 1, the optimizers
+differ more than data orders do.
+
+\begin{figure}[H]
+\centering
+\includegraphics{figures/ts10m/ranking.pdf}
+\caption{AdamW's value divided by Muon's at training loss 1.81, for selected metrics; three data orders each; bars:
+range across data orders.}
+\label{fig:rank}
+\end{figure}
+
 \begin{itemize}
 \item \emph{Weights $W$.} Muon's weight matrices have more evenly sized singular values. Their stable rank
 $\|W\|_F^2/\|W\|_2^2$ is 86 against AdamW's 33 (Muon/AdamW $2.61\pm0.04$), and their effective rank 325 against 272. Their
@@ -98,15 +108,14 @@ an artifact of their different learning rates.
 \item \emph{Predictions.} No prediction metric separates the two: every AdamW/Muon range contains 1 (\cref{tab:app-am}).
 \end{itemize}
 
-\begin{figure}[h]
-\centering
-\includegraphics{figures/ts10m/ranking.pdf}
-\caption{AdamW's value divided by Muon's at training loss 1.81, for selected metrics; three data orders each; bars:
-range across data orders.}
-\label{fig:rank}
-\end{figure}
+\paragraph{Step 3: swaps (\cref{fig:swap}).} \emph{Swaps.} A \emph{swap} switches a run of one optimizer (the
+\emph{parent}, on data order 0) to the other optimizer at a \emph{fork step}, then trains it to step 10{,}000 on the
+parent's batches (\cref{app:forks} gives the fork steps, the optimizer state at the swap and the measurement steps).
+An optimizer's \emph{own run} is its run from the start. We swap at nine fork steps from 50 to 4000, in both
+directions. We give each metric's value at step 10{,}000 as a fraction of the way from the parent's value (0) to the
+own run's (1).
 
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\linewidth]{figures/ts10m/swap_traj_adamw_muon.pdf}
 \caption{Swaps on data order 0: five metrics against the step. Top: AdamW to Muon; bottom: Muon to AdamW. Black: the
@@ -115,29 +124,21 @@ the swap).}
 \label{fig:swap}
 \end{figure}
 
-\paragraph{Step 3: swaps (\cref{fig:swap}).} A \emph{swap} switches a run of one optimizer (the \emph{parent}, on
-data order 0) to the other optimizer at a \emph{fork step}, then trains it to step 10{,}000 on the parent's batches
-(\cref{app:forks} gives the fork steps, the optimizer state at the swap and the measurement steps). An optimizer's \emph{own run} is its run from the start.
+\emph{Predictions.} Every swapped run ends as close to the new optimizer's own run as two data orders are
+(0.86--0.95 floors).
 
-We swap at nine fork steps from 50 to 4000, in both directions. \Cref{fig:swap} follows five metrics of each swapped
-run from the swap to step 10{,}000. We give each metric's value at step 10{,}000 as a fraction of the way from the
-parent's value (0) to the own run's (1).
-
-The updates change at once. Within 50 steps of the swap, the cosine between consecutive updates moves to the new
+\emph{Updates switch at once.} Within 50 steps of the swap, the cosine between consecutive updates moves to the new
 optimizer's level (c, h). At step 10{,}000 it is 0.99--1.03 of the way. The spectral norm of $W$ also ends near or
 beyond the own run's value (0.94--1.56 of the way; b, g).
 
-The stable rank of $W$ and the fraction of active MLP units move less the later the swap (a, e, f, j). After a swap
-at step 4000, the stable rank moves 0.25 (AdamW to Muon) and 0.46 (Muon to AdamW) of the way, and the active
-fraction 0.07 and 0.13.
+\emph{Stable rank and MLP sparsity are partly inherited.} The stable rank of $W$ and the fraction of active MLP units
+move less the later the swap (a, e, f, j). After a swap at step 4000, the stable rank moves 0.25 (AdamW to Muon) and
+0.46 (Muon to AdamW) of the way, and the active fraction 0.07 and 0.13.
 
-$\lambda_{\max}$ responds differently in the two swap directions (d, i). After a switch to AdamW, it falls to AdamW's level (1.00--1.18 of
-the way), often after a brief spike. After a switch to Muon, it reaches Muon's level only for swaps up to step 100;
-from step 700 on, it moves at most 0.30 of the way. A swap also changes the learning rate, so part of this response
-may reflect the new rate.
-
-In its predictions, every swapped run ends as close to the new optimizer's own run as two data orders are (0.86--0.95
-floors).
+\emph{Sharpness.} $\lambda_{\max}$ responds differently in the two swap directions (d, i). After a switch to AdamW, it
+falls to AdamW's level (1.00--1.18 of the way), often after a brief spike. After a switch to Muon, it reaches Muon's
+level only for swaps up to step 100; from step 700 on, it moves at most 0.30 of the way. A swap also changes the
+learning rate, so part of this response may reflect the new rate.
 
 \paragraph{Next steps.} (i)~Repeat Steps 1--3 on a larger model (TinyStories-30M) and on character-level Shakespeare.
 (ii)~For each property that differs in Step 2: does it follow directly from Muon's orthogonalized updates, or does it
