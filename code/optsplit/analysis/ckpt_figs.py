@@ -58,14 +58,13 @@ def ranking(metrics, keys, curves, out):
     ax = fig.add_subplot(gs[0])
     L, v = values(m)
     r = {k: [ratio(v[k][a], v[k][b]) for a, b in RATIO_PAIRS] for k in keys}
-    keys = sorted(keys, key=lambda k: -abs(np.log(r[k][0][0])))
     y = np.arange(len(keys))
     for i, ((a, b), c, mk) in enumerate(zip(RATIO_PAIRS, ('k', '0.45', '0.7'), 'os^')):
         mid, _, lo, hi = np.array([r[k][i] for k in keys]).T
         ax.errorbar(mid, y + (i - 1) * 0.25, xerr=[mid - lo, hi - mid], fmt=mk, ms=2.5, color=c, elinewidth=0.8,
                     capsize=1.5, label=f'{NAMES[a]} / {NAMES[b]}')
     ax.set_yticks(y)
-    ax.set_yticklabels([METRICS[k][1] for k in keys])
+    ax.set_yticklabels([METRICS[k][1] + (' (by construction)' if k == 'update_stable_rank' else '') for k in keys])
     ax.invert_yaxis()
     ax.set_xscale('log')
     ax.axvline(1, color='k', lw=0.6)

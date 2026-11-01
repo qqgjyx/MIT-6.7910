@@ -103,28 +103,25 @@ predictions. We compare optimizers by each metric's ratio at training loss 1.81,
 data orders each (\cref{fig:rank}; AdamW and Muon in \cref{tab:app-am}; SGD with momentum as a reference
 in \cref{tab:app-sgd}).
 
-All four metrics of the weight matrices' singular values (spectral norm, stable and effective rank,
-singular-value spread) differ between AdamW and Muon beyond data-order variation (\cref{tab:app-am}), while the prediction metrics
-(entropy, confidence, calibration, accuracy, losses on frequent and rare targets, JS to $n$-gram models) all have
-AdamW/Muon intervals containing 1, all but calibration error's within $1\pm0.03$, as does how far the weights move
-($1.01\pm0.02$). Muon's weight matrices have more even
-singular values: their stable rank $\|W\|_F^2/\|W\|_2^2$ is $2.61\pm0.04$ times AdamW's (86 against 33), and
-AdamW's largest-to-median singular-value ratio $\sigma_1/\sigma_{\rm median}$ is $2.98\pm0.03$ times Muon's (8.0
-against 2.7). AdamW's model uses fewer MLP units, has larger activations and sharper attention, and sits where the
-loss is less curved; relative to Muon's, its fraction of active MLP units is $0.539\pm0.007$ times as large (12\%
-against 22\%), its residual-stream RMS $1.40\pm0.03$ times, its attention entropy $0.899\pm0.014$ times, and its
-Hessian trace $\operatorname{tr}H$ $0.510\pm0.019$ times (top eigenvalue $0.433\pm0.013$ times). Muon's one-step updates have a stable rank $13.1\pm0.2$ times AdamW's (220
-against 17), by construction. SGD differs from both (\cref{tab:app-sgd}): AdamW and Muon end $4.47\pm0.11$ and $4.42\pm0.07$
-times as far from the initialization, take relative steps $10.9\pm1.0$ and $10.8\pm0.9$
-times as large, less aligned with the batch gradient (cosine
-0.24, 0.22 against 0.45), and SGD's $\operatorname{tr}H$ is $18.0\pm0.8$ and $9.18\pm0.20$ times theirs.
+Compared with AdamW's, Muon's weight matrices use their directions more evenly (\cref{tab:app-am}): their stable
+rank $\|W\|_F^2/\|W\|_2^2$ is 86 against 33 ($2.61\pm0.04$ times), their effective rank 325 against 272, and their
+spectral norm (2.9 against 5.4) and largest-to-median singular-value ratio $\sigma_1/\sigma_{\rm median}$ (2.7 against
+8.0) are lower. Consecutive Muon steps are less alike (cosine 0.74 against 0.88); their much higher stable rank (220
+against 17) holds by construction, since Muon orthogonalizes every update. Muon also sits about twice as sharp: the
+top Hessian eigenvalue $\lambda_{\max}$ is 14 against 6.2, and the trace $\operatorname{tr}H$ 2770 against 1400. But
+the two tuned learning rates differ, and across a learning-rate sweep $\lambda_{\max}$ falls about as one over the rate
+(log-log slopes $-0.86$ for AdamW and $-0.84$ for Muon, at the peak of the schedule), so part of this gap reflects the
+rates rather than the optimizer. AdamW's MLP is sparser: 12\% of its units are active, against 22\%. No prediction
+metric separates the two (every AdamW/Muon interval contains 1), and both move equally far from the initialization
+(ratio $1.01\pm0.02$): they differ in the shape of the weights, not in how far they travel. SGD differs from both in
+most metrics (\cref{tab:app-sgd}).
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.8\linewidth]{figures/ts10m/ranking.pdf}
+\includegraphics[width=0.88\linewidth]{figures/ts10m/ranking.pdf}
 \caption{TinyStories-10M, three data orders per optimizer. Left: ratio of two optimizers' values at training loss 1.81
-for selected metrics (log scale; bars: margins; all metrics in \cref{tab:app-am,tab:app-sgd}).
-$\Delta$: change over one step; $g_t$: gradient on the step's batch; $H$: Hessian on 32 training sequences.
+for selected metrics (log scale; bars: margins; all 30 metrics in \cref{tab:app-am,tab:app-sgd}).
+$\Delta$: change over one step; $H$: Hessian on 32 training sequences.
 Middle, right: stable rank of $W$ and $\|\theta-\theta_0\|/\|\theta_0\|$ against training loss; colour: optimizer, line style: data order.}
 \label{fig:rank}
 \end{figure}
