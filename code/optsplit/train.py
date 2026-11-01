@@ -4,7 +4,6 @@ The run directory is $OPTSPLIT_ROOT/runs/<suite>/<name>. If it holds latest.pt t
 `fork.parent` is set it starts from the parent's fork checkpoint (see DESIGN.md)."""
 
 import contextlib
-import itertools
 import json
 import math
 import os
@@ -17,11 +16,9 @@ import torch
 from .config import load_config, run_dir, save_config, step_grid
 from .data import build_data
 from .measure import measure_step
-from .measure.hessian import HVP
 from .measure.step_sharpness import StepSharpness
-from .models import build_model, muon_params
+from .models import build_model
 from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
-from .layerlr.balance import Balancer, StepBalancer
 from .probe import Probe
 
 INTERRUPTED = 3
@@ -55,24 +52,10 @@ def main(argv):
                         num_classes=getattr(data, 'num_classes', None)).to(device)
     opt = build_optimizer(cfg.optimizer, model, cfg)
     shadow = Shadow(model, cfg)
-    balancer, mults = None, []
-    if cfg.balance.variant == 'F':  # fixed multipliers {block: m_a}, set as Balancer.apply does; no balancing
-        mults = [(g, cfg.balance.mults.get(g['block'], 1.0)) for g in opt.param_groups
-                 if g.get('use_muon', True)]  # Muon's auxiliary AdamW keeps the schedule's rate
-    elif cfg.balance.variant:
-        named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
-        if cfg.optimizer == 'muon':  # balanced on the matrices Muon updates
-            named = [(n, p) for n, p in named if n in muon_params(model)[0]]
-        xh, yh = data.fixed_batch('train', cfg.measure.hessian_batch, seed=1)
-        draws = itertools.count(1)
-
-        def hvp():  # on the fixed batch, or on fresh training sequences at every call
-            x, y = data.random_batches(1, cfg.measure.hessian_batch, seed=next(draws))[0] \
-                if cfg.balance.fresh else (xh, yh)
-            return HVP(model, x, y, [p for _, p in named])
-        balancer = Balancer(cfg, opt, named, hvp)
-        if cfg.balance.variant == 'R':  # v2; the old measure is only logged
-            balancer = StepBalancer(cfg, opt, model, data, v1=balancer)
+    rates = None
+    if cfg.get('balance', {}).get('variant'):  # per-layer learning rates (optsplit/layerlr)
+        from .layerlr.rates import LayerRates
+        rates = LayerRates(cfg, opt, model, data)
     probe = Probe(cfg, data)
     T = cfg.train.max_steps
 
@@ -82,8 +65,8 @@ def main(argv):
         model.load_state_dict(ck['model'])
         load_optimizer_state(opt, ck['optimizer'])
         shadow.load(ck['shadow'])
-        if balancer:
-            balancer.load(ck['balance'])
+        if rates:
+            rates.load(ck['balance'])
         start = ck['step']
         print(f'resuming at step {start}')
     elif cfg.fork.parent:
@@ -116,7 +99,7 @@ def main(argv):
     def save_latest(step):
         atomic_save(dict(model=model.state_dict(), optimizer=opt.state_dict(),
                          shadow=shadow.state_dicts(), step=step,
-                         balance=balancer and balancer.state_dict()), out / 'latest.pt')
+                         balance=rates and rates.state_dict()), out / 'latest.pt')
 
     use_amp = device.type == 'cuda' and cfg.train.dtype == 'bfloat16'
     autocast = (lambda: torch.autocast('cuda', dtype=torch.bfloat16)) if use_amp else contextlib.nullcontext
@@ -148,17 +131,10 @@ def main(argv):
                 log('measure', step, **rec)
             break
 
-        if balancer:
-            bal = balancer.step(step, lr_mult(step, cfg))
-            if bal:
-                log('balance', step, **bal)
-        if mults:  # m_a^f, f = 1, or with `balance.ramp: [a, b]` rising linearly from 0 at step a to 1 at step b
-            r = cfg.balance.get('ramp')
-            f = 1.0 if r is None else min(1.0, max(0.0, (step - r[0]) / (r[1] - r[0])))
-            for g, ma in mults:
-                g['lr_mult'] = ma ** f
         x, y = data.get_batch(step)
         set_lr(opt, lr_mult(step, cfg))
+        if rates:
+            rates.before(step, log)
         probed = tracker is not None and tracker.before(step)
         with autocast():
             loss = train_loss(x, y)
@@ -167,10 +143,8 @@ def main(argv):
         opt.step()
         shadow.step()
         opt.zero_grad(set_to_none=True)
-        if balancer:
-            bal = balancer.after(step)
-            if bal:
-                log('balance', step, **bal)
+        if rates:
+            rates.after(step, log)
         if probed:
             log('step_sharpness', step, **tracker.after(x, y, step))
 

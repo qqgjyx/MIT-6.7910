@@ -69,6 +69,7 @@ Comparisons
 def summarize(runs, base):
     from optsplit.analysis.distance import loss_curve
     from optsplit.analysis.split import by_seed
+    from optsplit.layerlr import balance_cfg
 
     def curve(a, b):
         c = loss_curve(a, b)
@@ -76,7 +77,8 @@ def summarize(runs, base):
 
     def info(r, trace):
         keys = ('step', 'lr', 'lambda_max', 'precond_lambda_max')
-        return dict(optimizer=r.optimizer, seed=r.data_seed, cfg=dict(balance=r.cfg.get('balance'),
+        bal = r.cfg.get('balance') and balance_cfg(r.cfg)  # with the defaults, for runs that save only overrides
+        return dict(optimizer=r.optimizer, seed=r.data_seed, cfg=dict(balance=bal,
                     optim=r.cfg.optim[r.optimizer], max_steps=r.cfg.train.max_steps), done=r.done,
                     train=[[x['step'], x['loss']] for x in r.records_of('train')],
                     eval=[[x['step'], x['train_loss'], x['val_loss']] for x in r.records_of('eval')],

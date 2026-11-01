@@ -25,6 +25,7 @@ from optsplit.analysis import eos
 from optsplit.analysis.io import load_runs
 from optsplit.analysis.plots import _group
 from optsplit.data import build_data
+from optsplit.layerlr import balance_cfg
 from optsplit.measure.hessian import HVP, adam_preconditioner, lanczos
 from optsplit.models import build_model, double_backward_ok, layer, muon_params
 from optsplit.optim import build_optimizer, load_optimizer_state
@@ -48,7 +49,8 @@ def rate_vector(cfg, model, named, rate):
     the blocks the balancer leaves out and, for Muon, for the parameters of its auxiliary AdamW. Flat, in the order
     of `named`."""
     hidden = set(muon_params(model)[0]) if cfg.optimizer == 'muon' else {n for n, _ in named}
-    return torch.cat([torch.full((p.numel(),), rate.get(layer(n, cfg.balance.blocks), 1.0) if n in hidden else 1.0,
+    split = balance_cfg(cfg).blocks
+    return torch.cat([torch.full((p.numel(),), rate.get(layer(n, split), 1.0) if n in hidden else 1.0,
                                  device=p.device) for n, p in named])
 
 

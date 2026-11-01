@@ -27,6 +27,7 @@ import torch
 from ..measure.hessian import _grad, adam_preconditioner, flat, lanczos, split
 from ..models import double_backward_ok, layer
 from ..optim.muon import zeropower_via_newtonschulz5
+from . import balance_cfg
 
 
 def threshold(cfg):
@@ -98,7 +99,7 @@ class Balancer:
     def __init__(self, cfg, opt, named, hvp):
         """`named`: the trainable (name, parameter) pairs, in the order of `hvp`'s flat vectors; `hvp()` builds a
         Hessian-vector product at the current parameters. The groups of `opt` name their layer in `block`."""
-        b = self.b = cfg.balance
+        b = self.b = balance_cfg(cfg)
         self.cfg, self.opt, self.hvp = cfg, opt, hvp
         self.params = [p for _, p in named]
         self.blocks = list(dict.fromkeys(layer(n, b.blocks) for n, _ in named))
@@ -232,7 +233,7 @@ class StepBalancer:
     `v1`, a Balancer on the old measure, is only evaluated (at the current rates) and logged for comparison."""
 
     def __init__(self, cfg, opt, model, data, v1=None):
-        b = self.b = cfg.balance
+        b = self.b = balance_cfg(cfg)
         self.opt, self.model, self.data, self.v1 = opt, model, data, v1
         named = [(n, p) for n, p in model.named_parameters() if p.requires_grad]
         self.params = [p for _, p in named]
