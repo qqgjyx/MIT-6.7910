@@ -69,7 +69,7 @@ initialization and the batches, if Muon just followed AdamW's path faster, they 
 at equal step (b). The opposite happens: from step 250 on, their distance is
 larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, but less than a change of
 data order does: from step 500 on, at equal step, AdamW and Muon on the same data order are closer than two data
-orders of one optimizer (a, b). Only at equal loss, with Muon ahead, are they as far apart as two data orders (c).
+orders of one optimizer (a, b).
 
 \emph{Endpoints.} The final AdamW and Muon models are about as far apart as two runs of one optimizer on different
 data orders (c), but Muon ends at a lower validation loss: 1.309 against 1.344 (d).
