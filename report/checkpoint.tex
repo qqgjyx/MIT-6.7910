@@ -36,8 +36,7 @@
 
 \paragraph{Summary.} We train a small language model with AdamW and with Muon, from one initialization and on the
 same mini-batches. (1)~Muon trains faster and on a different path. At equal training
-loss, their predictions differ about as much as two runs on different data orders; their final weights differ
-more. (2)~Muon's weight and update matrices have more evenly sized singular values
+loss, their predictions differ about as much as two runs on different data orders. (2)~Muon's weight and update matrices have more evenly sized singular values
 than AdamW's, beyond data-order variation; no prediction statistic differs. (3)~A run switched to the other optimizer
 mid-training ends up predicting no further from either optimizer's runs than two data orders do. Its updates
 take the new optimizer's form; its weights and activations keep part of the old one's.
@@ -72,9 +71,9 @@ bring them closer than comparing them at equal step (b). The opposite happens: f
 larger at equal loss than at equal step (at step 1000, 0.131 against 0.102). So the paths differ, and by about as much
 as a new data order: at equal loss the distance sits at the floor (median 1.02$\times$).
 
-\emph{Final weights.} Their final weights are further apart than two data orders'. The \emph{loss barrier} between two weight vectors is
-how far the training loss rises, on the straight path between them, above the line joining its end values
-\citep{frankle2020lmc}. It is 3.5--4.1 nats between AdamW and Muon, against 1.2--1.9 between two data orders.
+\emph{Endpoints.} At the lowest training loss both reach, the AdamW--Muon distance is 0.99 floors (c). The final
+models of AdamW and Muon on the same data order are JS 0.056--0.060 apart, and those of two data orders of one
+optimizer 0.057--0.062. Muon ends at a lower validation loss, 1.309 against 1.344 (d).
 
 \paragraph{Step 2: what differs along the way.} We measure 30 properties of each model at 34 points of training, in
 five groups: weights $W$, one-step updates $\Delta W$, loss curvature (Hessian $H$), internal activations and
