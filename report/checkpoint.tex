@@ -48,8 +48,7 @@ take the new optimizer's form; its weights and activations keep part of the old 
 
 \emph{Optimizers.} Muon \citep{jordan2024muon} orthogonalizes the update of each weight matrix in the transformer blocks: it sets the
 update's singular values to about 1. AdamW trains Muon's other parameters. Each optimizer uses the best of five
-learning rates. All runs start from the same weights. Each optimizer runs on the same five \emph{data orders} (sequences
-of mini-batches), so AdamW and Muon on the same data order see exactly the same batches.
+learning rates. All runs start from the same weights. Each optimizer runs on the same five \emph{data orders}.
 
 \emph{Comparing runs.} The distance between two runs is the mean Jensen--Shannon divergence (JS, in bits) of their
 next-token predictions on held-out text. We compare runs at equal training loss, so that speed does not count as a
