@@ -219,3 +219,6 @@ __marimo__/
 
 # Private course notes (not for the public repo)
 docs/
+
+# macOS Finder metadata
+.DS_Store
