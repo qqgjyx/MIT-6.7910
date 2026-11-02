@@ -1,0 +1,12 @@
+# Metrics along training for Figure 2 of the checkpoint (next step (i)): ts10m_traj on ts30m, AdamW and Muon,
+# data orders 0-2, with ts30m_main's learning rates and the steps of ts10m_traj scaled by the training length
+# (x2: 20000 steps): checkpoints at three consecutive steps t, t+1, t+2 at 23 points and at 19998-20000.
+suite: ts30m_traj
+base: ../base/tinystories_30m.yaml
+overrides:
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  log.ckpt_steps: {extra: [50, 51, 52, 100, 101, 102, 200, 201, 202, 300, 301, 302, 400, 401, 402, 500, 501, 502, 600, 601, 602, 800, 801, 802, 1000, 1001, 1002, 1200, 1201, 1202, 1600, 1601, 1602, 2000, 2001, 2002, 2500, 2501, 2502, 3000, 3001, 3002, 4000, 4001, 4002, 5000, 5001, 5002, 6000, 6001, 6002, 8000, 8001, 8002, 10000, 10001, 10002, 12000, 12001, 12002, 14000, 14001, 14002, 16000, 16001, 16002, 18000, 18001, 18002, 19998, 19999]}
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [adamw, muon], train.data_seed: [0, 1, 2]}

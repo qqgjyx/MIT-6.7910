@@ -3,9 +3,10 @@ the metric ranking and the metrics under swaps (from rank_metrics.py's metrics.j
 
     python -m optsplit.analysis.ckpt_figs barriers --lmc ts10m=<lmc_layers.json> ts30m=... shakespeare=... --out f.pdf
     python -m optsplit.analysis.ckpt_figs forks --dir checkpoint/figures/ts10m --out f.pdf
-    python -m optsplit.analysis.ckpt_figs ranking --metrics metrics.json --keys k1 k2 ... [--pairs adamw/muon ...] --out f.pdf
+    python -m optsplit.analysis.ckpt_figs ranking --metrics metrics.json --keys k1 k2 ... [--pairs adamw/muon ...]
+        [--level 1.81] [--xticks 0.3 0.5 ...] --out f.pdf
     python -m optsplit.analysis.ckpt_figs swaps --metrics metrics.json --swap-json swap.json --keys k1 ... --out f.pdf
-    python -m optsplit.analysis.ckpt_figs swap-traj --keys k1 ... --out f.pdf
+    python -m optsplit.analysis.ckpt_figs swap-traj --keys k1 ... [--suite ts10m_forks_dense --pure ts10m_traj] --out f.pdf
 """
 
 import argparse
@@ -52,14 +53,16 @@ def barriers(lmc, out):
     print(f'wrote {out}')
 
 
-def ranking(metrics, keys, curves, out, pairs=RATIO_PAIRS, size=(7.1, 1.5)):
+def ranking(metrics, keys, curves, out, pairs=RATIO_PAIRS, size=(7.1, 1.5), level=1.81, xticks=None):
+    """Ratios at the loss level of metrics.json nearest to `level`; `xticks`: the ratio axis' labelled ticks (default:
+    matplotlib's)."""
     m = json.load(open(metrics))
     levels = np.array(m['levels'])
     ncurves = len(curves)
     fig = plt.figure(figsize=size)
     gs = fig.add_gridspec(1, 1 + ncurves, width_ratios=[1.5] + [1] * ncurves, wspace=0.35)
     ax = fig.add_subplot(gs[0])
-    L, v = values(m)
+    L, v = values(m, level)
     y = np.arange(len(keys))
     for i, (a, b) in enumerate(pairs):
         c, mk = dict(zip(RATIO_PAIRS, zip(('k', '0.45', '0.7'), 'os^')))[a, b]
@@ -71,6 +74,10 @@ def ranking(metrics, keys, curves, out, pairs=RATIO_PAIRS, size=(7.1, 1.5)):
     ax.invert_yaxis()
     ax.set_xscale('log')
     ax.axvline(1, color='k', lw=0.6)
+    if xticks:
+        ax.set_xticks(xticks)
+        ax.xaxis.set_major_formatter(matplotlib.ticker.LogFormatterSciNotation(minor_thresholds=(np.inf, np.inf)))
+        ax.xaxis.set_minor_formatter(matplotlib.ticker.NullFormatter())
     if len(pairs) > 1:
         ax.set_xlabel(f'ratio of values at training loss {L:.2f}')
         ax.legend(frameon=False, loc='lower left', bbox_to_anchor=(0, 1), ncol=3, handlelength=1, columnspacing=0.8)
@@ -193,15 +200,16 @@ def forks(d, out, metrics=None, keys=()):
     print(f'wrote {out}')
 
 
-def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1, 2.6)):
+def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1, 2.6), min_step=10):
     """Whole-model metrics (metrics/trajectory.py) against the step, one row per direction of the AdamW<->Muon swaps
     of `suite`: the parent's optimizer on data order 0 (from `pure`) in black, each swapped run from its fork step
-    (marker) to the end coloured by the fork step, and the new optimizer on data order 0 grey dashed."""
+    (marker) to the end coloured by the fork step (log scale from the first to the last), and the new optimizer on
+    data order 0 grey dashed; points from step `min_step` on."""
     runs = root_dir() / 'runs'
 
     def load(run):
         ds = sorted((json.load(open(f)) for f in (runs / run / 'traj_metrics').glob('*.json')), key=lambda d: d['step'])
-        return lambda k: tuple(zip(*[(d['step'], d[k]) for d in ds if k in d and d['step'] >= 10])) or ((), ())
+        return lambda k: tuple(zip(*[(d['step'], d[k]) for d in ds if k in d and d['step'] >= min_step])) or ((), ())
 
     small = {'font.size': 6, 'axes.titlesize': 6, 'axes.labelsize': 6, 'legend.fontsize': 5.5, 'xtick.labelsize': 5,
              'ytick.labelsize': 5, 'xtick.major.pad': 1.5, 'ytick.major.pad': 1.5, 'axes.labelpad': 2,
@@ -209,7 +217,8 @@ def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1
                                     (('major', 2, 0.6), ('minor', 1, 0.4)) for k, v in
                                     (('size', size), ('width', width))}}  # small text and ticks: room for the panels
     with plt.rc_context(small):
-        cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(50, 4000)
+        forks = sorted(int(p.name.rsplit('_at', 1)[1]) for p in (runs / suite).glob('adamw_to_muon_at*'))
+        cmap, norm = plt.get_cmap('viridis'), matplotlib.colors.LogNorm(forks[0], forks[-1])
         fig, axes = plt.subplots(2, len(keys), figsize=size, sharex=True, layout='constrained')
         fig.get_layout_engine().set(w_pad=1 / 72, h_pad=1 / 72, wspace=0.01, hspace=0.01)
         for row, (a, b) in zip(axes, (('adamw', 'muon'), ('muon', 'adamw'))):
@@ -232,7 +241,6 @@ def swap_traj(keys, out, suite='ts10m_forks_dense', pure='ts10m_traj', size=(7.1
             ax.set_title(METRICS[k][1])
         for ax in axes[1]:
             ax.set_xlabel('step')
-        forks = [s for s, _ in swaps]
         cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm, cmap), ax=axes, label='fork step', aspect=30, pad=0.01)
         cb.set_ticks(forks, labels=[str(s) for s in forks])
         cb.minorticks_off()
@@ -262,10 +270,14 @@ def main():
     s.add_argument('--curves', nargs='+', default=[])
     s.add_argument('--pairs', nargs='+', help='a/b pairs of optimizers (default: all of metric_ratios.PAIRS)')
     s.add_argument('--size', type=float, nargs=2, default=(7.1, 1.5), help='figure width and height (in)')
+    s.add_argument('--level', type=float, default=1.81, help='training loss (the nearest level of metrics.json)')
+    s.add_argument('--xticks', type=float, nargs='+', help='labelled ticks of the ratio axis')
     s.add_argument('--out', required=True)
     s = sub.add_parser('swap-traj')
     s.add_argument('--keys', nargs='+', required=True)
     s.add_argument('--suite', default='ts10m_forks_dense')
+    s.add_argument('--pure', default='ts10m_traj', help='suite of the runs without a swap (data order 0)')
+    s.add_argument('--min-step', type=int, default=10, help='first step drawn')
     s.add_argument('--size', type=float, nargs=2, default=(7.1, 2.6))
     s.add_argument('--out', required=True)
     s = sub.add_parser('swaps')
@@ -279,10 +291,11 @@ def main():
     elif args.fig == 'barriers':
         barriers([tuple(x.split('=', 1)) for x in args.lmc], args.out)
     elif args.fig == 'swap-traj':
-        swap_traj(args.keys, args.out, args.suite, size=args.size)
+        swap_traj(args.keys, args.out, args.suite, args.pure, args.size, args.min_step)
     elif args.fig == 'ranking':
         ranking(args.metrics, args.keys, args.curves, args.out,
-                [tuple(x.split('/')) for x in args.pairs] if args.pairs else RATIO_PAIRS, args.size)
+                [tuple(x.split('/')) for x in args.pairs] if args.pairs else RATIO_PAIRS, args.size, args.level,
+                args.xticks)
     else:
         swaps(args.metrics, args.swap_json, args.keys, args.out)
 

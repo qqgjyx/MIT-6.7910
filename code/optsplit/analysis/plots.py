@@ -37,7 +37,7 @@ def _t_star_step(split, run):
 
 def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps=False, max_loss=None, traj_steps=(),
                traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None, log_offset=None,
-               labels=False):
+               labels=False, loss_ticks=None, traj_room=0.):
     """Left: distance by step for the cross pairs (same data seed) and the noise-floor pairs.
     Right: loss-matched distance with the floor band (or, with `pairs`, every pair as on the left), the episodes
     above the floor (shaded), the first exceedance t* (dotted) and the persistent split (dashed, with its CI).
@@ -48,7 +48,9 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     draws the loss-matched panel's loss axis as in `loss_pairs`. With `val_runs`, their validation loss by optimizer
     (mean over data orders, band from min to max, up to `max_loss`) comes in a last panel; `mark_step` draws a dotted
     line at that step instead of t*. With `pairs`, the step- and loss-matched panels share their y axis and have no
-    t*, episodes or split. `labels`: (a), (b), ... at the top left of the panels."""
+    t*, episodes or split. `labels`: (a), (b), ... at the top left of the panels. `loss_ticks`: the loss-matched
+    panel's ticks with `log_offset` (default LOSS_TICKS). `traj_room`: blank width right of the trajectories, as a
+    fraction of theirs, so that the legend does not cover them."""
     metric = split['metric']
     ylabel = {'js': 'JS (bits)'}.get(metric, metric)
     A, B = by_seed(runs_a), by_seed(runs_b)
@@ -67,6 +69,10 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
     n = 3 + bool(val_runs)
     fig, axes = plt.subplots(1, n, figsize=(13 * n / 3, 3.4))  # panels of the same size as with three
     if traj:
+        if traj_room:
+            x = [p[0] for r in traj[0].values() for p in r['xy']]
+            w = max(x) - min(x)
+            axes[0].set_xlim(min(x) - 0.05 * w, max(x) + (0.05 + traj_room) * w)  # autoscale's margins, plus the room
         trajectories.draw(axes[0], *traj, steps=traj_steps, label_steps=traj_label_steps, name_step=traj_name_step)
         axes[0].get_legend().set_loc('upper right')  # clear of the paths; 'best' also avoids the point labels
         a1, a2, a3 = *axes[1:3], None
@@ -111,7 +117,7 @@ def divergence(runs_a, runs_b, split, path, traj=None, pairs=False, linear_steps
             a2.axvline(split['persist_loss'], color='r', ls='--', label='persistent split')
             a2.axvspan(*split['ci_persist'], color='r', alpha=0.1)
     a2.set(ylabel=ylabel)
-    _loss_axis(a2, max_loss, log_offset)
+    _loss_axis(a2, max_loss, log_offset, loss_ticks)
     if not pairs:  # with pairs, the lines are those of the step panel
         a2.legend(fontsize=7)
     if a3 is not None:
@@ -383,7 +389,7 @@ def loss_pairs(runs, path, max_loss=None, log_offset=None):
     _save(fig, path)
 
 
-def _loss_axis(ax, max_loss=None, log_offset=None):
+def _loss_axis(ax, max_loss=None, log_offset=None, ticks=None):
     """Training loss, decreasing to the right, up to `max_loss`; on log(L - log_offset) with ticks at loss values."""
     if log_offset is not None:
         ax.set_xscale('function', functions=(lambda x: np.log(x - log_offset), lambda y: np.exp(y) + log_offset))
@@ -391,7 +397,7 @@ def _loss_axis(ax, max_loss=None, log_offset=None):
     ax.set(xlabel='training loss', xlim=(None, max_loss))
     if log_offset is not None:
         lo, hi = ax.get_xlim()
-        ticks = [t for t in LOSS_TICKS if lo <= t <= hi]
+        ticks = [t for t in ticks or LOSS_TICKS if lo <= t <= hi]
         ax.set_xticks(ticks, [f'{t:g}' for t in ticks])
     ax.invert_xaxis()
 
@@ -406,11 +412,12 @@ def _json(path):
 
 def fig_divergence(runs_a, runs_b, split=None, metric='js', traj=None, pairs=False, linear_steps=False, max_loss=None,
                    traj_steps=(), traj_label_steps=(), val_runs=None, mark_step=None, traj_name_step=None,
-                   log_offset=None, labels=False, out=None, name='divergence'):
+                   log_offset=None, labels=False, loss_ticks=None, traj_room=0., out=None, name='divergence'):
     runs_a, runs_b = load_runs(runs_a), load_runs(runs_b)
     divergence(runs_a, runs_b, _json(split) or locate_split(runs_a, runs_b, metric=metric, n_boot=200),
                _path(out, name), traj and trajectories.parse(traj), pairs, linear_steps, max_loss, traj_steps,
-               traj_label_steps, val_runs and load_runs(val_runs), mark_step, traj_name_step, log_offset, labels)
+               traj_label_steps, val_runs and load_runs(val_runs), mark_step, traj_name_step, log_offset, labels,
+               loss_ticks, traj_room)
 
 
 def fig_sharpness(runs, split=None, out=None, name='sharpness'):
@@ -483,6 +490,8 @@ def main():
     s.add_argument('--traj-name-step', type=int, help='of the --traj-steps, the one to write the data order at')
     s.add_argument('--log-offset', type=float, help='loss-matched panel on log(L - offset), as in pairs')
     s.add_argument('--labels', action='store_true', help='panel labels (a), (b), ...')
+    s.add_argument('--loss-ticks', type=float, nargs='+', help='with --log-offset, ticks of the loss-matched panel')
+    s.add_argument('--traj-room', type=float, help='blank width right of the trajectories (fraction of theirs)')
     s = sub.add_parser('sharpness', parents=[common])
     s.add_argument('--runs', nargs='+', required=True)
     s.add_argument('--split')

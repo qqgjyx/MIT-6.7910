@@ -1,0 +1,13 @@
+# Parents of shakespeare_forks_dense: shakespeare_main's AdamW and Muon runs on data order 0 again, with the
+# other optimizer's state in shadow and fork checkpoints at the fork steps of TS-10M scaled by the training length
+# (x0.15), 8, 15, 30, 60, 105, 150, 225, 375, 600. No Hessian measurements (they do not change the run).
+suite: shakespeare_parent
+base: ../base/shakespeare_char.yaml
+overrides:
+  optim.adamw.lr: 3.0e-4
+  optim.muon.lr: 0.04
+  measure.hessian: false
+  measure.delta_loss: false
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [adamw, muon], train.data_seed: 0, shadow: [[adamw, muon]], log.fork_steps: [[8, 15, 30, 60, 105, 150, 225, 375, 600]]}

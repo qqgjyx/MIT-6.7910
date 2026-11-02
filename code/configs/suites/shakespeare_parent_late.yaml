@@ -1,0 +1,11 @@
+# The parents of shakespeare_forks_dense (shakespeare_parent's d0 runs) continued from their last fork step, 600, with the
+# same optimizer, data order and shadow state, to save fork checkpoints at 60, 75 and 90% of training:
+# 900, 1125, 1350. No Hessian measurements (they do not change the run).
+suite: shakespeare_parent_late
+base: ../base/shakespeare_char.yaml
+overrides:
+  measure.hessian: false
+  measure.delta_loss: false
+runs:
+  - {fork.parent: shakespeare_parent/adamw_d0, optimizer: adamw, fork.step: 600, log.fork_steps: [[900, 1125, 1350]], name: adamw_d0}
+  - {fork.parent: shakespeare_parent/muon_d0, optimizer: muon, fork.step: 600, log.fork_steps: [[900, 1125, 1350]], name: muon_d0}

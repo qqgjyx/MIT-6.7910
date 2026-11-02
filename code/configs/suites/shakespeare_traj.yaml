@@ -1,0 +1,12 @@
+# Metrics along training for Figure 2 of the checkpoint (next step (i)): ts10m_traj on shakespeare, AdamW and Muon,
+# data orders 0-2, with shakespeare_main's learning rates and the steps of ts10m_traj scaled by the training length
+# (x0.15: 1500 steps): checkpoints at three consecutive steps t, t+1, t+2 at 23 points and at 1498-1500.
+suite: shakespeare_traj
+base: ../base/shakespeare_char.yaml
+overrides:
+  optim.adamw.lr: 3.0e-4
+  optim.muon.lr: 0.04
+  log.ckpt_steps: {extra: [4, 5, 6, 8, 9, 10, 15, 16, 17, 22, 23, 24, 30, 31, 32, 38, 39, 40, 45, 46, 47, 60, 61, 62, 75, 76, 77, 90, 91, 92, 120, 121, 122, 150, 151, 152, 188, 189, 190, 225, 226, 227, 300, 301, 302, 375, 376, 377, 450, 451, 452, 600, 601, 602, 750, 751, 752, 900, 901, 902, 1050, 1051, 1052, 1200, 1201, 1202, 1350, 1351, 1352, 1498, 1499]}
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [adamw, muon], train.data_seed: [0, 1, 2]}
