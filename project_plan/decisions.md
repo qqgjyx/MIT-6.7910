@@ -7,7 +7,7 @@ Each entry: what the decision is about, the options, what we chose and why.
 - **Options:** (a) experiments only; (b) a new theorem; (c) experiments plus a check against known theory.
 - **Chosen:** (c). The professor's three requirements (model bank, two metrics, swap) are experimental. On linearly separable data the limits are known (ℓ2 for GD, ℓ∞ for Adam, spectral for Muon), so the swap has an exact prediction there, which validates the pipeline. A new theorem for nonlinear networks is unrealistic in two months.
 
-## 2. Tasks
+## 2. Tasks (superseded by 7)
 - **About:** where the model bank is built.
 - **Options:** linear separable data; Vasudeva's Gaussian setting with a two-layer network; MNIST or CIFAR-10 with an MLP or CNN; a small transformer language model (TinyStories); spurious-correlation benchmarks (Waterbirds, colored MNIST); ReLU or smooth activations.
 - **Chosen:** three tasks, all with GELU:
@@ -23,7 +23,7 @@ Each entry: what the decision is about, the options, what we chose and why.
   - Vasudeva's Gaussian setting was dropped: it came with a theoretical prediction, but a second synthetic task adds little over task 0.
   - Smooth activations: with ReLU the input Hessian is zero almost everywhere, so second- and third-order metrics would be meaningless; ReLU is also rare in current models.
 
-## 3. What "matched loss" means
+## 3. What "matched loss" means (superseded by 6 and 8)
 - **About:** the condition under which models count as risk-equivalent.
 - **Options:** stop at fixed training-loss targets (e.g. before and after interpolation); train to convergence; same test loss or accuracy; same number of steps; same compute.
 - **Chosen:** train every run to convergence (training-loss plateau), and report final training and test loss with every metric.
@@ -47,7 +47,7 @@ Each entry: what the decision is about, the options, what we chose and why.
   - Norms are what linear theory predicts each optimizer keeps small, so they test those predictions directly; using several avoids picking the one that favours a given optimizer.
   - Region counts were dropped: they need piecewise-linear networks and say little about smooth functions.
 
-## 5. Swap design
+## 5. Swap design (timing superseded by 9; shadow state and control kept)
 - **About:** the causal intervention.
 - **Options:** one pair or all pairs; one swap time or several; how to start B: cold state with a learning-rate re-warm, or B's state accumulated in shadow during A's run; controls: none, or continue with the same optimizer.
 - **Chosen:** all 6 ordered pairs, swapped once, after convergence: from A's converged model, continued with B until it converges again. B's momentum and second-moment buffers are accumulated in shadow from A's gradients during A's run (without applying B's updates), so B starts warm. One control: continue with A for the same number of steps. The result is the fraction of the A-versus-B gap a swap closes.
@@ -57,10 +57,10 @@ Each entry: what the decision is about, the options, what we chose and why.
 
 ## Assumptions to check
 - **Deadlines:** initial checkpoint Oct 30 (first results needed), project discussion in the first two weeks of November, presentation Dec 1–4, final paper Dec 11. Experiments are planned to finish by Nov 30.
-- **Split of work:** Juntang leads CIFAR-10, and Víctor leads the linear check and the language model. This is a placeholder until you agree with Juntang.
+- **Split of work:** see the end of this file.
 
 ## Revision after the TA meeting (Oct 8)
-The plan above was rewritten around *when* optimizers diverge, following the TA's suggestions. Decisions 2-5 are superseded where they conflict with the points below.
+The plan above was rewritten around *when* optimizers diverge, following the TA's suggestions. Decisions 2, 3 and 5 are marked where the points below replace them; decision 4's metrics now score where swaps land, with the third-order ones if time allows.
 
 ### 6. Main question
 - **About:** what the project measures.

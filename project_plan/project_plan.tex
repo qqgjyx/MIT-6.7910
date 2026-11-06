@@ -1,20 +1,11 @@
 \documentclass[10pt]{article}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage[margin=0.7in]{geometry}
-\usepackage{amsmath,amssymb}
-\usepackage{microtype}
-\usepackage{multicol}
-\usepackage{enumitem}
-\usepackage[dvipsnames]{xcolor}
-\usepackage[backend=bibtex,style=authoryear,natbib=true,maxcitenames=2,maxbibnames=4,minbibnames=3,uniquelist=false,uniquename=false,giveninits=true,doi=false,isbn=false,url=false,eprint=false]{biblatex}
+\input{../litreview/preamble}
 \addbibresource{../litreview/refs.bib}
 \addbibresource{plan_refs.bib}
-\usepackage[colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
+\usepackage{multicol}
+\geometry{margin=0.7in}
+\ExecuteBibliographyOptions{eprint=false}
 \setlength{\parskip}{3pt}
-\setlength{\parindent}{0pt}
-\setlist{nosep,leftmargin=*}
 
 \title{\vspace{-1.6em}Together First, Apart Later? When Optimizers Start to Learn Different Functions\\[2pt]
 \large Project plan (9.520, Fall 2026)}
