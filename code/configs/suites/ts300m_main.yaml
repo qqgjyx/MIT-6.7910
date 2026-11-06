@@ -1,0 +1,8 @@
+# Optional larger scale: the three optimizers at ~300M parameters, two data orders, fork checkpoints on d0.
+suite: ts300m_main
+base: ../base/tinystories_300m.yaml
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 0, shadow: [[sgd, adamw, muon]],
+     log.fork_steps: [[300, 1000, 2000, 4000, 8000]]}
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 1}

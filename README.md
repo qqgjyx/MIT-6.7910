@@ -19,6 +19,10 @@ page of implications.
 (nanoGPT), plus a moonshot on which layers carry the sharpness at the edge of stability.
 `project_plan/decisions.md` logs each design choice and why.
 
+## Topic 3 project code
+
+`code/` holds the experiments of `project_plan/project_plan.pdf` (setup and usage in `code/README.md`).
+
 ## Building
 
 Run `latexmk -pdf <file>.tex` inside the document's folder. Topics 1 and 3 and the plan share

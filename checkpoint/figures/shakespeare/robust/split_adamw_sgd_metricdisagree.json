@@ -1,0 +1,209 @@
+{
+ "metric": "disagree",
+ "margin_mult": 0.5,
+ "margin_add": 0.0,
+ "k": 3,
+ "tol": 0.02,
+ "optimizer_a": "adamw",
+ "optimizer_b": "sgd",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "runs_a": [
+  "shakespeare_main/adamw_d0",
+  "shakespeare_main/adamw_d1",
+  "shakespeare_main/adamw_d2",
+  "shakespeare_main/adamw_d3",
+  "shakespeare_main/adamw_d4"
+ ],
+ "runs_b": [
+  "shakespeare_main/sgd_d0",
+  "shakespeare_main/sgd_d1",
+  "shakespeare_main/sgd_d2",
+  "shakespeare_main/sgd_d3",
+  "shakespeare_main/sgd_d4"
+ ],
+ "t_star_loss": 4.22689962387085,
+ "ci_loss": [
+  4.22689962387085,
+  4.22689962387085
+ ],
+ "boot_found": 1.0,
+ "steps": {
+  "shakespeare_main/adamw_d0": 1,
+  "shakespeare_main/adamw_d1": 1,
+  "shakespeare_main/adamw_d2": 1,
+  "shakespeare_main/adamw_d3": 1,
+  "shakespeare_main/adamw_d4": 2,
+  "shakespeare_main/sgd_d0": 1,
+  "shakespeare_main/sgd_d1": 1,
+  "shakespeare_main/sgd_d2": 1,
+  "shakespeare_main/sgd_d3": 1,
+  "shakespeare_main/sgd_d4": 1
+ },
+ "step_ci": {
+  "shakespeare_main/adamw_d0": [
+   1,
+   1
+  ],
+  "shakespeare_main/adamw_d1": [
+   1,
+   1
+  ],
+  "shakespeare_main/adamw_d2": [
+   1,
+   1
+  ],
+  "shakespeare_main/adamw_d3": [
+   1,
+   1
+  ],
+  "shakespeare_main/adamw_d4": [
+   2,
+   2
+  ],
+  "shakespeare_main/sgd_d0": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d1": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d2": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d3": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d4": [
+   1,
+   1
+  ]
+ },
+ "episodes": [
+  [
+   4.22689962387085,
+   3.100539445877075
+  ]
+ ],
+ "persist_loss": NaN,
+ "ci_persist": [
+  NaN,
+  NaN
+ ],
+ "boot_found_persist": 0.0,
+ "steps_persist": {
+  "shakespeare_main/adamw_d0": null,
+  "shakespeare_main/adamw_d1": null,
+  "shakespeare_main/adamw_d2": null,
+  "shakespeare_main/adamw_d3": null,
+  "shakespeare_main/adamw_d4": null,
+  "shakespeare_main/sgd_d0": null,
+  "shakespeare_main/sgd_d1": null,
+  "shakespeare_main/sgd_d2": null,
+  "shakespeare_main/sgd_d3": null,
+  "shakespeare_main/sgd_d4": null
+ },
+ "grid": [
+  4.298804759979248,
+  4.22689962387085,
+  4.091583251953125,
+  3.9203882217407227,
+  3.761265754699707,
+  3.644296884536743,
+  3.4705662727355957,
+  3.4059910774230957,
+  3.360631227493286,
+  3.283456802368164,
+  3.2039952278137207,
+  3.100539445877075,
+  2.984931468963623,
+  2.866640567779541,
+  2.7696590423583984,
+  2.6899263858795166,
+  2.616004705429077
+ ],
+ "cross": [
+  0.0,
+  0.11256494988797532,
+  0.16052217038141633,
+  0.22086862565297766,
+  0.09840843454675803,
+  0.008067326670847258,
+  0.3117741714897277,
+  0.19708112724542143,
+  0.12832138828897313,
+  0.2679406663822939,
+  0.10930282356443737,
+  0.33900021096491884,
+  0.39833004741776723,
+  0.36430958918715894,
+  0.33241185994038586,
+  0.28581763042902697,
+  0.26798301267459007
+ ],
+ "floor": [
+  0.0,
+  0.011298215433346743,
+  0.022664124498266984,
+  0.02197576141360607,
+  0.005363242661010217,
+  0.000946257754438775,
+  0.0185921698671874,
+  0.05066911699282822,
+  0.08360832887910677,
+  0.04042778680874143,
+  0.056369915077286156,
+  0.04970949370931573,
+  0.3125214712716865,
+  0.38168847156867364,
+  0.32429540681197333,
+  0.23706257809637626,
+  0.2622181808163827
+ ],
+ "floor_lo": [
+  0.0,
+  0.006641600909523108,
+  0.011072217050453166,
+  0.0070581781019787085,
+  0.002857128347704808,
+  7.42444916140523e-05,
+  0.0015745626331913779,
+  0.00994873046875,
+  0.0159912109375,
+  0.0,
+  0.003424353237432438,
+  0.009103700064698185,
+  0.0408935546875,
+  0.05714807327382245,
+  0.04595947265625,
+  0.07867431640625,
+  0.06640625
+ ],
+ "floor_hi": [
+  0.0,
+  0.01616263990125734,
+  0.02813720703125,
+  0.0308837890625,
+  0.00872802734375,
+  0.0015869140625,
+  0.034770838336236363,
+  0.08362675083259194,
+  0.15621342239380465,
+  0.07726472180647434,
+  0.11839950487194169,
+  0.0731201171875,
+  0.5300040232202764,
+  0.48299814915032785,
+  0.37514453472968196,
+  0.29658490952404404,
+  0.3889380126189589
+ ]
+}

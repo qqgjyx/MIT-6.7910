@@ -1,0 +1,891 @@
+{
+ "summary": {
+  "adamw, other data": {
+   "validation": 0.06314362924207341,
+   "shuffled": 0.19569408893585205,
+   "random": 0.27677205204963684
+  },
+  "adamw, other init": {
+   "validation": 0.07317685857415199,
+   "shuffled": 0.23948835730552673,
+   "random": 0.3536930978298187
+  },
+  "adamw-muon": {
+   "validation": 0.2640479164464133,
+   "shuffled": 0.5315561805452619,
+   "random": 0.6075930765696934
+  },
+  "adamw-sgd": {
+   "validation": 0.33946561387607027,
+   "shuffled": 0.3511547957147871,
+   "random": 0.47668822748320444
+  },
+  "muon, other data": {
+   "validation": 0.29228213971311395,
+   "shuffled": 0.5678459731015292,
+   "random": 0.6202866326678883
+  },
+  "muon, other init": {
+   "validation": 0.2916261047124863,
+   "shuffled": 0.5707263052463531,
+   "random": 0.6271670699119568
+  },
+  "muon-sgd": {
+   "validation": 0.5418220588139125,
+   "shuffled": 0.598450413772038,
+   "random": 0.6541177715573993
+  },
+  "sgd, other data": {
+   "validation": 0.12652700597589667,
+   "shuffled": 0.1523098424077034,
+   "random": 0.35635658827694977
+  },
+  "sgd, other init": {
+   "validation": 0.09073618650436402,
+   "shuffled": 0.11349914707243443,
+   "random": 0.3493811696767807
+  }
+ },
+ "pairs": [
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_initseed/adamw_i1_d1",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06450909376144409,
+    "shuffled": 0.2027982771396637,
+    "random": 0.27463266253471375
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_initseed/muon_i1_d0",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.2636793553829193,
+    "shuffled": 0.5295279622077942,
+    "random": 0.5984017848968506
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_initseed/sgd_i1_d0",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.34250035881996155,
+    "shuffled": 0.35021132230758667,
+    "random": 0.459672212600708
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_main/adamw_d0",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.0683535784482956,
+    "shuffled": 0.23626098036766052,
+    "random": 0.33488863706588745
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_main/adamw_d1",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07355009019374847,
+    "shuffled": 0.2410515993833542,
+    "random": 0.3583753705024719
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_main/adamw_d2",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07235562056303024,
+    "shuffled": 0.23922699689865112,
+    "random": 0.34508904814720154
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_main/adamw_d3",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07252632826566696,
+    "shuffled": 0.2383606731891632,
+    "random": 0.335744708776474
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d0",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07441512495279312,
+    "shuffled": 0.244083434343338,
+    "random": 0.35814881324768066
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_initseed/muon_i1_d1",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.2597119212150574,
+    "shuffled": 0.5292434096336365,
+    "random": 0.6135014295578003
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_initseed/sgd_i1_d1",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.3898458480834961,
+    "shuffled": 0.37574732303619385,
+    "random": 0.5624570846557617
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_main/adamw_d0",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07536952942609787,
+    "shuffled": 0.2391151338815689,
+    "random": 0.35991284251213074
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_main/adamw_d1",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.06903686374425888,
+    "shuffled": 0.23339642584323883,
+    "random": 0.35548704862594604
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_main/adamw_d2",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07433658838272095,
+    "shuffled": 0.2404436618089676,
+    "random": 0.36271917819976807
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_main/adamw_d3",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.0739784687757492,
+    "shuffled": 0.24075575172901154,
+    "random": 0.35313016176223755
+   }
+  },
+  {
+   "a": "shakespeare_initseed/adamw_i1_d1",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other init",
+   "js": {
+    "validation": 0.07784639298915863,
+    "shuffled": 0.24218891561031342,
+    "random": 0.3734351694583893
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_initseed/muon_i1_d1",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2907254099845886,
+    "shuffled": 0.5642750263214111,
+    "random": 0.625104546546936
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_initseed/sgd_i1_d0",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.5478797554969788,
+    "shuffled": 0.593497633934021,
+    "random": 0.6478098034858704
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_main/muon_d0",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.2879374325275421,
+    "shuffled": 0.5681957602500916,
+    "random": 0.6199672222137451
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_main/muon_d1",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.29560795426368713,
+    "shuffled": 0.5703808069229126,
+    "random": 0.6253624558448792
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_main/muon_d2",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.2890232503414154,
+    "shuffled": 0.5696893334388733,
+    "random": 0.6278084516525269
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_main/muon_d3",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.29322952032089233,
+    "shuffled": 0.570697009563446,
+    "random": 0.6232737302780151
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d0",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.29139044880867004,
+    "shuffled": 0.5765610337257385,
+    "random": 0.6224465370178223
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_initseed/sgd_i1_d1",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.5821624994277954,
+    "shuffled": 0.6094045042991638,
+    "random": 0.6932942271232605
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_main/muon_d0",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.28851133584976196,
+    "shuffled": 0.5701669454574585,
+    "random": 0.631270170211792
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_main/muon_d1",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.2914767265319824,
+    "shuffled": 0.5719596743583679,
+    "random": 0.630069375038147
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_main/muon_d2",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.2940793037414551,
+    "shuffled": 0.574080228805542,
+    "random": 0.631363034248352
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_main/muon_d3",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.29155296087265015,
+    "shuffled": 0.5655851364135742,
+    "random": 0.6267585754394531
+   }
+  },
+  {
+   "a": "shakespeare_initseed/muon_i1_d1",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other init",
+   "js": {
+    "validation": 0.29345211386680603,
+    "shuffled": 0.5699471235275269,
+    "random": 0.6333511471748352
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_initseed/sgd_i1_d1",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.07145585119724274,
+    "shuffled": 0.10162044316530228,
+    "random": 0.463064581155777
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_main/sgd_d0",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.05687027797102928,
+    "shuffled": 0.08663703501224518,
+    "random": 0.263754278421402
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_main/sgd_d1",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.10471627116203308,
+    "shuffled": 0.13337121903896332,
+    "random": 0.39697498083114624
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.03715915232896805,
+    "shuffled": 0.05791713297367096,
+    "random": 0.25657719373703003
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.04249660670757294,
+    "shuffled": 0.06133189797401428,
+    "random": 0.2322472333908081
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d0",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.20341366529464722,
+    "shuffled": 0.23164287209510803,
+    "random": 0.35637515783309937
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d1",
+   "b": "shakespeare_main/sgd_d0",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.0353173203766346,
+    "shuffled": 0.04921901226043701,
+    "random": 0.43938714265823364
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d1",
+   "b": "shakespeare_main/sgd_d1",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.050129152834415436,
+    "shuffled": 0.06116637960076332,
+    "random": 0.2991168200969696
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d1",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.06231114640831947,
+    "shuffled": 0.09454243630170822,
+    "random": 0.4354475736618042
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d1",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.06055949255824089,
+    "shuffled": 0.08816047757863998,
+    "random": 0.3536267876625061
+   }
+  },
+  {
+   "a": "shakespeare_initseed/sgd_i1_d1",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other init",
+   "js": {
+    "validation": 0.2543887794017792,
+    "shuffled": 0.27100300788879395,
+    "random": 0.46030452847480774
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/adamw_d1",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06236669421195984,
+    "shuffled": 0.19163042306900024,
+    "random": 0.27124130725860596
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/adamw_d2",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06149577349424362,
+    "shuffled": 0.18340975046157837,
+    "random": 0.2625690698623657
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/adamw_d3",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06326248496770859,
+    "shuffled": 0.193889319896698,
+    "random": 0.26193955540657043
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06304071843624115,
+    "shuffled": 0.18999707698822021,
+    "random": 0.2721706032752991
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/muon_d0",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.2688763737678528,
+    "shuffled": 0.5313795804977417,
+    "random": 0.6097720265388489
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d0",
+   "b": "shakespeare_main/sgd_d0",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.3707006871700287,
+    "shuffled": 0.3631589412689209,
+    "random": 0.5139579772949219
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d1",
+   "b": "shakespeare_main/adamw_d2",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06251260638237,
+    "shuffled": 0.19724802672863007,
+    "random": 0.27898985147476196
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d1",
+   "b": "shakespeare_main/adamw_d3",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06284485757350922,
+    "shuffled": 0.20142754912376404,
+    "random": 0.2858007550239563
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d1",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06423626840114594,
+    "shuffled": 0.20188674330711365,
+    "random": 0.281984806060791
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d1",
+   "b": "shakespeare_main/muon_d1",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.26426824927330017,
+    "shuffled": 0.531404972076416,
+    "random": 0.6159325242042542
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d1",
+   "b": "shakespeare_main/sgd_d1",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.4095190763473511,
+    "shuffled": 0.3869500756263733,
+    "random": 0.5211068987846375
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d2",
+   "b": "shakespeare_main/adamw_d3",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06256049126386642,
+    "shuffled": 0.19494393467903137,
+    "random": 0.28276535868644714
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d2",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06356091797351837,
+    "shuffled": 0.19473986327648163,
+    "random": 0.285015732049942
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d2",
+   "b": "shakespeare_main/muon_d2",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.2586791515350342,
+    "shuffled": 0.531424343585968,
+    "random": 0.6124829053878784
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d2",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.34598100185394287,
+    "shuffled": 0.3600804805755615,
+    "random": 0.47823092341423035
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d3",
+   "b": "shakespeare_main/adamw_d4",
+   "group": "adamw, other data",
+   "js": {
+    "validation": 0.06419001519680023,
+    "shuffled": 0.20066401362419128,
+    "random": 0.2873828709125519
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d3",
+   "b": "shakespeare_main/muon_d3",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.2651776373386383,
+    "shuffled": 0.5319523215293884,
+    "random": 0.5951990485191345
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d3",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.3475891649723053,
+    "shuffled": 0.35777124762535095,
+    "random": 0.42867881059646606
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d4",
+   "b": "shakespeare_main/muon_d4",
+   "group": "adamw-muon",
+   "js": {
+    "validation": 0.26794272661209106,
+    "shuffled": 0.5359606742858887,
+    "random": 0.6078618168830872
+   }
+  },
+  {
+   "a": "shakespeare_main/adamw_d4",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "adamw-sgd",
+   "js": {
+    "validation": 0.1701231598854065,
+    "shuffled": 0.26416417956352234,
+    "random": 0.37271368503570557
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d0",
+   "b": "shakespeare_main/muon_d1",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.29667043685913086,
+    "shuffled": 0.5652897357940674,
+    "random": 0.6177281141281128
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d0",
+   "b": "shakespeare_main/muon_d2",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2895601689815521,
+    "shuffled": 0.5638043880462646,
+    "random": 0.6151691675186157
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d0",
+   "b": "shakespeare_main/muon_d3",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.29235050082206726,
+    "shuffled": 0.5650141835212708,
+    "random": 0.620486855506897
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d0",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2933925986289978,
+    "shuffled": 0.5706913471221924,
+    "random": 0.6171643733978271
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d0",
+   "b": "shakespeare_main/sgd_d0",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.5730105638504028,
+    "shuffled": 0.6034374833106995,
+    "random": 0.6670414805412292
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d1",
+   "b": "shakespeare_main/muon_d2",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2917611598968506,
+    "shuffled": 0.5694562196731567,
+    "random": 0.6308625936508179
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d1",
+   "b": "shakespeare_main/muon_d3",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2922843098640442,
+    "shuffled": 0.5699259638786316,
+    "random": 0.6137471199035645
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d1",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.29250460863113403,
+    "shuffled": 0.5690222978591919,
+    "random": 0.6199447512626648
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d1",
+   "b": "shakespeare_main/sgd_d1",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.6078469753265381,
+    "shuffled": 0.6260543465614319,
+    "random": 0.6791379451751709
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d2",
+   "b": "shakespeare_main/muon_d3",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.29220545291900635,
+    "shuffled": 0.5645577907562256,
+    "random": 0.6252951622009277
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d2",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2934095859527588,
+    "shuffled": 0.5734801292419434,
+    "random": 0.6203840374946594
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d2",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.5466748476028442,
+    "shuffled": 0.6062067151069641,
+    "random": 0.6658776998519897
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d3",
+   "b": "shakespeare_main/muon_d4",
+   "group": "muon, other data",
+   "js": {
+    "validation": 0.2902393043041229,
+    "shuffled": 0.5707886219024658,
+    "random": 0.6172662377357483
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d3",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.548525869846344,
+    "shuffled": 0.6023877263069153,
+    "random": 0.6210761070251465
+   }
+  },
+  {
+   "a": "shakespeare_main/muon_d4",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "muon-sgd",
+   "js": {
+    "validation": 0.3866539001464844,
+    "shuffled": 0.5481644868850708,
+    "random": 0.6045871376991272
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d0",
+   "b": "shakespeare_main/sgd_d1",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.06394816935062408,
+    "shuffled": 0.07755443453788757,
+    "random": 0.38803398609161377
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d0",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.04832678660750389,
+    "shuffled": 0.07752016186714172,
+    "random": 0.272093802690506
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d0",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.04291554167866707,
+    "shuffled": 0.06901935487985611,
+    "random": 0.2916220724582672
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d0",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.23670276999473572,
+    "shuffled": 0.25967809557914734,
+    "random": 0.414531409740448
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d1",
+   "b": "shakespeare_main/sgd_d2",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.09492330998182297,
+    "shuffled": 0.1273210346698761,
+    "random": 0.39322686195373535
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d1",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.0916508212685585,
+    "shuffled": 0.11989952623844147,
+    "random": 0.2805600166320801
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d1",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.2795504033565521,
+    "shuffled": 0.29140737652778625,
+    "random": 0.4307030141353607
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d2",
+   "b": "shakespeare_main/sgd_d3",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.04163990914821625,
+    "shuffled": 0.06572405248880386,
+    "random": 0.2778247594833374
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d2",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.20901651680469513,
+    "shuffled": 0.24259395897388458,
+    "random": 0.3949250876903534
+   }
+  },
+  {
+   "a": "shakespeare_main/sgd_d3",
+   "b": "shakespeare_main/sgd_d4",
+   "group": "sgd, other data",
+   "js": {
+    "validation": 0.2116669863462448,
+    "shuffled": 0.2430698275566101,
+    "random": 0.31333687901496887
+   }
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+# Metrics along training (ranking of whole-model metrics): AdamW, Muon and SGD at 0.06, data orders 0-2, with the
+# logging and measurements of ts10m_main plus checkpoints at three consecutive steps t, t+1, t+2 at 24 points, so
+# that the updates of steps t and t+1 (and their alignment) can be read off the weights (metrics/trajectory.py).
+suite: ts10m_traj
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.06
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  log.ckpt_steps: {every: 1000, geometric: 12, extra: [25, 26, 27, 50, 51, 52, 100, 101, 102, 150, 151, 152, 200, 201,
+    202, 250, 251, 252, 300, 301, 302, 400, 401, 402, 500, 501, 502, 600, 601, 602, 800, 801, 802, 1000, 1001, 1002,
+    1250, 1251, 1252, 1500, 1501, 1502, 2000, 2001, 2002, 2500, 2501, 2502, 3000, 3001, 3002, 4000, 4001, 4002,
+    5000, 5001, 5002, 6000, 6001, 6002, 7000, 7001, 7002, 8000, 8001, 8002, 9000, 9001, 9002, 9998, 9999]}
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: [0, 1, 2]}

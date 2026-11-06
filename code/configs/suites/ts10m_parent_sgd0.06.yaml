@@ -1,0 +1,14 @@
+# Parent of the swaps with SGD at its re-tuned rate 0.06 on TinyStories-10M (ts10m_forks_sgd0.06): SGD data order 0
+# as in ts10m_main_sgd0.06, plus the AdamW and Muon states in shadow and the fork checkpoints of ts10m_main. The
+# shadows step with rate 0 and do not touch the weights, so this run is ts10m_main_sgd0.06/sgd_d0 up to numerical
+# noise; it is the pure SGD run of data order 0 in the swap analysis.
+suite: ts10m_parent_sgd0.06
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.06
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, train.data_seed: 0, shadow: [[sgd, adamw, muon]],
+     log.fork_steps: [[50, 100, 200, 400, 700, 1000, 1500, 2500, 4000]]}

@@ -1,0 +1,194 @@
+{
+ "metric": "js",
+ "margin_mult": 0.5,
+ "margin_add": 0.0,
+ "k": 3,
+ "tol": 0.01,
+ "optimizer_a": "muon",
+ "optimizer_b": "sgd",
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "runs_a": [
+  "shakespeare_main/muon_d0",
+  "shakespeare_main/muon_d1",
+  "shakespeare_main/muon_d2",
+  "shakespeare_main/muon_d3",
+  "shakespeare_main/muon_d4"
+ ],
+ "runs_b": [
+  "shakespeare_main/sgd_d0",
+  "shakespeare_main/sgd_d1",
+  "shakespeare_main/sgd_d2",
+  "shakespeare_main/sgd_d3",
+  "shakespeare_main/sgd_d4"
+ ],
+ "t_star_loss": 4.252688407897949,
+ "ci_loss": [
+  4.252688407897949,
+  4.252688407897949
+ ],
+ "boot_found": 1.0,
+ "steps": {
+  "shakespeare_main/muon_d0": 1,
+  "shakespeare_main/muon_d1": 1,
+  "shakespeare_main/muon_d2": 1,
+  "shakespeare_main/muon_d3": 1,
+  "shakespeare_main/muon_d4": 1,
+  "shakespeare_main/sgd_d0": 1,
+  "shakespeare_main/sgd_d1": 1,
+  "shakespeare_main/sgd_d2": 1,
+  "shakespeare_main/sgd_d3": 1,
+  "shakespeare_main/sgd_d4": 1
+ },
+ "step_ci": {
+  "shakespeare_main/muon_d0": [
+   1,
+   1
+  ],
+  "shakespeare_main/muon_d1": [
+   1,
+   1
+  ],
+  "shakespeare_main/muon_d2": [
+   1,
+   1
+  ],
+  "shakespeare_main/muon_d3": [
+   1,
+   1
+  ],
+  "shakespeare_main/muon_d4": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d0": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d1": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d2": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d3": [
+   1,
+   1
+  ],
+  "shakespeare_main/sgd_d4": [
+   1,
+   1
+  ]
+ },
+ "episodes": [
+  [
+   4.252688407897949,
+   2.607254981994629
+  ]
+ ],
+ "persist_loss": 4.252688407897949,
+ "ci_persist": [
+  2.7504866123199463,
+  4.252688407897949
+ ],
+ "boot_found_persist": 0.8866666666666667,
+ "steps_persist": {
+  "shakespeare_main/muon_d0": 1,
+  "shakespeare_main/muon_d1": 1,
+  "shakespeare_main/muon_d2": 1,
+  "shakespeare_main/muon_d3": 1,
+  "shakespeare_main/muon_d4": 1,
+  "shakespeare_main/sgd_d0": 1,
+  "shakespeare_main/sgd_d1": 1,
+  "shakespeare_main/sgd_d2": 1,
+  "shakespeare_main/sgd_d3": 1,
+  "shakespeare_main/sgd_d4": 1
+ },
+ "grid": [
+  4.298804759979248,
+  4.252688407897949,
+  4.161126613616943,
+  4.02946662902832,
+  3.8689894676208496,
+  3.698376178741455,
+  3.3923745155334473,
+  3.268620014190674,
+  3.161935806274414,
+  2.994680881500244,
+  2.8208131790161133,
+  2.7504866123199463,
+  2.6590867042541504,
+  2.607254981994629
+ ],
+ "cross": [
+  0.0,
+  5.8245708877344454e-05,
+  0.00017399005352716434,
+  0.0030012543912208865,
+  0.006500183643097282,
+  0.0354015819436175,
+  0.07066251067464954,
+  0.08589933196456542,
+  0.10282658978934407,
+  0.1287443574196983,
+  0.1389526865619501,
+  0.12864756997342713,
+  0.09799180060173229,
+  0.0830791850363941
+ ],
+ "floor": [
+  0.0,
+  8.239303275357332e-06,
+  4.226370853356768e-05,
+  0.00012620992826663414,
+  0.00028216128244687303,
+  0.0004936971463142834,
+  0.000972693972690678,
+  0.001185809657758097,
+  0.0014232042150392203,
+  0.06027742386417917,
+  0.0807108128167586,
+  0.06807887707631861,
+  0.04609412570809273,
+  0.04011233778813336
+ ],
+ "floor_lo": [
+  0.0,
+  8.71792467597443e-07,
+  4.097089905302661e-06,
+  1.1909874905449916e-05,
+  2.1432689019608927e-05,
+  4.371051548963532e-05,
+  0.00010401600107082378,
+  0.0001687268223892999,
+  0.0006237331737531716,
+  0.0018614927539601922,
+  0.0038300046816539864,
+  0.008915304105553709,
+  0.007827885921556865,
+  0.007953280008509063
+ ],
+ "floor_hi": [
+  0.0,
+  9.257667443307582e-06,
+  4.8539950512349606e-05,
+  0.00013663442223332822,
+  0.0003052774118259549,
+  0.0005384614923968911,
+  0.0010754780378192663,
+  0.0013724998570978642,
+  0.0016038096318108307,
+  0.16258674735544704,
+  0.11083793178058372,
+  0.08193026473012384,
+  0.06277192923717338,
+  0.05068400872398252
+ ]
+}

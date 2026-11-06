@@ -1,0 +1,10 @@
+sgd vs sgd: t* at loss 7.8461 (95% CI 7.8461-7.8461, split found in 88% of bootstraps)
+  episodes above the floor (loss from, to): 7.846-5.137
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts10m_breakeven/sgd_lr0.03_d0': None, 'ts10m_breakeven/sgd_lr0.03_d1': None, 'ts10m_breakeven/sgd_lr0.03_d2': None, 'ts10m_breakeven/sgd_lr0.1_d0': None, 'ts10m_breakeven/sgd_lr0.1_d1': None, 'ts10m_breakeven/sgd_lr0.1_d2': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/ts10m_breakeven/split_0.03_0.1.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/ts10m_breakeven/figures/divergence_0.03_0.1.png
+sgd vs sgd: t* at loss 7.7794 (95% CI 7.7794-7.7794, split found in 88% of bootstraps)
+  episodes above the floor (loss from, to): 7.779-6.239
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts10m_breakeven/sgd_lr0.1_d0': None, 'ts10m_breakeven/sgd_lr0.1_d1': None, 'ts10m_breakeven/sgd_lr0.1_d2': None, 'ts10m_breakeven/sgd_lr0.3_d0': None, 'ts10m_breakeven/sgd_lr0.3_d1': None, 'ts10m_breakeven/sgd_lr0.3_d2': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/ts10m_breakeven/split_0.1_0.3.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/ts10m_breakeven/figures/divergence_0.1_0.3.png

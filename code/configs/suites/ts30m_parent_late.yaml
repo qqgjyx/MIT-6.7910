@@ -1,0 +1,11 @@
+# The parents of ts30m_forks_dense (ts30m_main's d0 runs) continued from their last fork step, 8000, with the
+# same optimizer, data order and shadow state, to save fork checkpoints at 60, 75 and 90% of training:
+# 12000, 15000, 18000. No Hessian measurements (they do not change the run).
+suite: ts30m_parent_late
+base: ../base/tinystories_30m.yaml
+overrides:
+  measure.hessian: false
+  measure.delta_loss: false
+runs:
+  - {fork.parent: ts30m_main/adamw_d0, optimizer: adamw, fork.step: 8000, log.fork_steps: [[12000, 15000, 18000]], name: adamw_d0}
+  - {fork.parent: ts30m_main/muon_d0, optimizer: muon, fork.step: 8000, log.fork_steps: [[12000, 15000, 18000]], name: muon_d0}

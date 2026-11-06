@@ -1,0 +1,16 @@
+# Main runs: every optimizer from the same initialization, with data orders 0-4 (order 0 is shared across
+# optimizers; the others give each optimizer's seed-to-seed noise floor). The d0 runs accumulate the other
+# optimizers' state in shadow and save fork checkpoints for ts10m_forks.yaml.
+# Learning rates: best final validation loss in ts10m_lrsweep (Muon 1.305, AdamW 1.339). SGD: 0.1 (1.914)
+# blew up on data orders 1-3 (loss back to ~5), so it uses 0.03 (1.957).
+suite: ts10m_main
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 0, shadow: [[sgd, adamw, muon]],
+     log.fork_steps: [[50, 100, 200, 400, 700, 1000, 1500, 2500, 4000]]}
+  - {optimizer: [sgd, adamw, muon], train.data_seed: [1, 2, 3, 4]}

@@ -1,0 +1,15 @@
+# Control added after the plan: the main runs from a second initialization (init seed 1), data orders 0
+# and 1, so that the distance between optimizers can be compared with the distance between two
+# initializations as well as with the data-order floor. No curvature measurements.
+suite: ts10m_initseed
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.03
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  train.init_seed: 1
+  measure.hessian: false
+  measure.delta_loss: false
+name: "{optimizer}_i1_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: [0, 1]}

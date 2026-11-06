@@ -1,0 +1,63 @@
+== adamw muon --metric disagree
+  episodes above the floor (loss from, to): 8.310-6.633
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --margin-mult 0.25
+  episodes above the floor (loss from, to): 8.310-4.124
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --margin-mult 1.0
+  episodes above the floor (loss from, to): 8.310-5.231
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --k 2
+  episodes above the floor (loss from, to): 8.310-4.587
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --k 5
+  episodes above the floor (loss from, to): 8.310-4.587
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --tol 0.01
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw muon --tol 0.05
+  episodes above the floor (loss from, to): 8.310-4.587
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --metric disagree
+  episodes above the floor (loss from, to): 8.310-7.423
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --margin-mult 0.25
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --margin-mult 1.0
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --k 2
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --k 5
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --tol 0.01
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== adamw sgd --tol 0.05
+  episodes above the floor (loss from, to): 8.310-6.033
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --metric disagree
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --margin-mult 0.25
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --margin-mult 1.0
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --k 2
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --k 5
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --tol 0.01
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m
+== muon sgd --tol 0.05
+  episodes above the floor (loss from, to): 8.441-6.817
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'ts30m

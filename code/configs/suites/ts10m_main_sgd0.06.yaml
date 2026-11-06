@@ -1,0 +1,12 @@
+# SGD main runs on TinyStories-10M at the re-tuned rate 0.06 (ts10m_sgdtune), data orders 0-2, with the logging and
+# measurements of ts10m_main (predictions, Hessian, checkpoints). No shadow states or fork checkpoints: the swaps
+# keep the 0.03 runs of ts10m_main, which stay as they are.
+suite: ts10m_main_sgd0.06
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.06
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: sgd, train.data_seed: [0, 1, 2]}

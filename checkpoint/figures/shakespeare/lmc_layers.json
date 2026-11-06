@@ -1,0 +1,677 @@
+[
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/muon_d0",
+  "barriers": {
+   "all": 2.327416191250086,
+   "embeddings": 0.09781879186630249,
+   "block 0": 1.5637609481811523,
+   "block 1": 1.765184998512268,
+   "block 2": 2.0192691564559935,
+   "block 3": 1.8754504680633546,
+   "block 4": 1.6361435055732727,
+   "block 5": 1.108108019828796,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/sgd_d0",
+  "barriers": {
+   "all": 1.8138794898986816,
+   "embeddings": 0.6028612375259399,
+   "block 0": 2.0986688494682313,
+   "block 1": 0.8314454555511475,
+   "block 2": 0.2353948950767517,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/sgd_d0",
+  "barriers": {
+   "all": 1.7482078962028025,
+   "embeddings": 0.02575812712311709,
+   "block 0": 4.611578479409217,
+   "block 1": 0.5208098798990246,
+   "block 2": 0.35380278527736664,
+   "block 3": 0.19459439814090718,
+   "block 4": 0.1829102605581283,
+   "block 5": 0.19418446645140652,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d1",
+  "b": "shakespeare_main/muon_d1",
+  "barriers": {
+   "all": 2.109631930291653,
+   "embeddings": 0.05820947289466849,
+   "block 0": 1.4871434748172758,
+   "block 1": 1.736440098285675,
+   "block 2": 1.7981664061546323,
+   "block 3": 1.7686674714088437,
+   "block 4": 1.5799281001091003,
+   "block 5": 1.0829301357269285,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d1",
+  "b": "shakespeare_main/sgd_d1",
+  "barriers": {
+   "all": 2.496306025981903,
+   "embeddings": 1.4846100270748137,
+   "block 0": 2.167173856496811,
+   "block 1": 1.231303060054779,
+   "block 2": 0.5405261158943171,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d1",
+  "b": "shakespeare_main/sgd_d1",
+  "barriers": {
+   "all": 3.1136104613542557,
+   "embeddings": 3.2848160341382022,
+   "block 0": 5.700182622671127,
+   "block 1": 0.4246594130992887,
+   "block 2": 0.256489287316799,
+   "block 3": 0.2236467480659483,
+   "block 4": 0.14943838119506836,
+   "block 5": 0.21989885419607136,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d2",
+  "b": "shakespeare_main/muon_d2",
+  "barriers": {
+   "all": 2.4473135117441416,
+   "embeddings": 0.0915251493453979,
+   "block 0": 1.467891129851341,
+   "block 1": 1.7302998661994933,
+   "block 2": 1.8725038528442381,
+   "block 3": 1.8410484075546263,
+   "block 4": 1.6417065024375914,
+   "block 5": 1.1340637385845183,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d2",
+  "b": "shakespeare_main/sgd_d2",
+  "barriers": {
+   "all": 1.510534515976906,
+   "embeddings": 0.45125140249729156,
+   "block 0": 1.033975139260292,
+   "block 1": 0.8127274692058561,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d2",
+  "b": "shakespeare_main/sgd_d2",
+  "barriers": {
+   "all": 2.044894386827946,
+   "embeddings": 0.0,
+   "block 0": 3.6436275709420443,
+   "block 1": 0.6253637447953222,
+   "block 2": 0.3080066755414008,
+   "block 3": 0.22584743052721012,
+   "block 4": 0.17381667047739013,
+   "block 5": 0.20449427478015414,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d3",
+  "b": "shakespeare_main/muon_d3",
+  "barriers": {
+   "all": 2.5387583535164593,
+   "embeddings": 0.10192409753799425,
+   "block 0": 1.3455004543066025,
+   "block 1": 1.893265426158905,
+   "block 2": 1.8114584803581235,
+   "block 3": 1.855001413822174,
+   "block 4": 1.804498744010925,
+   "block 5": 1.0270798027515409,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d3",
+  "b": "shakespeare_main/sgd_d3",
+  "barriers": {
+   "all": 1.380071485042572,
+   "embeddings": 1.0415638118982313,
+   "block 0": 1.5304421007633207,
+   "block 1": 0.550830864906311,
+   "block 2": 0.2606526136398315,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d3",
+  "b": "shakespeare_main/sgd_d3",
+  "barriers": {
+   "all": 1.6725657366216182,
+   "embeddings": 1.3229499217122793,
+   "block 0": 4.482880930602549,
+   "block 1": 0.5004131838679313,
+   "block 2": 0.3067933186888694,
+   "block 3": 0.2502849683165549,
+   "block 4": 0.1713556561619043,
+   "block 5": 0.19109197892248608,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d4",
+  "b": "shakespeare_main/muon_d4",
+  "barriers": {
+   "all": 2.6674968764185905,
+   "embeddings": 0.07290083169937134,
+   "block 0": 1.4969866156578062,
+   "block 1": 1.8208215355873107,
+   "block 2": 1.8000488162040709,
+   "block 3": 1.8905561685562133,
+   "block 4": 1.7121755361557005,
+   "block 5": 1.0588477730751036,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d4",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 1.3906700134277343,
+   "embeddings": 0.01618934869766253,
+   "block 0": 0.43435189723968515,
+   "block 1": 0.1739480197429657,
+   "block 2": 0.05713489651679993,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d4",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 1.8881851866841317,
+   "embeddings": 0.0,
+   "block 0": 4.193173283338546,
+   "block 1": 0.5036842286586758,
+   "block 2": 0.28844980597496006,
+   "block 3": 0.21460785269737226,
+   "block 4": 0.17647122442722307,
+   "block 5": 0.20352946072816835,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/adamw_d1",
+  "barriers": {
+   "all": 0.1195564866065979,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/adamw_d2",
+  "barriers": {
+   "all": 0.11752761900424957,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/adamw_d3",
+  "barriers": {
+   "all": 0.14434705674648285,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d0",
+  "b": "shakespeare_main/adamw_d4",
+  "barriers": {
+   "all": 0.10604026913642883,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d1",
+  "b": "shakespeare_main/adamw_d2",
+  "barriers": {
+   "all": 0.1570604294538498,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d1",
+  "b": "shakespeare_main/adamw_d3",
+  "barriers": {
+   "all": 0.16921930015087128,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d1",
+  "b": "shakespeare_main/adamw_d4",
+  "barriers": {
+   "all": 0.1447318196296692,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d2",
+  "b": "shakespeare_main/adamw_d3",
+  "barriers": {
+   "all": 0.14442765712738037,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d2",
+  "b": "shakespeare_main/adamw_d4",
+  "barriers": {
+   "all": 0.1339416354894638,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/adamw_d3",
+  "b": "shakespeare_main/adamw_d4",
+  "barriers": {
+   "all": 0.15537570416927338,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/muon_d1",
+  "barriers": {
+   "all": 4.02082584425807,
+   "embeddings": 0.0,
+   "block 0": 2.734708228707313,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/muon_d2",
+  "barriers": {
+   "all": 4.010438149794936,
+   "embeddings": 0.0,
+   "block 0": 2.271742501854896,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/muon_d3",
+  "barriers": {
+   "all": 6.5500106159597635,
+   "embeddings": 0.0,
+   "block 0": 3.866396088153124,
+   "block 1": 0.07306592538952827,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d0",
+  "b": "shakespeare_main/muon_d4",
+  "barriers": {
+   "all": 4.2769004218280315,
+   "embeddings": 0.0,
+   "block 0": 2.9325145669281483,
+   "block 1": 0.09267135336995125,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d1",
+  "b": "shakespeare_main/muon_d2",
+  "barriers": {
+   "all": 3.7928454373031855,
+   "embeddings": 0.0,
+   "block 0": 2.744196051359176,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d1",
+  "b": "shakespeare_main/muon_d3",
+  "barriers": {
+   "all": 4.353533981367946,
+   "embeddings": 0.0,
+   "block 0": 3.5158239230513573,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d1",
+  "b": "shakespeare_main/muon_d4",
+  "barriers": {
+   "all": 3.5660643726587296,
+   "embeddings": 0.0,
+   "block 0": 2.2722010076045986,
+   "block 1": 0.0265839621424675,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d2",
+  "b": "shakespeare_main/muon_d3",
+  "barriers": {
+   "all": 4.887484632432461,
+   "embeddings": 0.0,
+   "block 0": 2.9491233099251986,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d2",
+  "b": "shakespeare_main/muon_d4",
+  "barriers": {
+   "all": 4.005826035514474,
+   "embeddings": 0.0,
+   "block 0": 2.6075792778283358,
+   "block 1": 0.06055821664631367,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/muon_d3",
+  "b": "shakespeare_main/muon_d4",
+  "barriers": {
+   "all": 3.890157787129283,
+   "embeddings": 0.0,
+   "block 0": 2.459612183272838,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d0",
+  "b": "shakespeare_main/sgd_d1",
+  "barriers": {
+   "all": 0.9503177762031556,
+   "embeddings": 1.038706052303314,
+   "block 0": 1.24350968003273,
+   "block 1": 0.36140531301498413,
+   "block 2": 0.009602952003478826,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d0",
+  "b": "shakespeare_main/sgd_d2",
+  "barriers": {
+   "all": 1.468087339401245,
+   "embeddings": 0.0,
+   "block 0": 0.6514936983585358,
+   "block 1": 0.010454058647155762,
+   "block 2": 0.0036341190338133877,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d0",
+  "b": "shakespeare_main/sgd_d3",
+  "barriers": {
+   "all": 1.0898570895195006,
+   "embeddings": 0.0,
+   "block 0": 0.12733402848243713,
+   "block 1": 0.036441004276275724,
+   "block 2": 0.004328167438507169,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d0",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 1.6560559958219527,
+   "embeddings": 0.0,
+   "block 0": 0.5222671687602993,
+   "block 1": 0.04103019237518302,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d1",
+  "b": "shakespeare_main/sgd_d2",
+  "barriers": {
+   "all": 1.8982675909996032,
+   "embeddings": 0.0,
+   "block 0": 0.19458358287811262,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 1.6391277313232422e-05,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d1",
+  "b": "shakespeare_main/sgd_d3",
+  "barriers": {
+   "all": 1.242913544178009,
+   "embeddings": 0.0,
+   "block 0": 0.0,
+   "block 1": 0.0011074364185335028,
+   "block 2": 0.0004847288131712979,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d1",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 3.1879070311784745,
+   "embeddings": 0.0,
+   "block 0": 0.04769966006278992,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d2",
+  "b": "shakespeare_main/sgd_d3",
+  "barriers": {
+   "all": 1.477950966358185,
+   "embeddings": 0.2383100390434265,
+   "block 0": 0.9663783490657805,
+   "block 1": 0.0887262225151062,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d2",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 1.2901084482669831,
+   "embeddings": 0.0,
+   "block 0": 0.21138718128204337,
+   "block 1": 0.0013064146041870117,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ },
+ {
+  "a": "shakespeare_main/sgd_d3",
+  "b": "shakespeare_main/sgd_d4",
+  "barriers": {
+   "all": 2.0767699599266054,
+   "embeddings": 0.0,
+   "block 0": 0.4320725679397581,
+   "block 1": 0.0,
+   "block 2": 0.0,
+   "block 3": 0.0,
+   "block 4": 0.0,
+   "block 5": 0.0,
+   "head": 0.0
+  }
+ }
+]

@@ -1,0 +1,12 @@
+sgd vs sgd: t* at loss 2.2744 (95% CI 2.2744-2.2744, split found in 52% of bootstraps)
+  episodes above the floor (loss from, to): 2.274-2.259, 2.213-2.183, 1.276-1.258, 1.166-1.131
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'cifar_breakeven/sgd_lr0.001_d0': None, 'cifar_breakeven/sgd_lr0.001_d1': None, 'cifar_breakeven/sgd_lr0.01_d0': None, 'cifar_breakeven/sgd_lr0.01_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/cifar_breakeven/split_0.001_0.01.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/cifar_breakeven/figures/divergence_0.001_0.01.png
+/orcd/home/002/conchell/MIT-6.7910/code/optsplit/analysis/split.py:87: RuntimeWarning: Mean of empty slice
+  return np.nanmean(np.stack(curves), 0)
+sgd vs sgd: t* at loss 0.4976 (95% CI 0.4976-0.4976, split found in 52% of bootstraps)
+  episodes above the floor (loss from, to): 0.498-0.413
+  persistent split at loss nan (95% CI nan-nan, found in 0% of bootstraps); steps: {'cifar_breakeven/sgd_lr0.01_d0': None, 'cifar_breakeven/sgd_lr0.01_d1': None, 'cifar_breakeven/sgd_lr0.1_d0': None, 'cifar_breakeven/sgd_lr0.1_d1': None}
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/cifar_breakeven/split_0.01_0.1.json
+wrote /orcd/pool/014/conchell/optsplit/analysis/breakeven/cifar_breakeven/figures/divergence_0.01_0.1.png

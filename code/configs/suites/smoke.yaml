@@ -1,0 +1,17 @@
+# Pipeline test (minutes on one GPU): tiny model on Shakespeare, all optimizers, two data orders, shadow
+# states and fork checkpoints on the d0 runs. Then launch smoke_forks.yaml.
+suite: smoke
+base: ../base/shakespeare_char.yaml
+overrides:
+  model.n_layer: 2
+  model.n_embd: 128
+  model.n_head: 4
+  train.max_steps: 300
+  log.eval_steps: {every: 25, geometric: 10}
+  log.ckpt_steps: {every: 100, geometric: 5}
+  measure.steps: {every: 50, geometric: 6}
+  measure.gradcov: true
+name: "{optimizer}_d{train.data_seed}"
+runs:
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 0, shadow: [[sgd, adamw, muon]], log.fork_steps: [[50, 150]]}
+  - {optimizer: [sgd, adamw, muon], train.data_seed: 1}

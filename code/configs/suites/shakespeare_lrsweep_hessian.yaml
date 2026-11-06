@@ -1,0 +1,15 @@
+# The learning-rate sweep repeated with sharpness measurements, to test the break-even point of each optimizer
+# (report, Section "A model of the results"): lambda_max ~ 1/lr for SGD and AdamW at their thresholds, no such
+# scaling for Muon.
+suite: shakespeare_lrsweep_hessian
+base: ../base/shakespeare_char.yaml
+overrides:
+  measure.delta_loss: false
+  measure.anatomy: false
+  measure.batch_sharpness_batches: 0
+  log.eval_steps: {every: 100, geometric: 0}
+  log.ckpt_steps: {every: 0, geometric: 0}
+runs:
+  - {optimizer: sgd, optim.sgd.lr: [0.05, 0.1, 0.15, 0.2, 0.25], name: "sgd_lr{optim.sgd.lr}"}
+  - {optimizer: adamw, optim.adamw.lr: [3.0e-4, 1.0e-3, 2.0e-3, 4.0e-3, 8.0e-3], name: "adamw_lr{optim.adamw.lr}"}
+  - {optimizer: muon, optim.muon.lr: [0.005, 0.01, 0.02, 0.04, 0.08], name: "muon_lr{optim.muon.lr}"}
