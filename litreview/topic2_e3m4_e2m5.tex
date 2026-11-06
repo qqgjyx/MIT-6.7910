@@ -5,8 +5,6 @@
 \usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \usepackage[numbers,sort&compress]{natbib}
-\usepackage{booktabs}
-\usepackage[skip=6pt]{caption}
 \usepackage{enumitem}
 \usepackage[compact]{titlesec}
 \usepackage[hidelinks]{hyperref}
@@ -100,7 +98,6 @@ Under Adam, the edge of stability is set by the preconditioned sharpness $\lambd
 Because the stable step size can depend on the format, comparing formats at one shared learning rate confounds format with $\eta\lambda$. Learning rates and warmup should be tuned per format, or at least swept. Following \citet{Qi2025}, rollout and training engines should share arithmetic, or their discrepancy should be monitored, whenever probabilities are compared across engines. Finally, monitoring sharpness online is affordable with a few Hessian--vector products every few hundred steps, and could serve as an early warning before the late divergences reported by \citet{Fishman2025}.
 
 \clearpage
-\bibliographystyle{plainnat}
 {\footnotesize
 \begin{thebibliography}{29}
 \setlength{\itemsep}{0pt}
