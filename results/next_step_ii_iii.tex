@@ -134,6 +134,34 @@ Muon  & AdamW (ghost)& 87.0 to 87.2 & 2.77 to 2.80 & 0.70 \\
 \subsection{What the speed needs}
 \label{sec:ablate}
 
+Three ablations: AdamW without weight decay, Muon with weight decay 0.02, and Muon without orthogonalization (\cref{tab:ablate}).
+
+\textbf{Weight decay is not the reason.} Muon has none and is already faster; removing it from AdamW costs a little (1.346 to 1.353 against 1.339 to 1.345) and adding it to Muon helps a little (1.297 to 1.304 against 1.308 to 1.310).
+
+\textbf{Without orthogonalization Muon trains worse than AdamW.} At learning rate 0.01 the final loss is 3.729, 2.943 and 1.389, and no rate tried (three, on one data order) reaches AdamW's 1.339. So orthogonalization is necessary for Muon's speed.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Final validation loss at step 10{,}000.}
+\label{tab:ablate}
+\begin{tabular}{l ccc}
+\toprule
+run & data order 0 & 1 & 2 \\
+\midrule
+AdamW (baseline)                 & 1.339 & 1.341 & 1.345 \\
+AdamW, weight decay 0            & 1.346 & 1.353 & 1.350 \\
+\midrule
+Muon (baseline)                  & 1.308 & 1.309 & 1.310 \\
+Muon, weight decay 0.02          & 1.297 & 1.298 & 1.304 \\
+\midrule
+Muon, no orthogonalization, lr 0.01           & 3.729 & 2.943 & 1.389 \\
+Muon, no orthogonalization, lr 0.003          & 1.454 &       &       \\
+Muon, no orthogonalization, lr 0.03           & 4.078 &       &       \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 %% =================================================================
 %% Dose-response, swap timescale, loss decomposition
 %% =================================================================
