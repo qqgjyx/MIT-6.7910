@@ -1,4 +1,4 @@
-# Next steps (ii)/(iii) (results/ii_iii/design.md): does each property that separates AdamW and Muon follow from
+# Next steps (ii)/(iii): does each property that separates AdamW and Muon follow from
 # the update rule, or does it emerge during training? Settings, checkpoints and measurements of ts10m_traj (so the
 # offline metrics/trajectory.py applies), data orders 0-2.
 # - A, ghosts: AdamW runs carrying an open-loop Muon copy (Muon's rule on the AdamW run's gradients), and Muon runs
