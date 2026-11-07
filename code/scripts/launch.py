@@ -23,8 +23,11 @@ Usage:
 --after JOBID starts the array once job JOBID (e.g. the parents' array) has ended, so forks can be
 submitted together with their parents.
 
-normal = mit_normal_gpu (6 h per job, 2 GPUs per user); preemptable = mit_preemptable (48 h, 4 GPUs,
-jobs can be killed). Both requeue: unfinished runs resume from latest.pt in the next job.
+The cluster is OPTSPLIT_CLUSTER (default orcd). ORCD: normal = mit_normal_gpu (6 h per job, 2 GPUs per
+user); preemptable = mit_preemptable (48 h, 4 GPUs, jobs can be killed). FAS RC Cannon (fasrc): normal = gpu
+(A100), preemptable = gpu_requeue (mixed GPUs, can be killed), test = gpu_test (A100 MIG slices, 12 h), hsph =
+hsph_gpu (H200); --gpu-type becomes a node constraint, and `any` means a full A100, H100 or H200 (gpu_requeue also
+has small MIG slices). All requeue: unfinished runs resume from latest.pt in the next job.
 """
 
 import argparse
@@ -41,10 +44,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from optsplit.config import (CODE_DIR, load_config, load_yaml, root_dir, run_dir,  # noqa: E402
                              save_config, set_dotted)
 
-PARTITIONS = {
-    'normal': dict(name='mit_normal_gpu', time='06:00:00', max_concurrent=2),
-    'preemptable': dict(name='mit_preemptable', time='48:00:00', max_concurrent=4),
+CLUSTERS = {
+    'orcd': {
+        'normal': dict(name='mit_normal_gpu', time='06:00:00', max_concurrent=2),
+        'preemptable': dict(name='mit_preemptable', time='48:00:00', max_concurrent=4),
+    },
+    'fasrc': {
+        # any_gpu: the node constraint for --gpu-type any (fasrc selects GPUs by node feature, not gres type)
+        'normal': dict(name='gpu', time='72:00:00', max_concurrent=4, any_gpu='a100'),
+        'preemptable': dict(name='gpu_requeue', time='72:00:00', max_concurrent=8, any_gpu='a100|h100|h200'),
+        'test': dict(name='gpu_test', time='12:00:00', max_concurrent=2, any_gpu='a100-mig'),
+        'hsph': dict(name='hsph_gpu', time='72:00:00', max_concurrent=4, any_gpu='h200'),
+    },
 }
+
+
+def cluster():
+    name = os.environ.get('OPTSPLIT_CLUSTER', 'orcd')
+    if name not in CLUSTERS:
+        raise SystemExit(f'unknown OPTSPLIT_CLUSTER={name!r} (one of {sorted(CLUSTERS)})')
+    return name
 
 
 def format_name(template, cfg):
@@ -91,9 +110,12 @@ def expand(suite_file):
 def main(argv=None):
     ap = argparse.ArgumentParser(description='Submit a suite of runs as a Slurm array job.')
     ap.add_argument('suite_file')
-    ap.add_argument('--partition', choices=list(PARTITIONS), default='normal')
+    partitions = CLUSTERS[cluster()]
+    ap.add_argument('--partition', choices=list(partitions), default='normal')
     ap.add_argument('--gpu-type', choices=['any', 'h100', 'h200', 'b200', 'l40s', 'a100'], default='any')
     ap.add_argument('--per-gpu', type=int, default=1, help='runs sharing one GPU, run concurrently')
+    ap.add_argument('--gpus', type=int, default=1, help='GPUs per task; a task runs gpus x per-gpu runs, '
+                    'spread over its GPUs (for partitions that cap jobs per user, e.g. gpu_test)')
     ap.add_argument('--time')
     ap.add_argument('--max-concurrent', type=int)
     ap.add_argument('--cpus', type=int, default=8)
@@ -144,18 +166,22 @@ def main(argv=None):
                 subprocess.run(cmd, check=True, cwd=CODE_DIR, env=env)
         return
 
-    part = PARTITIONS[args.partition]
+    part = partitions[args.partition]
     jobs = root_dir() / 'jobs' / suite
     list_file = jobs / f'{time.strftime("%Y%m%d-%H%M%S")}-{os.getpid()}.txt'
-    n_tasks = math.ceil(len(todo) / args.per_gpu)
-    gres = 'gpu:1' if args.gpu_type == 'any' else f'gpu:{args.gpu_type}:1'
+    per_task = args.gpus * args.per_gpu
+    n_tasks = math.ceil(len(todo) / per_task)
+    if cluster() == 'fasrc':
+        gpu = [f'--gres=gpu:{args.gpus}', f'--constraint={part["any_gpu"] if args.gpu_type == "any" else args.gpu_type}']
+    else:
+        gpu = [f'--gres=gpu:{args.gpus}' if args.gpu_type == 'any' else f'--gres=gpu:{args.gpu_type}:{args.gpus}']
     cmd = ['sbatch', f'--partition={part["name"]}', f'--time={args.time or part["time"]}',
            f'--array=0-{n_tasks - 1}%{args.max_concurrent or part["max_concurrent"]}',
-           f'--gres={gres}', f'--cpus-per-task={args.cpus}', f'--mem={args.mem}',
+           *gpu, f'--cpus-per-task={args.cpus}', f'--mem={args.mem}',
            f'--job-name={suite}', f'--output={jobs}/logs/%A_%a.out', '--requeue',
            *([f'--dependency=afterany:{args.after}'] if args.after else []),
            *([f'--exclude={args.exclude}'] if args.exclude else []),
-           str(CODE_DIR / 'slurm' / 'run_array.sbatch'), str(list_file), str(args.per_gpu)]
+           str(CODE_DIR / 'slurm' / 'run_array.sbatch'), str(list_file), str(per_task)]
     print(' '.join(cmd))
     if args.dry_run:
         return

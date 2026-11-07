@@ -20,7 +20,7 @@ Jastrzebski et al. (2020) as a check of the pipeline. Interfaces and file format
 | `optsplit/layerlr/` | dropped line, separate from the core: curvature-balanced per-layer rates and per-layer curvature (its `README.md`) |
 | `configs/` | `defaults.yaml`, model/data configs in `base/`, run suites in `suites/` |
 | `data/` | dataset preparation scripts |
-| `scripts/launch.py`, `slurm/` | submit suites as Slurm arrays on ORCD (`mit_normal_gpu` or `mit_preemptable`) |
+| `scripts/launch.py`, `slurm/` | submit suites as Slurm arrays on ORCD (`mit_normal_gpu` or `mit_preemptable`) or FAS RC Cannon |
 | `tests/` | unit tests (CPU): `python -m pytest tests -q` |
 
 ## Setup on ORCD (once)
@@ -38,6 +38,23 @@ sbatch slurm/test_gpu.sbatch                   # GPU sanity check
 `OPTSPLIT_ROOT` (data, runs, job logs) defaults to `optsplit/` in your pool storage
 (`/orcd/pool/<NNN>/$USER`, 1 TB). If compute nodes have no internet access, run the TinyStories
 preparation on the login node instead.
+
+## Setup on FAS RC Cannon (once)
+
+Same steps, with the cluster selected and the root in lab storage (`$HOME` is only 100 GB):
+
+```bash
+export OPTSPLIT_CLUSTER=fasrc OPTSPLIT_ROOT=<lab storage>/optsplit   # in every new shell, before env.sh
+bash slurm/setup_env.sh        # uv venv with torch (cu128) at $OPTSPLIT_ROOT/env
+source slurm/env.sh             # a bash script: from zsh, run `bash` first
+```
+
+The single-job scripts (`cmd.sbatch`, `test_gpu.sbatch`, `prepare_data.sbatch`) name ORCD partitions in their
+headers; override them on the command line, e.g. `sbatch -p gpu_test slurm/test_gpu.sbatch` or
+`sbatch -p test slurm/prepare_data.sbatch tinystories`. `launch.py` partitions on Cannon: `normal` = `gpu` (A100),
+`preemptable` = `gpu_requeue` (mixed GPUs, can be killed), `test` = `gpu_test` (A100 MIG slices, 12 h, at most 2 submitted jobs per user: pack runs with
+`--per-gpu`), `hsph` =
+`hsph_gpu` (H200). `--gpu-type` becomes a node constraint; keep it fixed within a set of runs you compare.
 
 ## Running
 

@@ -1,0 +1,96 @@
+\documentclass[10pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs,array}
+\usepackage[font=small,labelfont=bf,skip=3pt]{caption}
+\captionsetup[figure]{font=footnotesize}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[colorlinks=true,linkcolor=MidnightBlue,citecolor=MidnightBlue,urlcolor=MidnightBlue]{hyperref}
+\setlength{\parskip}{2pt}
+\setlength{\parindent}{0pt}
+\setlist{nosep,leftmargin=*}
+\setlength{\textfloatsep}{8pt}
+\setlength{\intextsep}{6pt}
+\makeatletter
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{1.0ex \@plus .3ex \@minus .2ex}{-1em}{\normalfont\normalsize\bfseries}}
+\renewcommand\maketitle{\begin{center}{\large\bfseries\@title\par}\vspace{3pt}\@author\quad\textperiodcentered\quad\@date\end{center}}
+\makeatother
+
+\title{Where the Differences Between AdamW and Muon Come From\\[1pt]
+\normalfont Next steps (ii) and (iii), draft}
+\author{Juntang Wang and V\'ictor Conchello}
+\date{November 6, 2026}
+
+\begin{document}
+\maketitle
+\vspace{-0.8em}
+
+\paragraph{Summary.} (ii) asks whether each property that separates AdamW and Muon in Step 2 of the checkpoint
+follows from Muon's update rule or emerges during training; (iii) asks whether these properties explain why Muon
+trains faster. (1)~The Step 2 runs reproduce on a new cluster. (2)~Fed the same real gradients,
+each optimizer's rule produces its own weight spectra and update similarity: these properties come from the rule
+acting on gradients with low-rank structure, whichever optimizer produced them. (3)~Weight decay does not explain
+Muon's speed; without orthogonalization Muon trains worse than AdamW. Whether the spectra cause the speed is still
+open.
+
+\paragraph{Setup.} TinyStories-10M with the checkpoint's settings (AdamW $2\cdot10^{-3}$, Muon 0.01, 10{,}000 steps,
+data orders 0 to 2), on FAS RC Cannon (A100 MIG 3g.20gb slices). New runs are compared only with new runs; the
+checkpoint's numbers serve only as a reproduction check.
+
+\paragraph{1. Reproduction (Table~\ref{tab:repro}).} The rerun Step 2 runs match the checkpoint within the
+spread over data orders, in final loss, in speed and in the Step 2 metrics. The other 26 rows of the checkpoint's
+Table 3 also agree.
+
+\begin{table}[H]
+\centering
+\small
+\caption{New runs against the checkpoint. Data orders 0 to 2: range for the losses and steps, mean $\pm$ half-range
+for the metrics, which are taken at training loss 1.81.}
+\label{tab:repro}
+\begin{tabular}{l cc cc}
+\toprule
+ & \multicolumn{2}{c}{AdamW} & \multicolumn{2}{c}{Muon} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+ & new & checkpoint & new & checkpoint \\
+\midrule
+final validation loss & 1.339 to 1.345 & 1.344 & 1.308 to 1.310 & 1.309 \\
+step reaching AdamW's final validation loss & & & 7250 to 7750 & 7500 \\
+stable rank of $W$ & $32.7 \pm 0.2$ & $33.0 \pm 0.3$ & $86.3 \pm 0.5$ & $86.2 \pm 0.3$ \\
+active MLP units & $0.120 \pm 0.001$ & $0.120 \pm 0.001$ & $0.222 \pm 0.001$ & $0.222 \pm 0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{2. The rules without learning (Figure~\ref{fig:noise}).} \emph{Test.} We take one block matrix of each shape from
+the initialization and update it with each optimizer's rule for 10{,}000 steps, with the runs' learning rates and
+schedule, but feed it synthetic gradients instead of real ones: either i.i.d.\ Gaussian noise, or a fixed random rank-4
+direction plus noise of the same Frobenius norm. Nothing is learned and the gradients do not depend on the weights.
+
+\emph{Update similarity follows from the rule.} On pure noise, consecutive updates have cosine 0.90 under AdamW's
+rule and 0.66 to 0.76 under Muon's, close to the real runs at training loss 1.81 (0.89 and 0.74). The gap needs no
+signal at all, which agrees with the checkpoint's swaps, where this cosine changes as soon as the optimizer does.
+
+\emph{The weight spectra do not follow from the rule alone.} On pure noise, neither rule changes the stable rank of
+$W$ from its initial value. With the low-rank signal, both rules end near the signal's rank, but AdamW's rule gets
+there within a few hundred steps and Muon's only by the end (stable rank at step 1000: 3.7 against 9.9). Muon sets
+the update's singular values to about 1, so the noise directions move as much as the signal's and the spectrum stays
+flat for longer; AdamW's elementwise update keeps the signal's low-rank structure (a sign of a rank-1 matrix is rank
+1). So the rule shapes the spectrum only through the structure of the gradients it is fed.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{ii_iii/figures/rule_noise.pdf}
+\caption{Each rule on synthetic gradients, MLP input matrix ($1536\times384$; the attention and MLP output matrices
+behave alike). (a, b) Stable rank of $W$ on pure noise and on a rank-4 signal plus noise. (c) Cosine of consecutive
+updates on pure noise; dashed: the real runs at training loss 1.81.}
+\label{fig:noise}
+\end{figure}
+
+\end{document}

@@ -1,0 +1,16 @@
+# Next step (iii), dose-response: Muon with the update U S^p V^T (optim.muon.sv_power, exact SVD) for p between
+# exact orthogonalization (0) and the plain Nesterov momentum direction (1; = muon_noorth in ts10m_ii), each
+# rescaled to an orthogonal update's Frobenius norm. Does speed follow the weight spectrum smoothly as p moves?
+# Settings and checkpoints of ts10m_ii (so metrics/trajectory.py applies); d0; two learning rates per p.
+suite: ts10m_svp
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  log.ckpt_steps: {every: 1000, geometric: 12, extra: [25, 26, 27, 50, 51, 52, 100, 101, 102, 150, 151, 152, 200, 201,
+    202, 250, 251, 252, 300, 301, 302, 400, 401, 402, 500, 501, 502, 600, 601, 602, 800, 801, 802, 1000, 1001, 1002,
+    1250, 1251, 1252, 1500, 1501, 1502, 2000, 2001, 2002, 2500, 2501, 2502, 3000, 3001, 3002, 4000, 4001, 4002,
+    5000, 5001, 5002, 6000, 6001, 6002, 7000, 7001, 7002, 8000, 8001, 8002, 9000, 9001, 9002, 9998, 9999]}
+runs:
+  - {optimizer: muon, optim.muon.sv_power: [0.0, 0.25, 0.5, 0.75], optim.muon.lr: [0.003, 0.01], train.data_seed: 0,
+     name: "muon_p{optim.muon.sv_power}_lr{optim.muon.lr}_d{train.data_seed}"}

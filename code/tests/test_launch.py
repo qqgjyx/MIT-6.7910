@@ -18,6 +18,7 @@ def write(path, obj):
 @pytest.fixture
 def suite_dir(tmp_path, monkeypatch):
     monkeypatch.setenv('OPTSPLIT_ROOT', str(tmp_path / 'root'))
+    monkeypatch.delenv('OPTSPLIT_CLUSTER', raising=False)
     d = tmp_path / 'suites'
     d.mkdir()
     write(d / 'base.yaml', {'task': 'gpt', 'dataset': 'shakespeare_char', 'train': {'max_steps': 100}})
@@ -70,6 +71,23 @@ def test_dry_run(suite_dir, capsys):
     out = capsys.readouterr().out
     assert '--array=0-1%2' in out and '--gres=gpu:h200:1' in out and 'mit_normal_gpu' in out
     assert not (suite_dir.parent / 'root').exists()
+
+
+def test_dry_run_fasrc(suite_dir, monkeypatch, capsys):
+    monkeypatch.setenv('OPTSPLIT_CLUSTER', 'fasrc')
+    path = suite(suite_dir, [{'optimizer': ['sgd', 'adamw']}])
+    launch.main([str(path), '--dry-run', '--partition', 'preemptable'])
+    out = capsys.readouterr().out
+    assert 'gpu_requeue' in out and '--gres=gpu:1' in out and "--constraint=a100|h100|h200" in out
+    launch.main([str(path), '--dry-run', '--gpu-type', 'h200'])
+    out = capsys.readouterr().out
+    assert '--partition=gpu ' in out and '--constraint=h200' in out and '--array=0-1%4' in out
+    launch.main([str(path), '--dry-run', '--partition', 'test', '--gpus', '2'])
+    out = capsys.readouterr().out
+    assert 'gpu_test' in out and '--gres=gpu:2' in out and '--array=0-0%2' in out and out.rstrip().endswith(' 2')
+    monkeypatch.setenv('OPTSPLIT_CLUSTER', 'nowhere')
+    with pytest.raises(SystemExit, match='OPTSPLIT_CLUSTER'):
+        launch.main([str(path), '--dry-run'])
 
 
 def test_submit_conflict_and_skips(suite_dir, monkeypatch, capsys):

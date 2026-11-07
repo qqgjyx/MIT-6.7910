@@ -2,7 +2,10 @@
 
 Only the single-device optimizer with auxiliary AdamW is kept. One change: `muon_update` no longer
 overwrites `grad` in place (upstream does `grad.lerp_`), so a shadow optimizer stepping after Muon on
-the same gradients sees them unchanged.
+the same gradients sees them unchanged. Added: a group may set `orthogonalize=False` (ablation): the Nesterov
+momentum is then only rescaled to the Frobenius norm of an orthogonal update of the same shape. And
+`sv_power=p` (ablation, replaces Newton-Schulz): the update is U S^p V^T from the SVD U S V^T of the Nesterov
+momentum, rescaled to that same Frobenius norm; p=0 is exact orthogonalization, p=1 is `orthogonalize=False`.
 """
 
 import torch
@@ -25,12 +28,19 @@ def zeropower_via_newtonschulz5(G, steps: int):
     return X
 
 
-def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True):
+def muon_update(grad, momentum, beta=0.95, ns_steps=5, nesterov=True, orthogonalize=True, sv_power=None):
     momentum.lerp_(grad, 1 - beta)
     update = grad.lerp(momentum, beta) if nesterov else momentum
     if update.ndim == 4:  # conv filters
         update = update.view(len(update), -1)
-    update = zeropower_via_newtonschulz5(update, steps=ns_steps)
+    if sv_power is not None:
+        U, S, Vh = torch.linalg.svd(update.float(), full_matrices=False)
+        update = (U * S.pow(sv_power)) @ Vh
+        update = update * (min(update.shape[-2:]) ** 0.5 / (update.norm() + 1e-7))
+    elif orthogonalize:
+        update = zeropower_via_newtonschulz5(update, steps=ns_steps)
+    else:  # same Frobenius norm as an orthogonal update: sqrt(min(n_out, n_in))
+        update = update * (min(update.shape[-2:]) ** 0.5 / (update.norm() + 1e-7))
     update *= max(1, update.size(-2) / update.size(-1)) ** 0.5
     return update
 
@@ -53,7 +63,10 @@ class SingleDeviceMuonWithAuxAdam(torch.optim.Optimizer):
                 group["lr"] = group.get("lr", 0.02)
                 group["momentum"] = group.get("momentum", 0.95)
                 group["weight_decay"] = group.get("weight_decay", 0)
-                assert set(group.keys()) == set(["params", "lr", "momentum", "weight_decay", "use_muon"])
+                group["orthogonalize"] = group.get("orthogonalize", True)
+                group["sv_power"] = group.get("sv_power", None)
+                assert set(group.keys()) == set(["params", "lr", "momentum", "weight_decay", "use_muon",
+                                                 "orthogonalize", "sv_power"])
             else:
                 group["lr"] = group.get("lr", 3e-4)
                 group["betas"] = group.get("betas", (0.9, 0.95))
@@ -77,7 +90,8 @@ class SingleDeviceMuonWithAuxAdam(torch.optim.Optimizer):
                     state = self.state[p]
                     if len(state) == 0:
                         state["momentum_buffer"] = torch.zeros_like(p)
-                    update = muon_update(p.grad, state["momentum_buffer"], beta=group["momentum"])
+                    update = muon_update(p.grad, state["momentum_buffer"], beta=group["momentum"],
+                                         orthogonalize=group["orthogonalize"], sv_power=group["sv_power"])
                     p.mul_(1 - group["lr"] * group["weight_decay"])
                     p.add_(update.reshape(p.shape), alpha=-group["lr"])
             else:
