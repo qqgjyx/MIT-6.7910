@@ -1,14 +1,12 @@
 \documentclass[10pt]{article}
 \usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage[margin=0.7in]{geometry}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath}
 \usepackage{microtype}
-\usepackage{enumitem}
 \usepackage{graphicx}
 \usepackage{float}
-\usepackage{booktabs,array}
+\usepackage{booktabs}
 \usepackage[font=small,labelfont=bf,skip=3pt]{caption}
 \captionsetup[figure]{font=footnotesize}
 \usepackage[dvipsnames]{xcolor}
@@ -16,17 +14,15 @@
 \usepackage[capitalise]{cleveref}
 \setlength{\parskip}{2pt}
 \setlength{\parindent}{0pt}
-\setlist{nosep,leftmargin=*}
-\setlength{\textfloatsep}{8pt}
 \setlength{\intextsep}{6pt}
 \makeatletter
 \renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}{1.0ex \@plus .3ex \@minus .2ex}{-1em}{\normalfont\normalsize\bfseries}}
 \renewcommand\maketitle{\begin{center}{\large\bfseries\@title\par}\vspace{3pt}\@author\quad\textperiodcentered\quad\@date\end{center}}
 \makeatother
 
-\title{Where the Differences Between AdamW and Muon Come From\\[1pt]
-\normalfont Next steps (ii) and (iii), draft}
-\author{Juntang Wang and V\'ictor Conchello}
+\title{How AdamW and Muon Train a Small Language Model\\[1pt]
+\normalfont Next steps (ii) and (iii) of the checkpoint}
+\author{Juntang Wang}
 \date{November 6, 2026}
 
 \begin{document}
@@ -42,9 +38,9 @@
 \label{sec:setup}
 
 %% =================================================================
-%% (ii) Do the rules alone make the differences?
+%% (ii) Direct result of Muon's updates, or emergent in training?
 %% =================================================================
-\section{(ii) Do the rules alone make the differences?}
+\section{(ii) Direct result of Muon's updates, or emergent in training?}
 \label{sec:ii}
 
 %% =================================================================
@@ -60,9 +56,9 @@
 \label{sec:ghost}
 
 %% =================================================================
-%% (iii) Do the differences explain the speed?
+%% (iii) Do the differences explain Muon's faster training and different path?
 %% =================================================================
-\section{(iii) Do the differences explain the speed?}
+\section{(iii) Do the differences explain Muon's faster training and different path?}
 \label{sec:iii}
 
 %% =================================================================
