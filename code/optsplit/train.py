@@ -18,7 +18,7 @@ from .data import build_data
 from .measure import measure_step
 from .measure.step_sharpness import StepSharpness
 from .models import build_model
-from .optim import Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
+from .optim import Ghost, Shadow, build_optimizer, load_optimizer_state, lr_mult, set_lr
 from .probe import Probe
 
 INTERRUPTED = 3
@@ -52,6 +52,16 @@ def main(argv):
                         num_classes=getattr(data, 'num_classes', None)).to(device)
     opt = build_optimizer(cfg.optimizer, model, cfg)
     shadow = Shadow(model, cfg)
+    ghost = Ghost(model, cfg)  # open-loop copies (cfg.ghost), saved as sibling runs <name>__ghost_<rule>
+    assert not (ghost.models and cfg.fork.parent), 'ghosts start at the initialization: not with forks'
+    ghost_dirs = {}
+    for rule in ghost.models:
+        d = out.parent / f'{cfg.name}__ghost_{rule}'
+        (d / 'ckpt').mkdir(parents=True, exist_ok=True)
+        gcfg = load_config(out / 'config.yaml', [f'name={d.name}', f'optimizer={rule}', 'ghost=[]',
+                                                 f'ghost_of={cfg.suite}/{cfg.name}'])
+        save_config(gcfg, d / 'config.yaml')
+        ghost_dirs[rule] = d
     rates = None
     if cfg.get('balance', {}).get('variant'):  # per-layer learning rates (optsplit/layerlr)
         from .layerlr.rates import LayerRates
@@ -65,6 +75,7 @@ def main(argv):
         model.load_state_dict(ck['model'])
         load_optimizer_state(opt, ck['optimizer'])
         shadow.load(ck['shadow'])
+        ghost.load(ck.get('ghost'))
         if rates:
             rates.load(ck['balance'])
         start = ck['step']
@@ -98,7 +109,7 @@ def main(argv):
 
     def save_latest(step):
         atomic_save(dict(model=model.state_dict(), optimizer=opt.state_dict(),
-                         shadow=shadow.state_dicts(), step=step,
+                         shadow=shadow.state_dicts(), ghost=ghost.state_dicts(), step=step,
                          balance=rates and rates.state_dict()), out / 'latest.pt')
 
     use_amp = device.type == 'cuda' and cfg.train.dtype == 'bfloat16'
@@ -116,6 +127,9 @@ def main(argv):
             log('eval', step, **rec)
         if step in ckpt_steps and not (out / 'ckpt' / f'{step:07d}.pt').exists():
             atomic_save({'model': model.state_dict()}, out / 'ckpt' / f'{step:07d}.pt')
+        for rule, d in ghost_dirs.items():
+            if step in ckpt_steps and not (d / 'ckpt' / f'{step:07d}.pt').exists():
+                atomic_save({'model': ghost.models[rule].state_dict()}, d / 'ckpt' / f'{step:07d}.pt')
         if step in fork_steps:
             atomic_save(dict(model=model.state_dict(),
                              optimizer={cfg.optimizer: opt.state_dict(), **shadow.state_dicts()}),
@@ -142,6 +156,7 @@ def main(argv):
         grad_norm = torch.nn.utils.clip_grad_norm_(params, clip)
         opt.step()
         shadow.step()
+        ghost.step(model, lr_mult(step, cfg))
         opt.zero_grad(set_to_none=True)
         if rates:
             rates.after(step, log)
@@ -165,6 +180,8 @@ def main(argv):
                 print(f'interrupted, saved step {step + 1}')
                 return INTERRUPTED
 
+    for d in ghost_dirs.values():
+        (d / 'done').touch()
     (out / 'done').touch()
     (out / 'latest.pt').unlink(missing_ok=True)
     print(f'done in {time.time() - t0:.0f}s')

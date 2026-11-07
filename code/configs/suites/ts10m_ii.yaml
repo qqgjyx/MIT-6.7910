@@ -1,0 +1,32 @@
+# Next steps (ii)/(iii): does each property that separates AdamW and Muon follow from
+# the update rule, or does it emerge during training? Settings, checkpoints and measurements of ts10m_traj (so the
+# offline metrics/trajectory.py applies), data orders 0-2.
+# - A, ghosts: AdamW runs carrying an open-loop Muon copy (Muon's rule on the AdamW run's gradients), and Muon runs
+#   carrying an open-loop AdamW copy (optim.Ghost); the copies are saved as <name>__ghost_<rule>.
+# - B, frozen: the model frozen at the initialization (SGD at lr 0) carrying both ghosts: each rule fed real
+#   gradients with no learning (fresh batches, fixed weights). No measurements.
+# - C1: AdamW without weight decay (Muon has none).
+# - C2: Muon with decoupled weight decay 0.02, the same per-step shrink as AdamW's (lr x wd = 2e-4).
+# - C3: Muon without orthogonalization (Nesterov momentum rescaled to an orthogonal update's Frobenius norm); a new
+#   optimizer, so d0 also at 0.003 and 0.03.
+suite: ts10m_ii
+base: ../base/tinystories_10m.yaml
+overrides:
+  optim.sgd.lr: 0.06
+  optim.adamw.lr: 2.0e-3
+  optim.muon.lr: 0.01
+  log.ckpt_steps: {every: 1000, geometric: 12, extra: [25, 26, 27, 50, 51, 52, 100, 101, 102, 150, 151, 152, 200, 201,
+    202, 250, 251, 252, 300, 301, 302, 400, 401, 402, 500, 501, 502, 600, 601, 602, 800, 801, 802, 1000, 1001, 1002,
+    1250, 1251, 1252, 1500, 1501, 1502, 2000, 2001, 2002, 2500, 2501, 2502, 3000, 3001, 3002, 4000, 4001, 4002,
+    5000, 5001, 5002, 6000, 6001, 6002, 7000, 7001, 7002, 8000, 8001, 8002, 9000, 9001, 9002, 9998, 9999]}
+runs:
+  - {optimizer: adamw, ghost: [[muon]], train.data_seed: [0, 1, 2], name: "adamw_ghost_d{train.data_seed}"}
+  - {optimizer: muon, ghost: [[adamw]], train.data_seed: [0, 1, 2], name: "muon_ghost_d{train.data_seed}"}
+  - {optimizer: adamw, optim.adamw.weight_decay: 0.0, train.data_seed: [0, 1, 2], name: "adamw_wd0_d{train.data_seed}"}
+  - {optimizer: muon, optim.muon.weight_decay: 0.02, train.data_seed: [0, 1, 2], name: "muon_wd_d{train.data_seed}"}
+  - {optimizer: muon, optim.muon.orthogonalize: false, train.data_seed: [0, 1, 2],
+     name: "muon_noorth_d{train.data_seed}"}
+  - {optimizer: muon, optim.muon.orthogonalize: false, optim.muon.lr: [0.003, 0.03], train.data_seed: 0,
+     name: "muon_noorth_lr{optim.muon.lr}_d{train.data_seed}"}
+  - {optimizer: sgd, optim.sgd.lr: 0.0, ghost: [[muon, adamw]], measure.hessian: false, measure.delta_loss: false,
+     train.data_seed: 0, name: "frozen_ghost_d{train.data_seed}"}

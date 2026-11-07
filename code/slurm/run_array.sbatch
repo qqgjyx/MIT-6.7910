@@ -2,7 +2,8 @@
 #SBATCH --signal=B:USR1@300
 # Array job submitted by scripts/launch.py, which passes partition, time, gres, array, etc.:
 #   sbatch [options] slurm/run_array.sbatch <list file> <runs per task K>
-# Task i runs lines [i*K, (i+1)*K) of the list (run config paths) concurrently on its GPU. Near the time
+# Task i runs lines [i*K, (i+1)*K) of the list (run config paths) concurrently on its GPUs (round robin over
+# CUDA_VISIBLE_DEVICES when the task has more than one). Near the time
 # limit (USR1) or on preemption (TERM) the runs get SIGTERM, save latest.pt and exit with code 3; the
 # job then requeues itself if a run is unfinished, and train.py resumes from latest.pt.
 LIST=${1:-$LIST}
@@ -15,6 +16,7 @@ JOB=${SLURM_ARRAY_JOB_ID:+${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}}
 JOB=${JOB:-$SLURM_JOB_ID}
 runs=()
 pids=()
+IFS=, read -ra devs <<< "${CUDA_VISIBLE_DEVICES:-}"
 
 unfinished() {
     for cfg in "${runs[@]}"; do
@@ -38,7 +40,10 @@ for cfg in "${lines[@]:$((SLURM_ARRAY_TASK_ID * K)):$K}"; do
         echo "skip (done): $cfg"
         continue
     fi
-    echo "start: $cfg"
+    if [ ${#devs[@]} -gt 1 ]; then
+        export CUDA_VISIBLE_DEVICES=${devs[$((${#runs[@]} % ${#devs[@]}))]}
+    fi
+    echo "start: $cfg (CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-})"
     python -m optsplit.train "$cfg" >> "$(dirname "$cfg")/train.out" 2>&1 &
     runs+=("$cfg")
     pids+=($!)
