@@ -70,6 +70,19 @@ active MLP units & $0.120 \pm 0.001$ ($0.120$) & $0.222 \pm 0.001$ ($0.222$) \\
 \subsection{Rules without learning}
 \label{sec:noise}
 
+Each rule updates one block matrix of each shape for 10{,}000 steps on synthetic gradients: noise, or a rank-4 direction plus noise. Nothing is learned (\cref{fig:noise}).
+
+\textbf{Update cosine follows the rule.} On noise, consecutive updates have cosine 0.90 under AdamW and 0.66 to 0.76 under Muon, close to the real runs (0.89 and 0.74).
+
+\textbf{The spectra do not.} On noise, neither rule moves the stable rank of $W$. With the rank-4 signal both fall to about its rank, AdamW's within a few hundred steps and Muon's by the end (step 1000: 3.7 against 9.9).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{ii_iii/figures/rule_noise.pdf}
+\caption{Each rule on synthetic gradients, MLP input matrix.}
+\label{fig:noise}
+\end{figure}
+
 %% =================================================================
 %% Ghosts on real gradients
 %% =================================================================
