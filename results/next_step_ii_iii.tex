@@ -89,6 +89,39 @@ Each rule updates one block matrix of each shape for 10{,}000 steps on synthetic
 \subsection{Ghosts on real gradients}
 \label{sec:ghost}
 
+Each run carries a \emph{ghost}: a copy of the initial weights updated by the other optimizer's rule on the run's own gradients. The ghost never feeds back into the run. With the two runs this makes a $2\times2$ design, rule $\times$ gradient stream (\cref{tab:ghost}, \cref{fig:ghost}).
+
+\textbf{The ordering follows the rule.} Muon's rule on AdamW's gradients ends at stable rank 87, against 40 for the AdamW run and 75 for the Muon run. AdamW's rule on Muon's gradients ends at 13. $\sigma_1/\sigma_{\mathrm{median}}$ and update cosine go the same way. Both ghosts go further than the run with their rule (87 against 75, 13 against 40), so learning pulls the two optimizers together.
+
+\textbf{The spectral norm does not.} On AdamW's gradients Muon's rule gives 10.9 and AdamW's 5.9; on Muon's gradients, 7.5 and 7.8. Which rule is larger depends on the gradient stream.
+
+\textbf{Not shown.} A ghost has no loss or Hessian, so it says nothing about $\lambda_{\max}$, MLP sparsity or the loss.
+
+\begin{table}[H]
+\centering
+\small
+\caption{The $2\times2$ design at step 10{,}000.}
+\label{tab:ghost}
+\begin{tabular}{l l ccc}
+\toprule
+rule & gradient stream & stable rank & $\sigma_1/\sigma_{\mathrm{median}}$ & update cosine \\
+\midrule
+AdamW & AdamW (run)  & 39.9 to 41.4 & 5.80 to 6.19 & 0.89 to 0.90 \\
+AdamW & Muon (ghost) & 12.6 to 13.0 & 15.6 to 16.0 & 0.89 \\
+\midrule
+Muon  & Muon (run)   & 75.3 to 75.5 & 2.89 to 2.90 & 0.71 \\
+Muon  & AdamW (ghost)& 87.0 to 87.2 & 2.77 to 2.80 & 0.70 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{ii_iii/figures/ghost.pdf}
+\caption{Ghosts (dashed) against runs.}
+\label{fig:ghost}
+\end{figure}
+
 %% =================================================================
 %% (iii) Do the differences explain Muon's faster training and different path?
 %% =================================================================
